@@ -1,0 +1,307 @@
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Lock, User, Eye, EyeOff, ShieldCheck, ArrowRight, Sparkles } from 'lucide-react';
+import BpsLogo from '@/components/BpsLogo';
+
+export default function LoginPage() {
+  const router = useRouter();
+  const [usernameOrEmail, setUsernameOrEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [activeRoleTab, setActiveRoleTab] = useState<'admin' | 'user' | null>(null);
+
+  const performLogin = (role: 'admin' | 'user') => {
+    if (role === 'admin') {
+      localStorage.setItem('sipersedia_user', JSON.stringify({
+        id: 'admin-001',
+        name: 'Admin Persediaan BPS',
+        email: 'admin@bps-okus.go.id',
+        role: 'admin',
+        bidang: 'Subbagian Umum',
+      }));
+    } else {
+      localStorage.setItem('sipersedia_user', JSON.stringify({
+        id: 'usr-001',
+        name: 'Ahmad Fauzi (Pegawai BPS)',
+        email: 'user@bps-okus.go.id',
+        role: 'user',
+        bidang: 'Tim Statistik Sosial',
+      }));
+    }
+    router.push('/dashboard');
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError('');
+
+    await new Promise((resolve) => setTimeout(resolve, 600));
+
+    const input = usernameOrEmail.trim().toLowerCase();
+    const pass = password.trim();
+
+    // Cek apakah Admin (ketik admin atau admin@bps-okus.go.id)
+    if (
+      (input === 'admin' || input === 'admin@bps-okus.go.id') &&
+      (pass === 'admin' || pass === 'admin123')
+    ) {
+      performLogin('admin');
+      return;
+    }
+
+    // Cek apakah User (ketik user atau user@bps-okus.go.id)
+    if (
+      (input === 'user' || input === 'user@bps-okus.go.id') &&
+      (pass === 'user' || pass === 'user123')
+    ) {
+      performLogin('user');
+      return;
+    }
+
+    setError('Username atau password salah. Ketik "admin" atau "user"');
+    setIsLoading(false);
+  };
+
+  const selectRole = (role: 'admin' | 'user') => {
+    setActiveRoleTab(role);
+    setError('');
+    if (role === 'admin') {
+      setUsernameOrEmail('admin');
+      setPassword('admin123');
+    } else {
+      setUsernameOrEmail('user');
+      setPassword('user123');
+    }
+  };
+
+  return (
+    <div className="login-bg min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Dynamic Glowing Ambient Circles in Official BPS Colors (Biru, Orange, Hijau) */}
+      <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-bps-blue/25 blur-[100px] pointer-events-none animate-pulse-soft" />
+      <div
+        className="absolute top-1/3 -right-24 w-96 h-96 rounded-full bg-bps-orange/20 blur-[110px] pointer-events-none animate-pulse-soft"
+        style={{ animationDelay: '1.5s' }}
+      />
+      <div
+        className="absolute -bottom-24 left-1/4 w-96 h-96 rounded-full bg-bps-green/20 blur-[110px] pointer-events-none animate-pulse-soft"
+        style={{ animationDelay: '3s' }}
+      />
+
+      <div className="relative z-10 w-full max-w-md animate-fade-in my-8">
+        {/* Logo & Header Instansi */}
+        <div className="text-center mb-6">
+          {/* BPS Logo Box dengan Badge Putih Bersih */}
+          <div className="inline-flex items-center justify-center p-4 rounded-2xl bg-white shadow-2xl shadow-black/20 mb-4 ring-4 ring-white/20 transition-transform hover:scale-105 duration-300">
+            <BpsLogo size={68} />
+          </div>
+
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-white/90 text-xs font-medium mb-2">
+            <Sparkles className="w-3.5 h-3.5 text-bps-orange" />
+            <span>Badan Pusat Statistik RI</span>
+          </div>
+
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+            SIPERSEDIA
+          </h1>
+          <p className="text-white/80 text-sm font-medium mt-0.5">
+            Sistem Informasi Persediaan Barang
+          </p>
+          <p className="text-bps-orange-300 text-xs font-semibold tracking-wider mt-1 uppercase">
+            BPS KABUPATEN OGAN KOMERING ULU SELATAN
+          </p>
+        </div>
+
+        {/* Login Card dengan Aksen Tricolor BPS (Biru - Orange - Hijau) */}
+        <div className="glass-card rounded-2xl shadow-2xl border border-white/40 overflow-hidden relative backdrop-blur-xl">
+          {/* Pita Tricolor Resmi BPS di Bagian Atas Kartu */}
+          <div className="h-1.5 w-full bg-gradient-to-r from-bps-blue via-bps-orange to-bps-green" />
+
+          <div className="p-6 sm:p-8">
+            <div className="text-center mb-5">
+              <h2 className="text-lg font-bold text-dark-800">Masuk ke Sistem</h2>
+              <p className="text-dark-400 text-xs mt-1">
+                Ketik <span className="font-semibold text-bps-blue">admin</span> atau{' '}
+                <span className="font-semibold text-bps-green">user</span> untuk masuk
+              </p>
+            </div>
+
+            {/* Role Shortcut Tabs */}
+            <div className="grid grid-cols-2 gap-2 mb-5 p-1 rounded-xl bg-dark-50 border border-dark-100">
+              <button
+                type="button"
+                onClick={() => selectRole('admin')}
+                className={`py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
+                  activeRoleTab === 'admin'
+                    ? 'bg-gradient-to-r from-bps-blue to-bps-blue-700 text-white shadow-md'
+                    : 'text-dark-600 hover:text-bps-blue hover:bg-white/80'
+                }`}
+              >
+                <div className="w-2 h-2 rounded-full bg-bps-orange" />
+                <span>Admin (Gudang)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => selectRole('user')}
+                className={`py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
+                  activeRoleTab === 'user'
+                    ? 'bg-gradient-to-r from-bps-green to-bps-green-700 text-white shadow-md'
+                    : 'text-dark-600 hover:text-bps-green hover:bg-white/80'
+                }`}
+              >
+                <div className="w-2 h-2 rounded-full bg-bps-blue" />
+                <span>User (Pegawai)</span>
+              </button>
+            </div>
+
+            {error && (
+              <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2 animate-fade-in font-medium">
+                <div className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0 animate-ping" />
+                <span>{error}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div>
+                <label htmlFor="usernameOrEmail" className="input-label text-xs font-semibold text-dark-700">
+                  Username atau Email
+                </label>
+                <div className="relative">
+                  <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-dark-400" />
+                  <input
+                    id="usernameOrEmail"
+                    type="text"
+                    value={usernameOrEmail}
+                    onChange={(e) => setUsernameOrEmail(e.target.value)}
+                    className="input pl-10 pr-4 py-2.5 text-sm rounded-xl border-dark-200 focus:border-bps-blue focus:ring-bps-blue/20"
+                    placeholder="Ketik 'admin' atau 'user'"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="password" className="input-label text-xs font-semibold text-dark-700">
+                  Password
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-dark-400" />
+                  <input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="input pl-10 pr-10 py-2.5 text-sm rounded-xl border-dark-200 focus:border-bps-blue focus:ring-bps-blue/20"
+                    placeholder="admin123 / user123 (atau 'admin' / 'user')"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-dark-400 hover:text-dark-600 transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full py-3 px-4 rounded-xl font-bold text-sm text-white bg-gradient-to-r from-bps-blue via-bps-blue-600 to-bps-teal hover:opacity-95 shadow-lg shadow-bps-blue/30 active:scale-[0.99] transition-all flex items-center justify-center gap-2 mt-2"
+              >
+                {isLoading ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                    <span>Memverifikasi Kredensial...</span>
+                  </div>
+                ) : (
+                  <>
+                    <span>Masuk ke Sistem</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+            </form>
+
+            {/* Quick 1-Click Access Cards with BPS Colors */}
+            <div className="mt-6 pt-5 border-t border-dark-100">
+              <p className="text-[11px] font-semibold text-dark-400 uppercase tracking-wider text-center mb-3">
+                Akses Cepat Kredensial:
+              </p>
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  onClick={() => performLogin('admin')}
+                  className="w-full text-left p-3 rounded-xl border border-bps-orange/30 bg-gradient-to-r from-bps-orange-50/70 to-white hover:border-bps-orange hover:shadow-sm transition-all group"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-lg bg-bps-orange text-white flex items-center justify-center font-bold text-xs shadow-sm">
+                        AD
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-dark-800 group-hover:text-bps-orange-700 transition-colors">
+                          Masuk sebagai Admin
+                        </p>
+                        <p className="text-[11px] text-dark-400">
+                          Username: <code className="text-dark-600 font-mono">admin</code> · Password:{' '}
+                          <code className="text-dark-600 font-mono">admin</code>
+                        </p>
+                      </div>
+                    </div>
+                    <span className="badge bg-bps-orange-100 text-bps-orange-700 text-[10px] font-bold">
+                      ADMINISTRATOR
+                    </span>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => performLogin('user')}
+                  className="w-full text-left p-3 rounded-xl border border-bps-green/30 bg-gradient-to-r from-bps-green-50/70 to-white hover:border-bps-green hover:shadow-sm transition-all group"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-lg bg-bps-green text-white flex items-center justify-center font-bold text-xs shadow-sm">
+                        US
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-dark-800 group-hover:text-bps-green-700 transition-colors">
+                          Masuk sebagai User Pegawai
+                        </p>
+                        <p className="text-[11px] text-dark-400">
+                          Username: <code className="text-dark-600 font-mono">user</code> · Password:{' '}
+                          <code className="text-dark-600 font-mono">user</code>
+                        </p>
+                      </div>
+                    </div>
+                    <span className="badge bg-bps-green-100 text-bps-green-700 text-[10px] font-bold">
+                      USER PEGAWAI
+                    </span>
+                  </div>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="text-center text-white/50 text-xs mt-6 space-y-1">
+          <p className="flex items-center justify-center gap-1.5 font-medium">
+            <ShieldCheck className="w-4 h-4 text-bps-green" />
+            <span>Sistem Informasi Persediaan Barang BPS OKU Selatan</span>
+          </p>
+          <p className="text-[11px] text-white/35">
+            Nuansa Warna Resmi BPS: Biru Integritas, Orange Amanah, Hijau Profesional
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}

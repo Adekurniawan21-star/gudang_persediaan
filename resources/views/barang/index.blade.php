@@ -44,7 +44,7 @@
     }
 
     .badge {
-        font-size: 0.75rem;
+        font-size: 1rem;
         padding: 4px 10px;
         border-radius: 30px;
         font-weight: 600;
@@ -58,25 +58,31 @@
         font-weight: 600;
         letter-spacing: 0.5px;
     }
+
     .btn-action i {
         margin-right: 4px;
     }
+
     .btn-action:hover {
         transform: translateY(-2px);
         box-shadow: 0 8px 20px rgba(0,0,0,0.2);
     }
 
-    #imageModal img {
-        transition: transform 0.3s, box-shadow 0.3s;
+    .blink {
+        animation: blink 1s infinite;
     }
-    #imageModal img:hover {
-        transform: scale(1.03);
-        box-shadow: 0 0 20px rgba(255,255,255,0.4);
+
+    @keyframes blink {
+        0% { opacity: 1; }
+        50% { opacity: 0.3; }
+        100% { opacity: 1; }
     }
 </style>
 
 <div class="container-fluid" style="margin-top: -20px;">
-    <h1 class="judul-page">Daftar Barang</h1>
+    <div class="d-flex justify-content-center align-items-center mb-0">
+        <h1 class="judul-page text-center">Daftar Barang</h1>
+    </div>
 
     <div class="mb-3">
         <a href="{{ route('barang.create') }}" class="btn btn-primary btn-action me-2">
@@ -116,11 +122,11 @@
                             <td>{{ $b->kategori }}</td>
                             <td class="text-center">
                                 @if($b->stok == 0)
-                                    <span class="badge bg-danger">Habis</span>
-                                @elseif($b->stok <= 5)
+                                    <span class="badge bg-danger blink text-dark">Habis</span>
+                                @elseif($b->stok < 100)
                                     <span class="badge bg-warning text-dark">{{ $b->stok }}</span>
                                 @else
-                                    <span class="badge bg-success">{{ $b->stok }}</span>
+                                    <span class="badge bg-success text-dark">{{ $b->stok }}</span>
                                 @endif
                             </td>
                             <td class="text-center">

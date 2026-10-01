@@ -16,15 +16,16 @@
     <!-- Navbar Right -->
     <ul class="navbar-nav ml-auto">
         <li class="nav-item dropdown no-arrow">
-            <a class="nav-link dropdown-toggle d-flex align-items-center rounded shadow-sm px-2 py-1"
+            <a class="nav-link dropdown-toggle d-flex align-items-center rounded shadow-sm px-3 py-2"
                href="#" id="userDropdown" role="button"
                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"
-               style="background: #f1f1f1; border: 1px solid #ddd; transition: all 0.3s; box-shadow: 0 2px 6px rgba(0,0,0,0.08); font-size: 0.75rem; width: fit-content;">
-                <span class="mr-1 d-none d-lg-inline text-dark fw-normal" style="font-size: 0.75rem;">
+               style="background: #f8f9fc; border: 1px solid #e3e6f0; transition: all 0.3s; font-size: 0.8rem;">
+                <span class="mr-2 d-none d-lg-inline text-dark fw-medium">
                     {{ Auth::user()->name ?? 'Admin' }}
                 </span>
-                <i class="fas fa-user-circle text-primary" style="font-size: 1rem;"></i>
+                <i class="fas fa-user-circle fa-lg text-primary"></i>
             </a>
+
             <!-- Dropdown -->
             <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
                  aria-labelledby="userDropdown">

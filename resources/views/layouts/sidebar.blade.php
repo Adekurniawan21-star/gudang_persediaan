@@ -47,6 +47,16 @@
             <span style="margin-left: 5px;">Barang Keluar</span>
         </a>
     </li>
+
+    <!-- Peminjaman -->
+    <li class="nav-item {{ request()->routeIs('peminjaman.*') ? 'active border-left border-white' : '' }}">
+        <a class="nav-link text-white fw-bold" href="{{ route('peminjaman.index') }}"
+           style="transition: all 0.3s; border-radius: 8px;">
+            <i class="fas fa-fw fa-handshake"></i>
+            <span style="margin-left: 5px;">Peminjaman</span>
+        </a>
+    </li>
+
 </ul>
 
 <!-- Tambahkan CSS custom di style atau file CSS kamu -->

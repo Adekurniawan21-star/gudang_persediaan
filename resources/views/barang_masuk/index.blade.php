@@ -63,7 +63,9 @@
 
 <div class="container-fluid">
 
-    <h1 class="judul-page">Data Barang Masuk</h1>
+    <div class="d-flex justify-content-center align-items-center " style="margin-top: -40px;">
+        <h1 class="judul-page text-center">Daftar Barang Masuk</h1>
+    </div>
 
     <div class="d-flex flex-wrap gap-2 mb-3">
         <a href="{{ route('barang_masuk.create') }}" class="btn btn-primary btn-action">
@@ -78,28 +80,38 @@
         <div class="alert alert-success shadow-sm fw-semibold">{{ session('success') }}</div>
     @endif
 
-    <div class="card card-custom mb-4 border-0">
-        <div class="card-body">
-
-            <!-- Filter -->
-            <!-- Filter -->
-            <div class="d-flex flex-wrap gap-2 mb-3">
-                <input type="date" id="filterTanggal" class="form-control flex-grow-1" placeholder="Filter Tanggal">
-                <select id="filterBulan" class="form-select flex-grow-1">
+    <div class="card p-3 mb-4 shadow-sm">
+        <div class="row g-2 align-items-center">
+            <div class="col-md-2">
+                <input type="date" id="filterTanggal" class="form-control">
+            </div>
+            <div class="col-md-2">
+                <select id="filterBulan" class="form-select">
                     <option value="">Pilih Bulan</option>
                     @for ($i = 1; $i <= 12; $i++)
-                        <option value="{{ str_pad($i, 2, '0', STR_PAD_LEFT) }}">{{ DateTime::createFromFormat('!m', $i)->format('F') }}</option>
+                        <option value="{{ str_pad($i, 2, '0', STR_PAD_LEFT) }}">
+                            {{ DateTime::createFromFormat('!m', $i)->format('F') }}
+                        </option>
                     @endfor
                 </select>
-                <select id="filterTahun" class="form-select flex-grow-1">
+            </div>
+            <div class="col-md-2">
+                <select id="filterTahun" class="form-select">
                     <option value="">Pilih Tahun</option>
                     @for ($year = date('Y'); $year >= 2020; $year--)
                         <option value="{{ $year }}">{{ $year }}</option>
                     @endfor
                 </select>
+            </div>
+            <div class="col-md-3 text-end">
+                <button class="btn btn-primary me-2" id="applyFilter">Filter</button>
                 <button class="btn btn-secondary" id="resetFilter">Reset</button>
             </div>
+        </div>
+    </div>
 
+    <div class="card card-custom mb-4 border-0">
+        <div class="card-body">
 
             <div class="table-responsive">
                 <table id="tableBarangMasuk" class="table table-bordered align-middle" width="100%" cellspacing="0">

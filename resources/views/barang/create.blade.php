@@ -113,8 +113,13 @@
 
                 <div class="mb-3">
                     <span class="label-button">Kategori</span>
-                    <input type="text" name="kategori" class="form-control" placeholder="Contoh: Alat Pelindung Diri">
+                    <select name="kategori" class="form-control" required>
+                        <option value="">-- Pilih Kategori --</option>
+                        <option value="Barang Sekali Pakai">Barang Sekali Pakai</option>
+                        <option value="Barang Pinjam">Barang Pinjam</option>
+                    </select>
                 </div>
+
 
                 <div class="mb-3">
                     <span class="label-button">Stok</span>

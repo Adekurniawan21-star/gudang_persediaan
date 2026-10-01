@@ -24,8 +24,13 @@
                 </div>
                 <div class="form-group">
                     <label>Kategori</label>
-                    <input type="text" name="kategori" class="form-control" value="{{ $barang->kategori }}">
+                    <select name="kategori" class="form-control" required>
+                        <option value="">-- Pilih Kategori --</option>
+                        <option value="Barang Sekali Pakai" {{ $barang->kategori == 'Barang Sekali Pakai' ? 'selected' : '' }}>Barang Sekali Pakai</option>
+                        <option value="Barang Pinjam" {{ $barang->kategori == 'Barang Pinjam' ? 'selected' : '' }}>Barang Pinjam</option>
+                    </select>
                 </div>
+
                 <div class="form-group">
                     <label>Stok</label>
                     <input type="number" name="stok" class="form-control" value="{{ $barang->stok }}" required>

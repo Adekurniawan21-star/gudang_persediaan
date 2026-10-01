@@ -3,144 +3,200 @@
 @section('title', 'Dashboard')
 
 @section('content')
-<div class="container-fluid">
+<div class="container-fluid py-3">
 
-    <h1 class="h3 mb-4 text-gray-800">Dashboard</h1>
-
-    <div class="row">
-        <div class="col-md-4">
-            <div class="card bg-gradient-primary text-white shadow mb-4">
-                <div class="card-body">Total Stok Barang
-                    <div class="h4 mt-2 fw-bold">{{ $totalStok }}</div>
+    {{-- Kartu Ringkasan --}}
+    <div class="row g-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm bg-primary text-white rounded-4">
+                <div class="card-body">
+                    <h6 class="fw-light mb-1">Total Stok Barang</h6>
+                    <h4 class="fw-bold">{{ $totalStok }}</h4>
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card bg-gradient-success text-white shadow mb-4">
-                <div class="card-body">Total Barang Masuk
-                    <div class="h4 mt-2 fw-bold">{{ $totalMasuk }}</div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm bg-success text-white rounded-4">
+                <div class="card-body">
+                    <h6 class="fw-light mb-1">Barang Masuk</h6>
+                    <h4 class="fw-bold">{{ $totalMasuk }}</h4>
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card bg-gradient-danger text-white shadow mb-4">
-                <div class="card-body">Total Barang Keluar
-                    <div class="h4 mt-2 fw-bold">{{ $totalKeluar }}</div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm bg-danger text-white rounded-4">
+                <div class="card-body">
+                    <h6 class="fw-light mb-1">Barang Keluar</h6>
+                    <h4 class="fw-bold">{{ $totalKeluar }}</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm bg-warning text-dark rounded-4">
+                <div class="card-body">
+                    <h6 class="fw-light mb-1">Barang Dipinjam</h6>
+                    <h4 class="fw-bold">{{ $totalDipinjam }}</h4>
                 </div>
             </div>
         </div>
     </div>
 
-    <form method="GET" class="mb-4 d-flex align-items-center">
-        <select name="filter" class="form-control w-auto d-inline rounded shadow-sm">
-            <option value="daily" {{ $filter == 'daily' ? 'selected' : '' }}>Harian</option>
-            <option value="monthly" {{ $filter == 'monthly' ? 'selected' : '' }}>Bulanan</option>
-            <option value="yearly" {{ $filter == 'yearly' ? 'selected' : '' }}>Tahunan</option>
-        </select>
-        <button type="submit" class="btn btn-primary ml-2 shadow-sm">Tampilkan</button>
-    </form>
+    {{-- Stok dan Dipinjam --}}
+    <div class="row mt-5 g-4">
+        <div class="col-md-6">
+            <div class="card shadow-sm rounded-4">
+                <div class="card-header bg-primary text-white fw-bold rounded-top-4">Stok Barang</div>
+                <div class="card-body table-responsive" style="max-height: 300px;">
+                    <table class="table table-sm table-bordered table-hover align-middle">
+                        <thead style="background-color: #dfe6fd;" class="text-dark fw-bold">
+                            <tr>
+                                <th>No</th>
+                                <th>Nama Barang</th>
+                                <th>Stok</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($stokBarang as $index => $b)
+                                <tr>
+                                    <td>{{ $index + 1 }}</td>
+                                    <td>{{ $b->nama_barang }}</td>
+                                    <td>{{ $b->stok }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
 
-    <div class="card shadow-lg mb-4">
-        <div class="card-body" style="height: 300px;">
-            <h5 class="text-center fw-bold mb-3 text-primary">📈 Grafik Barang Masuk</h5>
-            <canvas id="grafikMasuk" style="width: 100%; height: 220px;"></canvas>
+        <div class="col-md-6">
+            <div class="card shadow-sm rounded-4">
+                <div class="card-header bg-warning text-dark fw-bold rounded-top-4">Barang Dipinjam</div>
+                <div class="card-body table-responsive" style="max-height: 300px;">
+                    <table class="table table-sm table-bordered table-hover align-middle">
+                        <thead style="background-color: #fff3cd;" class="text-dark fw-bold">
+                            <tr>
+                                <th>No</th>
+                                <th>Barang</th>
+                                <th>Jumlah</th>
+                                <th>Status</th>
+                                <th>Tgl Kembali</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($barangDipinjam as $index => $item)
+                                @php
+                                    $today = \Carbon\Carbon::today();
+                                    $kembali = \Carbon\Carbon::parse($item->tanggal_kembali);
+                                    $diff = $today->diffInDays($kembali, false);
+                                @endphp
+                                <tr>
+                                    <td>{{ $index + 1 }}</td>
+                                    <td>{{ $item->barang->nama_barang ?? '-' }}</td>
+                                    <td>{{ $item->jumlah }} pcs</td>
+                                    <td>
+                                        @switch(true)
+                                            @case($item->status === 'selesai')
+                                                <span class="badge bg-secondary">Selesai</span>
+                                                @break
+                                            @case($diff < 0)
+                                                <span class="badge bg-danger blink text-white">Jatuh Tempo</span>
+                                                @break
+                                            @case($diff == 0)
+                                                <span class="badge bg-danger text-white">Hari Ini</span>
+                                                @break
+                                            @case($diff <= 2)
+                                                <span class="badge bg-warning text-dark">Mendekati</span>
+                                                @break
+                                            @default
+                                                <span class="badge bg-success text-white">Dipinjam</span>
+                                        @endswitch
+                                    </td>
+                                    <td>{{ \Carbon\Carbon::parse($item->tanggal_kembali)->format('d M Y') }}</td>
+                                </tr>
+                            @empty
+                                <tr><td colspan="5" class="text-center text-muted">Tidak ada data</td></tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div class="card shadow-lg">
-        <div class="card-body" style="height: 300px;">
-            <h5 class="text-center fw-bold mb-3 text-danger">📉 Grafik Barang Keluar</h5>
-            <canvas id="grafikKeluar" style="width: 100%; height: 220px;"></canvas>
+    {{-- Hari Ini --}}
+    <div class="row mt-4 g-4">
+        <div class="col-md-6">
+            <div class="card shadow-sm rounded-4">
+                <div class="card-header bg-success text-white fw-bold rounded-top-4">Barang Masuk Hari Ini</div>
+                <div class="card-body table-responsive">
+                    <table class="table table-sm table-bordered align-middle">
+                        <thead style="background-color: #d1e7dd;" class="text-dark fw-bold">
+                            <tr>
+                                <th>No</th>
+                                <th>Barang</th>
+                                <th>Jumlah</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($masukHariIni as $index => $m)
+                                <tr>
+                                    <td>{{ $index + 1 }}</td>
+                                    <td>{{ $m->barang->nama_barang ?? '-' }}</td>
+                                    <td>{{ $m->jumlah }}</td>
+                                </tr>
+                            @empty
+                                <tr><td colspan="3" class="text-center text-muted">Tidak ada data</td></tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card shadow-sm rounded-4">
+                <div class="card-header bg-danger text-white fw-bold rounded-top-4">Barang Keluar Hari Ini</div>
+                <div class="card-body table-responsive">
+                    <table class="table table-sm table-bordered align-middle">
+                        <thead style="background-color: #f8d7da;" class="text-dark fw-bold">
+                            <tr>
+                                <th>No</th>
+                                <th>Barang</th>
+                                <th>Jumlah</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($keluarHariIni as $index => $k)
+                                <tr>
+                                    <td>{{ $index + 1 }}</td>
+                                    <td>{{ $k->barang->nama_barang ?? '-' }}</td>
+                                    <td>{{ $k->jumlah }}</td>
+                                </tr>
+                            @empty
+                                <tr><td colspan="3" class="text-center text-muted">Tidak ada data</td></tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
-
 </div>
+
+{{-- Animasi Blink --}}
+<style>
+    .blink {
+        animation: blink 1s infinite;
+    }
+
+    @keyframes blink {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.4; }
+    }
+
+    .table th, .table td {
+        vertical-align: middle;
+    }
+</style>
 @endsection
-
-@push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-    const barangMasuk = @json($barangMasuk);
-    const barangKeluar = @json($barangKeluar);
-
-    const masukLabels = barangMasuk.map(item => item.label);
-    const masukData = barangMasuk.map(item => item.total);
-
-    const keluarLabels = barangKeluar.map(item => item.label);
-    const keluarData = barangKeluar.map(item => item.total);
-
-    new Chart(document.getElementById('grafikMasuk'), {
-        type: 'line',
-        data: {
-            labels: masukLabels,
-            datasets: [{
-                label: 'Barang Masuk',
-                data: masukData,
-                borderColor: '#1cc88a',
-                backgroundColor: 'rgba(28, 200, 138, 0.2)',
-                pointBackgroundColor: '#1cc88a',
-                pointBorderColor: '#fff',
-                pointHoverBackgroundColor: '#fff',
-                pointHoverBorderColor: '#1cc88a',
-                fill: true,
-                tension: 0.4
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    backgroundColor: '#fff',
-                    titleColor: '#333',
-                    bodyColor: '#333',
-                    borderColor: '#ddd',
-                    borderWidth: 1,
-                }
-            },
-            scales: {
-                y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
-                x: { grid: { color: 'rgba(0,0,0,0.05)' } }
-            }
-        }
-    });
-
-    new Chart(document.getElementById('grafikKeluar'), {
-        type: 'line',
-        data: {
-            labels: keluarLabels,
-            datasets: [{
-                label: 'Barang Keluar',
-                data: keluarData,
-                borderColor: '#e74a3b',
-                backgroundColor: 'rgba(231, 74, 59, 0.2)',
-                pointBackgroundColor: '#e74a3b',
-                pointBorderColor: '#fff',
-                pointHoverBackgroundColor: '#fff',
-                pointHoverBorderColor: '#e74a3b',
-                fill: true,
-                tension: 0.4
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    backgroundColor: '#fff',
-                    titleColor: '#333',
-                    bodyColor: '#333',
-                    borderColor: '#ddd',
-                    borderWidth: 1,
-                }
-            },
-            scales: {
-                y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
-                x: { grid: { color: 'rgba(0,0,0,0.05)' } }
-            }
-        }
-    });
-</script>
-@endpush

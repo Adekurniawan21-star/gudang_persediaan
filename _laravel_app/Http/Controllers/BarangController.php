@@ -31,7 +31,7 @@ class BarangController extends Controller
     {
         $request->validate([
             'nama_barang' => 'required',
-            'kategori'    => 'nullable',
+            'kategori'    => 'required|in:Barang Sekali Pakai,Barang Pinjam',
             'stok'        => 'required|integer',
             'foto'        => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
@@ -66,7 +66,7 @@ class BarangController extends Controller
         $request->validate([
             'nama_barang' => 'required',
             'kode_barang' => 'required|unique:barang,kode_barang,' . $id . ',id_barang',
-            'kategori'    => 'nullable',
+            'kategori'    => 'required|in:Barang Sekali Pakai,Barang Pinjam',
             'stok'        => 'required|integer',
             'foto'        => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
@@ -99,22 +99,15 @@ class BarangController extends Controller
         return redirect()->route('barang.index')->with('success', 'Barang berhasil dihapus!');
     }
 
-    /**
-     * Cetak barcode satuan
-     */
     public function cetakBarcode($id)
     {
         $barang = Barang::findOrFail($id);
         return view('barang.cetak_barcode', compact('barang'));
     }
 
-    /**
-     * Cetak semua barcode
-     */
     public function cetakSemuaBarcode()
     {
         $barangs = Barang::all();
         return view('barang.cetak_semua_barcode', compact('barangs'));
     }
-
 }

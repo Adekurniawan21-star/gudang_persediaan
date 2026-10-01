@@ -19,6 +19,7 @@
         margin-bottom: 20px;
         transition: all 0.3s;
     }
+
     .judul-tombol:hover {
         transform: translateY(-2px);
         box-shadow: 0 10px 25px rgba(0,0,0,0.3);
@@ -49,10 +50,12 @@
         transition: all 0.3s;
         font-size: 1rem;
     }
+
     .form-control::placeholder {
         color: #a0a4ac;
         font-style: italic;
     }
+
     .form-control:focus, select:focus {
         box-shadow: 0 0 10px rgba(78, 115, 223, 0.3);
         border-color: #4e73df;
@@ -65,15 +68,16 @@
         font-weight: 700;
         font-size: 1rem;
     }
+
     .btn-submit i {
         margin-right: 5px;
     }
+
     .btn-submit:hover {
         transform: translateY(-2px);
         box-shadow: 0 12px 25px rgba(0,0,0,0.2);
     }
 
-    /* Scroll area listItems */
     #listItems {
         max-height: 250px;
         overflow-y: auto;
@@ -85,9 +89,7 @@
 </style>
 
 <div class="container-fluid d-flex justify-content-center">
-
     <div class="w-100" style="max-width: 800px;">
-
         <h1 class="judul-tombol text-center">Tambah Barang Keluar</h1>
 
         @if (session('error'))
@@ -95,7 +97,6 @@
         @endif
 
         <div class="card card-custom mb-5">
-
             <div class="card-body">
 
                 <!-- Scan Form -->
@@ -125,35 +126,45 @@
 
                 <hr class="my-4">
 
+                <!-- Toggle Manual Form Checkbox -->
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" id="toggleManualForm" onchange="toggleManual()">
+                    <label class="form-check-label" for="toggleManualForm">
+                        Tampilkan Form Manual
+                    </label>
+                </div>
+
                 <!-- Manual Form -->
-                <span class="label-button text-center">Tambah Manual (Satu Barang)</span>
-                <form action="{{ route('barang_keluar.store') }}" method="POST">
-                    @csrf
-                    <div class="mb-2">
-                        <span class="label-button">Pilih Barang</span>
-                        <select name="id_barang" class="form-control" required>
-                            <option value="">-- Pilih --</option>
-                            @foreach ($barang as $b)
-                                <option value="{{ $b->id_barang }}">{{ $b->nama_barang }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="mb-2">
-                        <span class="label-button">Jumlah</span>
-                        <input type="number" name="jumlah" class="form-control" required>
-                    </div>
-                    <div class="mb-2">
-                        <span class="label-button">Tanggal</span>
-                        <input type="date" name="tanggal" class="form-control" value="{{ date('Y-m-d') }}" required>
-                    </div>
-                    <div class="mb-3">
-                        <span class="label-button">Keterangan</span>
-                        <input type="text" name="keterangan" class="form-control" placeholder="Opsional">
-                    </div>
-                    <button type="submit" class="btn btn-primary btn-submit w-100">
-                        <i class="fas fa-save"></i> Simpan Manual
-                    </button>
-                </form>
+                <div id="manualForm" style="display: none;">
+                    <span class="label-button text-center">Tambah Manual (Satu Barang)</span>
+                    <form action="{{ route('barang_keluar.store') }}" method="POST">
+                        @csrf
+                        <div class="mb-2">
+                            <span class="label-button">Pilih Barang</span>
+                            <select name="id_barang" class="form-control" required>
+                                <option value="">-- Pilih --</option>
+                                @foreach ($barang as $b)
+                                    <option value="{{ $b->id_barang }}">{{ $b->nama_barang }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="mb-2">
+                            <span class="label-button">Jumlah</span>
+                            <input type="number" name="jumlah" class="form-control" required>
+                        </div>
+                        <div class="mb-2">
+                            <span class="label-button">Tanggal</span>
+                            <input type="date" name="tanggal" class="form-control" value="{{ date('Y-m-d') }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <span class="label-button">Keterangan</span>
+                            <input type="text" name="keterangan" class="form-control" placeholder="Opsional">
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-submit w-100">
+                            <i class="fas fa-save"></i> Simpan Manual
+                        </button>
+                    </form>
+                </div>
 
             </div>
         </div>
@@ -216,8 +227,13 @@
             `;
         });
         html += '</tbody></table>';
-
         container.innerHTML = html;
+    }
+
+    function toggleManual() {
+        const checkbox = document.getElementById('toggleManualForm');
+        const manualForm = document.getElementById('manualForm');
+        manualForm.style.display = checkbox.checked ? 'block' : 'none';
     }
 </script>
 @endpush
