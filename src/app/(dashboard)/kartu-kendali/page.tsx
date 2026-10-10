@@ -351,9 +351,6 @@ export default function KartuKendaliPage() {
             <span className="text-xs bg-bps-blue-50 text-bps-blue font-bold px-2.5 py-0.5 rounded-full border border-bps-blue-200">
               Dokumen Resmi BPS OKU Selatan
             </span>
-            <span className="text-xs bg-emerald-50 text-emerald-700 font-bold px-2.5 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
-              <ShieldCheck className="w-3.5 h-3.5" /> 100% Balance
-            </span>
           </div>
           <p className="text-sm text-dark-400 mt-1">
             Buku besar pembantu mutasi persediaan barang — Otomatis terhubung dengan Transaksi Masuk, Transaksi Keluar (SPB), dan Laporan Persediaan
@@ -432,77 +429,6 @@ export default function KartuKendaliPage() {
             className="input pl-9 py-1.5 text-xs w-full"
             placeholder="Cari kode atau nama barang..."
           />
-        </div>
-      </div>
-
-      {/* BANNER INPUT LANGSUNG + PENJELASAN */}
-      <div className="bg-gradient-to-r from-blue-50 via-indigo-50 to-emerald-50 border border-blue-200/80 rounded-2xl p-4 sm:p-5 shadow-xs">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-xl bg-bps-blue text-white flex items-center justify-center shrink-0 shadow-sm mt-0.5">
-              <HelpCircle className="w-5 h-5" />
-            </div>
-            <div className="space-y-1">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="text-sm font-bold text-dark-800">
-                  Input Mutasi Langsung dari Kartu Kendali
-                </h3>
-                <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                  <ShieldCheck className="w-3 h-3 text-emerald-600" /> 100% Terhubung Otomatis &amp; Balance
-                </span>
-              </div>
-              <p className="text-xs text-dark-600 leading-relaxed max-w-3xl">
-                Anda dapat menambah mutasi <strong>Masuk</strong> atau <strong>Keluar</strong> langsung dari sini. Data otomatis tersinkronisasi ke <strong>Transaksi Masuk</strong>, <strong>Transaksi Keluar (SPB)</strong>, dan <strong>Laporan Persediaan</strong> — sehingga semua angka tetap <strong>100% balance</strong>.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0 flex-wrap">
-            {/* === TOMBOL INPUT LANGSUNG === */}
-            <button
-              onClick={() => handleOpenInputModal('masuk')}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-md hover:shadow-lg transition-all duration-200 hover:scale-[1.02]"
-            >
-              <Plus className="w-4 h-4" />
-              <ArrowDownToLine className="w-3.5 h-3.5" />
-              Input Barang Masuk
-            </button>
-            <button
-              onClick={() => handleOpenInputModal('keluar')}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-bps-blue hover:bg-bps-blue-700 text-white text-xs font-bold rounded-xl shadow-md hover:shadow-lg transition-all duration-200 hover:scale-[1.02]"
-            >
-              <Plus className="w-4 h-4" />
-              <ArrowUpFromLine className="w-3.5 h-3.5" />
-              Input Barang Keluar
-            </button>
-            <Link
-              href="/laporan"
-              className="inline-flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-dark-50 text-dark-700 border border-dark-200 text-xs font-semibold rounded-lg shadow-xs transition-colors"
-            >
-              <Layers className="w-3.5 h-3.5" />
-              Lihat Laporan Persediaan
-            </Link>
-          </div>
-        </div>
-
-        {/* Indikator Keterhubungan Real-time */}
-        <div className="mt-3 pt-3 border-t border-blue-100 grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] text-dark-600">
-          <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span>Saldo Awal: <strong>{formatNumber(stockAwal)}</strong> {activeBarang?.satuan?.nama_satuan || 'Buah'}</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
-            <span>Total Masuk: <strong>+{formatNumber(totalMasuk - (entries[0]?.masuk || 0))}</strong></span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-            <span>Total Keluar: <strong>-{formatNumber(totalKeluar)}</strong></span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
-            <span>Sisa Akhir Berjalan: <strong className="text-bps-blue">{formatNumber(sisaAkhir)}</strong></span>
-          </div>
         </div>
       </div>
 
@@ -1332,18 +1258,6 @@ export default function KartuKendaliPage() {
 
             {/* Form */}
             <form onSubmit={handleSaveInput} className="p-6 space-y-4">
-              {/* Info Balance */}
-              <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-800">
-                <div className="flex items-start gap-2">
-                  <ShieldCheck className="w-4 h-4 flex-shrink-0 mt-0.5 text-blue-600" />
-                  <span>
-                    Data yang diinput di sini <strong>otomatis tersinkronisasi</strong> ke halaman
-                    {inputJenis === 'masuk' ? ' Transaksi Masuk' : ' Transaksi Keluar (SPB)'} dan Laporan Persediaan.
-                    Semua angka tetap <strong>100% balance</strong>.
-                  </span>
-                </div>
-              </div>
-
               {/* Toggle Jenis */}
               <div>
                 <label className="block text-xs font-bold text-dark-700 mb-1.5">Jenis Mutasi</label>

@@ -101,11 +101,15 @@ export default function BarangPage() {
         const parsed = JSON.parse(storedBarang);
         if (Array.isArray(parsed) && parsed.length > 0) {
           setBarangList(parsed);
+        } else {
+          setBarangList(mockBarang);
+          localStorage.setItem('sipersedia_barang_list', JSON.stringify(mockBarang));
         }
       } catch (e) {
         console.error(e);
       }
     } else {
+      setBarangList(mockBarang);
       localStorage.setItem('sipersedia_barang_list', JSON.stringify(mockBarang));
     }
 

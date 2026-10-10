@@ -170,22 +170,11 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Status Bar Nuansa BPS */}
-        <div className="bg-black/20 px-6 py-2 border-t border-white/10 flex flex-wrap items-center justify-between text-[11px] text-white/70">
+        {/* Status Bar */}
+        <div className="bg-black/20 px-6 py-2 border-t border-white/10 flex items-center text-[11px] text-white/70">
           <div className="flex items-center gap-2">
             <ShieldCheck className="w-3.5 h-3.5 text-bps-green" />
             <span>Koneksi Sistem Aktif · Database Supabase BPS OKU Selatan</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-bps-blue" /> Biru (Integritas)
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-bps-orange" /> Orange (Amanah)
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-bps-green" /> Hijau (Profesional)
-            </span>
           </div>
         </div>
       </div>

@@ -228,15 +228,6 @@ export default function LoginPage() {
               </button>
             </form>
 
-            {/* Akses Default Kredensial - teks biasa tanpa kartu besar */}
-            <div className="mt-5 pt-4 border-t border-dark-100">
-              <p className="text-[11px] text-dark-400 text-center leading-relaxed">
-                <span className="font-semibold text-dark-500">Akses Default Kredensial:</span>{' '}
-                Admin (<code className="font-mono text-bps-blue font-semibold">admin_persediaan</code> / <code className="font-mono text-bps-blue font-semibold">admin123</code>)
-                {' '}<span className="text-dark-300">|</span>{' '}
-                Pegawai (<code className="font-mono text-bps-blue font-semibold">pegawai</code> / <code className="font-mono text-bps-blue font-semibold">pegawai123</code>)
-              </p>
-            </div>
           </div>
         </div>
 
@@ -245,9 +236,6 @@ export default function LoginPage() {
           <p className="flex items-center justify-center gap-1.5 font-medium">
             <ShieldCheck className="w-4 h-4 text-bps-green" />
             <span>Sistem Informasi Persediaan Barang BPS OKU Selatan</span>
-          </p>
-          <p className="text-[11px] text-white/35">
-            Nuansa Warna Resmi BPS: Biru Integritas, Orange Amanah, Hijau Profesional
           </p>
         </div>
       </div>

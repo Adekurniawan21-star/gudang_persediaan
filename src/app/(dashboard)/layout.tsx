@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
+import { SAMPLE_BARANG_BPS } from '@/lib/mock-data';
 import { cn } from '@/lib/utils';
 
 interface UserData {
@@ -44,14 +45,11 @@ export default function DashboardLayout({
 
     loadUser();
 
-    // Inisialisasi awal data kosong agar pengguna dapat mencoba input fitur per fitur dari awal
+    // Inisialisasi awal data barang resmi BPS
     try {
-      const cleanFlag = localStorage.getItem('sipersedia_clean_start_v1');
-      if (!cleanFlag) {
-        localStorage.setItem('sipersedia_barang_list', JSON.stringify([]));
-        localStorage.setItem('sipersedia_transaksi_masuk', JSON.stringify([]));
-        localStorage.setItem('sipersedia_transaksi_keluar', JSON.stringify([]));
-        localStorage.setItem('sipersedia_clean_start_v1', 'true');
+      const storedBarang = localStorage.getItem('sipersedia_barang_list');
+      if (!storedBarang || storedBarang === '[]') {
+        localStorage.setItem('sipersedia_barang_list', JSON.stringify(SAMPLE_BARANG_BPS));
       }
     } catch (e) {
       console.error(e);

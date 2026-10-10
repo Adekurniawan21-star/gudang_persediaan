@@ -87,8 +87,8 @@ export const SAMPLE_BARANG_BPS: Barang[] = [
   },
 ];
 
-// Default Data Bersih (Kosong) agar pengguna dapat mencoba input fitur per fitur
-export const mockBarang: Barang[] = [];
+// Data Barang Resmi BPS Aktif
+export const mockBarang: Barang[] = [...SAMPLE_BARANG_BPS];
 
 // Data Contoh Transaksi Masuk — per No. Dokumen (Master-Detail)
 export const SAMPLE_TRANSAKSI_MASUK: TransaksiMasuk[] = [
