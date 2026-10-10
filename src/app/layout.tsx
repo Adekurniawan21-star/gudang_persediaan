@@ -2,9 +2,9 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'SIPERSEDIA — Sistem Informasi Persediaan Barang | BPS Kab. OKU Selatan',
-  description: 'Sistem Informasi Persediaan Barang Badan Pusat Statistik Kabupaten Ogan Komering Ulu Selatan. Kelola inventaris, transaksi masuk/keluar, dan laporan persediaan bulanan.',
-  keywords: ['BPS', 'persediaan', 'inventaris', 'OKU Selatan', 'gudang', 'barang'],
+  title: 'SIPERSEDIA — Gudang Persediaan BPS Kab. OKU Selatan',
+  description: 'Sistem Informasi Gudang Persediaan Badan Pusat Statistik Kabupaten Ogan Komering Ulu Selatan. Kelola inventaris persediaan, transaksi masuk/keluar, kartu kendali, dan laporan bulanan.',
+  keywords: ['BPS', 'persediaan', 'gudang persediaan', 'sipersedia', 'inventaris', 'OKU Selatan'],
 };
 
 export default function RootLayout({

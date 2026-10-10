@@ -27,18 +27,46 @@ export default function DashboardLayout({
 
   useEffect(() => {
     // Check authentication
-    const stored = localStorage.getItem('sipersedia_user');
-    if (!stored) {
-      router.push('/login');
-      return;
-    }
+    const loadUser = () => {
+      const stored = localStorage.getItem('sipersedia_user');
+      if (!stored) {
+        router.push('/login');
+        return;
+      }
+      try {
+        const parsed = JSON.parse(stored);
+        setUser(parsed);
+      } catch {
+        router.push('/login');
+      }
+      setIsLoading(false);
+    };
+
+    loadUser();
+
+    // Inisialisasi awal data kosong agar pengguna dapat mencoba input fitur per fitur dari awal
     try {
-      const parsed = JSON.parse(stored);
-      setUser(parsed);
-    } catch {
-      router.push('/login');
+      const cleanFlag = localStorage.getItem('sipersedia_clean_start_v1');
+      if (!cleanFlag) {
+        localStorage.setItem('sipersedia_barang_list', JSON.stringify([]));
+        localStorage.setItem('sipersedia_transaksi_masuk', JSON.stringify([]));
+        localStorage.setItem('sipersedia_transaksi_keluar', JSON.stringify([]));
+        localStorage.setItem('sipersedia_clean_start_v1', 'true');
+      }
+    } catch (e) {
+      console.error(e);
     }
-    setIsLoading(false);
+
+    const handleProfileUpdate = () => {
+      loadUser();
+    };
+
+    window.addEventListener('storage', handleProfileUpdate);
+    window.addEventListener('profileUpdated', handleProfileUpdate);
+    return () => {
+      window.removeEventListener('storage', handleProfileUpdate);
+      window.removeEventListener('profileUpdated', handleProfileUpdate);
+    };
   }, [router]);
 
   if (isLoading || !user) {

@@ -1,61 +1,80 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# 📦 SIPERSEDIA — Sistem Informasi Gudang Persediaan
+### BPS (Badan Pusat Statistik) Kabupaten Ogan Komering Ulu Selatan
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Aplikasi web modern untuk pencatatan, pemantauan, dan pelaporan barang persediaan kantor BPS Kabupaten OKU Selatan.
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## 🚀 Teknologi Utama
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- **Framework**: [Next.js 14](https://nextjs.org/) (App Router)
+- **Library**: [React 18](https://react.dev/), [TypeScript](https://www.typescriptlang.org/)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+- **Icons**: [Lucide React](https://lucide.dev/)
+- **Cloud Database (Opsional)**: [Supabase](https://supabase.com/)
+- **Deployment Platform**: [Vercel](https://vercel.com/)
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+> **Catatan**: Aplikasi ini adalah aplikasi web modern berbasis Node.js / Next.js, sehingga **TIDAK memerlukan Laragon/Apache/PHP**. Aplikasi dapat dijalankan langsung di komputer lokal menggunakan Node.js dan siap di-hosting langsung ke **Vercel**.
 
-## Learning Laravel
+---
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## 💻 Menjalankan di Lokal (Development)
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+1. Pastikan **Node.js** (v18 ke atas) telah terinstal di komputer.
+2. Buka terminal di folder project ini:
+   ```bash
+   npm install
+   ```
+3. Jalankan server development:
+   ```bash
+   npm run dev
+   ```
+4. Buka browser dan akses:
+   [http://localhost:3000](http://localhost:3000)
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+---
 
-## Laravel Sponsors
+## 🌐 Cara Hosting ke Vercel
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+### Langkah 1: Push ke GitHub
+Simpan seluruh perubahan ke repositori GitHub:
+```bash
+git add .
+git commit -m "Deploy: Gudang Persediaan SIPERSEDIA Next.js"
+git push origin main
+```
 
-### Premium Partners
+### Langkah 2: Hubungkan ke Vercel
+1. Buka [https://vercel.com](https://vercel.com) dan login dengan akun GitHub Anda.
+2. Klik tombol **"Add New..."** > **"Project"**.
+3. Pilih repositori GitHub Anda (`gudang_barang` atau `gudang_persediaan`).
+4. Pada konfigurasi framework, Vercel akan otomatis mendeteksi **Next.js**.
+5. Klik **"Deploy"**.
+6. Selesai! Web Anda akan online dengan domain `https://nama-project.vercel.app`.
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+---
 
-## Contributing
+## 📋 Fitur Utama SIPERSEDIA
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+1. **Dashboard Eksekutif**:
+   - Statistik stok barang, transaksi masuk & keluar bulan berjalan.
+   - Grafik pergerakan persediaan.
+2. **Transaksi Masuk**:
+   - Pencatatan barang masuk (Pembelian / Transfer Masuk dari Provinsi).
+   - Penomoran otomatis BAST & Nota.
+   - Cetak Bukti Penerimaan Barang resmi dengan Kop Surat BPS & tanda tangan Pengurus Barang.
+3. **Pemakaian Barang (Transaksi Keluar)**:
+   - Pencatatan pemakaian barang per tim kerja BPS (Kepala, Tim Umum, Statistik Sosial, Distribusi, Pertanian, IPDS, Nerwilis, PEK/KTIP).
+   - Cetak Formulir Permintaan dan Pengeluaran Barang (FPPB) sesuai format resmi.
+4. **Kartu Kendali Persediaan**:
+   - Riwayat keluar-masuk per barang secara terperinci.
+   - Perhitungan saldo fisik dan saldo nilai otomatis yang selalu balance.
+   - Cetak Kartu Kendali per barang resmi.
+5. **Laporan Persediaan & Berita Acara Rekapitulasi**:
+   - Rekap saldo awal, penerimaan, pemakaian, dan saldo akhir.
+   - Dilengkapi fungsi Edit dan Cetak Berita Acara Rekapitulasi resmi (Kop Surat, Pejabat BPS, Nip, Nomer Surat).
+6. **Manajemen User & Multi-Role**:
+   - Role Admin & Pegawai.
+7. **Pengaturan & Manajemen Data**:
+   - Kemudahan mengosongkan/reset database untuk memulai data baru.
+   - Kemudahan memuat kembali Data Sampel Resmi BPS untuk pengujian.

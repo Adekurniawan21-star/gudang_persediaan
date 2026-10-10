@@ -67,15 +67,29 @@ export interface TimPemohon {
   nip_pj: string;
 }
 
+export const PEJABAT_KPB = {
+  nama: 'Rival Abdul Jabar, S.ST., M.Si.',
+  nip: '198311222007011003',
+  jabatan: 'Kepala BPS Kabupaten OKU Selatan',
+  peran: 'Kuasa Pengguna Barang',
+};
+
+export const PENGELOLA_PERSEDIAAN = {
+  nama: 'Guspita Karleni, S.Si',
+  nip: '199708062025212039',
+  jabatan: 'Penata Layanan Operasional',
+  peran: 'Administrator Gudang / Kuasa Pengguna Barang',
+};
+
 export const TIM_PEMOHON_LIST: TimPemohon[] = [
-  { id: 'kepala', nama_tim: 'Kepala', penanggung_jawab: 'RIVAL ABDUL JABAR, S.ST., M.Si.', nip_pj: '' },
-  { id: 'tim-umum', nama_tim: 'Tim Umum', penanggung_jawab: 'SURYA WAGITO, SST', nip_pj: '' },
-  { id: 'tim-sosial', nama_tim: 'Tim Statistik Sosial', penanggung_jawab: 'FATONAH AMINI, S.Tr.Stat.', nip_pj: '' },
-  { id: 'tim-distribusi', nama_tim: 'Tim Statistik Distribusi', penanggung_jawab: 'USWAR M. ALGHIFARI A.P, S.Tr.Stat.', nip_pj: '' },
-  { id: 'tim-pertanian', nama_tim: 'Tim Pertanian', penanggung_jawab: 'HERA YUDHO KARTIKO, SP', nip_pj: '' },
-  { id: 'tim-ipds', nama_tim: 'Tim IPDS', penanggung_jawab: 'DANU ABDI SAPUTRA, S.Tr.Stat.', nip_pj: '' },
-  { id: 'tim-nerwilis', nama_tim: 'Tim Nerwilis', penanggung_jawab: 'NURLATIFAH KHOIRUN NISSA, S.Tr.Stat.', nip_pj: '' },
-  { id: 'tim-pek-ktip', nama_tim: 'Tim PEK dan KTIP', penanggung_jawab: 'JOSEPA SITANGGANG, S.Stat.', nip_pj: '' },
+  { id: 'kepala', nama_tim: 'Kepala BPS', penanggung_jawab: 'RIVAL ABDUL JABAR, S.ST., M.Si.', nip_pj: '19831122 200701 1003' },
+  { id: 'tim-umum', nama_tim: 'Tim Umum', penanggung_jawab: 'SURYA WAGITO, SST', nip_pj: '19910814 201412 1001' },
+  { id: 'tim-sosial', nama_tim: 'Tim Statistik Sosial', penanggung_jawab: 'FATONAH AMINI, S.Tr.Stat.', nip_pj: '19990317 202104 2001' },
+  { id: 'tim-distribusi', nama_tim: 'Tim Statistik Distribusi', penanggung_jawab: 'USWAR M. ALGHIFARI A.P, S.Tr.Stat.', nip_pj: '19980512 202012 1002' },
+  { id: 'tim-pertanian', nama_tim: 'Tim Pertanian & Kehutanan', penanggung_jawab: 'HERA YUDHO KARTIKO, SP', nip_pj: '19861024 201003 1002' },
+  { id: 'tim-ipds', nama_tim: 'Tim IPDS', penanggung_jawab: 'DANU ABDI SAPUTRA, S.Tr.Stat.', nip_pj: '20000626 202201 1005' },
+  { id: 'tim-nerwilis', nama_tim: 'Tim Neraca (Nerwilis)', penanggung_jawab: 'NURLATIFAH KHOIRUN NISSA, S.Tr.Stat.', nip_pj: '19970823 201912 2001' },
+  { id: 'tim-pek-ktip', nama_tim: 'Tim PEK dan KTIP', penanggung_jawab: 'JOSEPA SITANGGANG, S.Stat.', nip_pj: '19870819 200902 2006' },
 ];
 
 // ==========================================
@@ -153,7 +167,11 @@ export interface KartuKendali {
   nama_barang: string;
   satuan: string;
   tahun: number;
+  proyek_rutin?: string;      // Contoh: "Rutin" (sesuai formulir PDF 1)
+  halaman?: number;           // Contoh: 1
+  stock_awal_tahun?: number;  // Saldo awal tahun
   entries: KartuKendaliEntry[];
+  pengeluaran_bulanan?: { [bulan: number]: number }; // Pemetaan pengeluaran per bulan 1-12
 }
 
 // ==========================================

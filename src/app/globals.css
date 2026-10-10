@@ -227,7 +227,24 @@
     }
 
     body {
-      font-size: 12px;
+      font-size: 11pt;
+      background: white !important;
+      color: black !important;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    #print-area {
+      width: 100% !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      box-shadow: none !important;
+      border: none !important;
+      background: white !important;
+    }
+
+    header, aside, nav {
+      display: none !important;
     }
   }
 }

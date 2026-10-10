@@ -56,3 +56,40 @@ export function getStokStatus(stok: number, stokMinimum: number): 'aman' | 'rend
   if (stok <= stokMinimum) return 'rendah';
   return 'aman';
 }
+
+const NAMA_HARI = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+
+export function getNamaHari(d: Date | string = new Date()): string {
+  const date = typeof d === 'string' ? new Date(d) : d;
+  return NAMA_HARI[date.getDay()];
+}
+
+export function angkaKeTerbilang(num: number): string {
+  const dasar = [
+    '', 'Satu', 'Dua', 'Tiga', 'Empat', 'Lima', 'Enam', 'Tujuh', 'Delapan', 'Sembilan',
+    'Sepuluh', 'Sebelas'
+  ];
+  if (num < 12) return dasar[num];
+  if (num < 20) return dasar[num - 10] + ' Belas';
+  if (num < 100) return dasar[Math.floor(num / 10)] + ' Puluh' + (num % 10 !== 0 ? ' ' + dasar[num % 10] : '');
+  if (num < 200) return 'Seratus' + (num % 100 !== 0 ? ' ' + angkaKeTerbilang(num % 100) : '');
+  if (num < 1000) return dasar[Math.floor(num / 100)] + ' Ratus' + (num % 100 !== 0 ? ' ' + angkaKeTerbilang(num % 100) : '');
+  if (num < 2000) return 'Seribu' + (num % 1000 !== 0 ? ' ' + angkaKeTerbilang(num % 1000) : '');
+  if (num < 1000000) return angkaKeTerbilang(Math.floor(num / 1000)) + ' Ribu' + (num % 1000 !== 0 ? ' ' + angkaKeTerbilang(num % 1000) : '');
+  return String(num);
+}
+
+export function getTeksBeritaAcaraOpname(d: Date | string = new Date()): string {
+  const date = typeof d === 'string' ? new Date(d) : d;
+  const hari = getNamaHari(date);
+  const tanggalTerbilang = angkaKeTerbilang(date.getDate());
+  const bulan = getMonthName(date.getMonth() + 1);
+  const tahunTerbilang = angkaKeTerbilang(date.getFullYear());
+  return `Pada hari ini ${hari}, Tanggal ${tanggalTerbilang} Bulan ${bulan} Tahun ${tahunTerbilang}, kami telah melaksanakan opname phisik barang persediaan dengan hasil rincian sebagai berikut :`;
+}
+
+export function formatTanggalTandaTangan(d: Date | string = new Date()): string {
+  const date = typeof d === 'string' ? new Date(d) : d;
+  return `Muaradua, ${date.getDate()} ${getMonthName(date.getMonth() + 1)} ${date.getFullYear()}`;
+}
+

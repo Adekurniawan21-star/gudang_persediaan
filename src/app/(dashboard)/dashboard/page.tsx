@@ -13,25 +13,27 @@ import {
   PlusCircle,
   FileText,
   Boxes,
+  CheckCircle2,
 } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
 import StatsCard from '@/components/StatsCard';
 import { mockDashboardStats, mockChartData, mockBarang, mockTransaksiKeluar } from '@/lib/mock-data';
+import type { Barang, TransaksiMasuk, TransaksiKeluar } from '@/types';
 import { formatCurrency, formatNumber, formatDateShort, getStokStatus, cn } from '@/lib/utils';
 
 export default function DashboardPage() {
-  const stats = mockDashboardStats;
-  const chartData = mockChartData;
-  const lowStockItems = mockBarang.filter(b => b.stok <= b.stok_minimum);
-
   const [currentUser, setCurrentUser] = useState<{
     id: string;
     name: string;
     role: 'admin' | 'user';
     bidang: string;
   } | null>(null);
+
+  const [barangList, setBarangList] = useState<Barang[]>([]);
+  const [transaksiMasukList, setTransaksiMasukList] = useState<TransaksiMasuk[]>([]);
+  const [transaksiKeluarList, setTransaksiKeluarList] = useState<TransaksiKeluar[]>([]);
 
   useEffect(() => {
     const stored = localStorage.getItem('sipersedia_user');
@@ -42,7 +44,39 @@ export default function DashboardPage() {
         console.error(e);
       }
     }
+
+    const b = localStorage.getItem('sipersedia_barang_list');
+    if (b) {
+      try {
+        const parsed = JSON.parse(b);
+        if (Array.isArray(parsed)) setBarangList(parsed);
+      } catch (e) {}
+    }
+
+    const m = localStorage.getItem('sipersedia_transaksi_masuk');
+    if (m) {
+      try {
+        const parsed = JSON.parse(m);
+        if (Array.isArray(parsed)) setTransaksiMasukList(parsed);
+      } catch (e) {}
+    }
+
+    const k = localStorage.getItem('sipersedia_transaksi_keluar');
+    if (k) {
+      try {
+        const parsed = JSON.parse(k);
+        if (Array.isArray(parsed)) setTransaksiKeluarList(parsed);
+      } catch (e) {}
+    }
   }, []);
+
+  const totalBarang = barangList.length;
+  const lowStockItems = barangList.filter(b => b.stok <= b.stok_minimum);
+  const totalStokRendah = lowStockItems.length;
+  const totalTransaksiMasuk = transaksiMasukList.length;
+  const totalTransaksiKeluar = transaksiKeluarList.length;
+  const totalNilaiPersediaan = barangList.reduce((acc, b) => acc + (b.stok * 25000), 0);
+  const chartData = mockChartData;
 
   const isAdmin = currentUser?.role === 'admin';
 
@@ -79,17 +113,17 @@ export default function DashboardPage() {
               </div>
 
               <h1 className="text-xl sm:text-2xl font-black tracking-tight">
-                SIPERSEDIA · BPS OKU SELATAN
+                SIPERSEDIA · GUDANG PERSEDIAAN BPS
               </h1>
 
               <p className="text-xs sm:text-sm text-white/80 max-w-2xl leading-relaxed">
                 {isAdmin ? (
                   <>
-                    Selamat datang, <span className="font-bold text-white">{currentUser?.name || 'Administrator'}</span>! Anda berada di mode <span className="font-bold text-bps-orange-300">Admin Persediaan</span> untuk mengelola stok gudang, input barang masuk, dan persetujuan.
+                    Selamat datang, <span className="font-bold text-white">{currentUser?.name || 'Administrator'}</span>! Anda berada di mode <span className="font-bold text-bps-orange-300">Admin Persediaan</span> untuk mengelola stok persediaan, input barang masuk, dan persetujuan.
                   </>
                 ) : (
                   <>
-                    Selamat datang, <span className="font-bold text-white">{currentUser?.name || 'Pegawai BPS'}</span>! Anda berada di mode <span className="font-bold text-bps-green-300">User Pegawai</span> untuk mengecek stok ATK dan mengajukan permintaan pemakaian barang.
+                    Selamat datang, <span className="font-bold text-white">{currentUser?.name || 'Pegawai BPS'}</span>! Anda berada di mode <span className="font-bold text-bps-blue-200">Pegawai</span> untuk melihat katalog stok persediaan dan mengajukan permintaan pemakaian.
                   </>
                 )}
               </p>
@@ -161,7 +195,7 @@ export default function DashboardPage() {
         <div>
           <StatsCard
             title="Total Barang"
-            value={formatNumber(stats.totalBarang)}
+            value={formatNumber(totalBarang)}
             subtitle="item terdaftar"
             icon={<Package className="w-5 h-5 text-white" />}
             variant="blue"
@@ -171,30 +205,29 @@ export default function DashboardPage() {
         <div>
           <StatsCard
             title="Stok Rendah"
-            value={formatNumber(stats.totalStokRendah)}
+            value={formatNumber(totalStokRendah)}
             subtitle="perlu restock"
             icon={<AlertTriangle className="w-5 h-5 text-white" />}
             variant="orange"
-            trend={{ value: 15, direction: 'up' }}
+            trend={totalStokRendah > 0 ? { value: totalStokRendah, direction: 'up' } : undefined}
             delay={100}
           />
         </div>
         <div>
           <StatsCard
-            title="Masuk Bulan Ini"
-            value={formatNumber(stats.totalTransaksiMasukBulanIni)}
-            subtitle="transaksi masuk"
+            title="Transaksi Masuk"
+            value={formatNumber(totalTransaksiMasuk)}
+            subtitle="surat penerimaan"
             icon={<ArrowDownToLine className="w-5 h-5 text-white" />}
             variant="green"
-            trend={{ value: 12, direction: 'up' }}
             delay={200}
           />
         </div>
         <div>
           <StatsCard
-            title="Keluar Bulan Ini"
-            value={formatNumber(stats.totalTransaksiKeluarBulanIni)}
-            subtitle="transaksi keluar"
+            title="Transaksi Keluar"
+            value={formatNumber(totalTransaksiKeluar)}
+            subtitle="surat permintaan (SPB)"
             icon={<ArrowUpFromLine className="w-5 h-5 text-white" />}
             variant="orange"
             delay={300}
@@ -203,8 +236,8 @@ export default function DashboardPage() {
         <div>
           <StatsCard
             title="Nilai Persediaan"
-            value="28.7jt"
-            subtitle={formatCurrency(stats.totalNilaiPersediaan)}
+            value={totalNilaiPersediaan > 0 ? `${(totalNilaiPersediaan / 1000000).toFixed(1)}jt` : 'Rp 0'}
+            subtitle={formatCurrency(totalNilaiPersediaan)}
             icon={<Wallet className="w-5 h-5 text-white" />}
             variant="blue"
             delay={400}
@@ -276,35 +309,43 @@ export default function DashboardPage() {
             </span>
           </div>
           <div className="space-y-3">
-            {lowStockItems.map((item) => {
-              const status = getStokStatus(item.stok, item.stok_minimum);
-              return (
-                <div key={item.id} className="flex items-center gap-3 p-3 rounded-xl bg-dark-50 hover:bg-dark-100/70 transition-colors border border-dark-100/50">
-                  <div className={cn(
-                    'w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0',
-                    status === 'habis' ? 'bg-red-100' : 'bg-bps-orange-100'
-                  )}>
-                    <Package className={cn(
-                      'w-5 h-5',
-                      status === 'habis' ? 'text-red-600' : 'text-bps-orange'
-                    )} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-dark-800 truncate">{item.nama_barang}</p>
-                    <p className="text-xs text-dark-400">{item.kode_barang} · {item.kategori?.nama_kategori}</p>
-                  </div>
-                  <div className="text-right flex-shrink-0">
-                    <p className={cn(
-                      'text-sm font-extrabold',
-                      status === 'habis' ? 'text-red-600' : 'text-bps-orange'
+            {lowStockItems.length === 0 ? (
+              <div className="text-center py-6 text-dark-400 text-xs">
+                <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-1.5 opacity-60" />
+                <p className="font-semibold text-dark-600">Stok persediaan aman</p>
+                <p className="text-[11px] mt-0.5">Tidak ada barang yang berada di bawah batas minimum</p>
+              </div>
+            ) : (
+              lowStockItems.map((item) => {
+                const status = getStokStatus(item.stok, item.stok_minimum);
+                return (
+                  <div key={item.id} className="flex items-center gap-3 p-3 rounded-xl bg-dark-50 hover:bg-dark-100/70 transition-colors border border-dark-100/50">
+                    <div className={cn(
+                      'w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0',
+                      status === 'habis' ? 'bg-red-100' : 'bg-bps-orange-100'
                     )}>
-                      {item.stok}
-                    </p>
-                    <p className="text-[10px] text-dark-400 font-medium">min: {item.stok_minimum}</p>
+                      <Package className={cn(
+                        'w-5 h-5',
+                        status === 'habis' ? 'text-red-600' : 'text-bps-orange'
+                      )} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-dark-800 truncate">{item.nama_barang}</p>
+                      <p className="text-xs text-dark-400">{item.kode_barang} · {item.kategori?.nama_kategori}</p>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <p className={cn(
+                        'text-sm font-extrabold',
+                        status === 'habis' ? 'text-red-600' : 'text-bps-orange'
+                      )}>
+                        {item.stok}
+                      </p>
+                      <p className="text-[10px] text-dark-400 font-medium">min: {item.stok_minimum}</p>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </div>
         </div>
       </div>
@@ -314,7 +355,7 @@ export default function DashboardPage() {
         <div className="px-5 py-4 border-b border-dark-100 flex items-center justify-between bg-dark-50/40">
           <div>
             <h2 className="text-base font-bold text-dark-800">Pemakaian Barang Terbaru</h2>
-            <p className="text-xs text-dark-400 mt-0.5">Riwayat pemakaian barang oleh pegawai</p>
+            <p className="text-xs text-dark-400 mt-0.5">Riwayat pemakaian barang persediaan</p>
           </div>
           <Link
             href="/transaksi-keluar"
@@ -335,7 +376,7 @@ export default function DashboardPage() {
               </tr>
             </thead>
             <tbody>
-              {mockTransaksiKeluar.map((trx) => (
+              {transaksiKeluarList.slice(0, 5).map((trx) => (
                 <tr key={trx.id}>
                   <td>
                     <span className="font-mono text-xs text-bps-blue font-bold">{trx.no_dokumen}</span>
@@ -354,6 +395,15 @@ export default function DashboardPage() {
                   <td className="text-xs text-dark-500">{trx.penanggung_jawab}</td>
                 </tr>
               ))}
+              {transaksiKeluarList.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="text-center py-8">
+                    <FileText className="w-8 h-8 text-dark-200 mx-auto mb-2" />
+                    <p className="text-dark-500 text-xs font-semibold">Belum ada transaksi pengeluaran barang</p>
+                    <p className="text-dark-400 text-[11px] mt-0.5">Transaksi permintaan barang persediaan akan tampil di sini</p>
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

@@ -1,0 +1,19 @@
+{
+  "folders": [
+    {
+      "name": "Gudang Persediaan (SIPERSEDIA)",
+      "path": "."
+    }
+  ],
+  "settings": {
+    "window.title": "Gudang Persediaan — SIPERSEDIA BPS OKU Selatan",
+    "files.exclude": {
+      "**/.git": true,
+      "**/.next": true,
+      "**/.vercel": true,
+      "**/.agents": true,
+      "**/skills-lock.json": true,
+      "**/tsconfig.tsbuildinfo": true
+    }
+  }
+}

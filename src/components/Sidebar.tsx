@@ -18,6 +18,7 @@ import {
   ChevronRight,
   X,
   ClipboardList,
+  Home,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -33,6 +34,7 @@ interface SidebarProps {
 const navSections = [
   {
     title: 'MENU UTAMA',
+    adminOnly: true,
     items: [
       { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     ],
@@ -48,14 +50,15 @@ const navSections = [
     ],
   },
   {
-    title: 'KATALOG BARANG',
+    title: 'MENU UTAMA',
     userOnly: true,
     items: [
-      { label: 'Cek Stok Barang', href: '/barang', icon: Package },
+      { label: 'Beranda', href: '/dashboard', icon: Home },
+      { label: 'Katalog & Stok Barang', href: '/barang', icon: Package },
     ],
   },
   {
-    title: 'TRANSAKSI GUDANG',
+    title: 'TRANSAKSI PERSEDIAAN',
     adminOnly: true,
     items: [
       { label: 'Barang Masuk', href: '/transaksi-masuk', icon: ArrowDownToLine },
@@ -67,6 +70,13 @@ const navSections = [
     userOnly: true,
     items: [
       { label: 'Permintaan Barang', href: '/transaksi-keluar', icon: ArrowUpFromLine },
+    ],
+  },
+  {
+    title: 'PENGATURAN & AKUN',
+    userOnly: true,
+    items: [
+      { label: 'Profil & Pengaturan', href: '/pengaturan', icon: Settings },
     ],
   },
   {
@@ -130,7 +140,7 @@ export default function Sidebar({
               </div>
               <div className="min-w-0">
                 <h1 className="text-sm font-extrabold text-white tracking-wider leading-none">SIPERSEDIA</h1>
-                <p className="text-[10px] text-bps-orange-200 font-semibold mt-1 truncate">BPS OKU SELATAN</p>
+                <p className="text-[10px] text-bps-orange-200 font-semibold mt-1 truncate">GUDANG PERSEDIAAN BPS</p>
               </div>
             </div>
           )}
@@ -235,7 +245,7 @@ export default function Sidebar({
                   userRole === 'admin' ? 'bg-bps-orange' : 'bg-bps-green'
                 )} />
                 <span className="font-bold tracking-wide">
-                  {userRole === 'admin' ? 'ADMIN GUDANG' : 'PEGAWAI BPS'}
+                  {userRole === 'admin' ? 'ADMIN PERSEDIAAN' : 'PEGAWAI BPS'}
                 </span>
               </div>
               <span className="text-[10px] opacity-75 font-mono">OKU-S</span>

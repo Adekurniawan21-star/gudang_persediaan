@@ -1,287 +1,1507 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import {
-  ClipboardList, Search, Printer, X, ArrowDownToLine, ArrowUpFromLine,
+  ClipboardList, Search, Printer, Calendar, FileText, ArrowRight,
+  Layers, CheckCircle2, ChevronRight, Eye, ArrowDownToLine, ArrowUpFromLine,
+  HelpCircle, ShieldCheck, Plus, X, AlertTriangle, Package
 } from 'lucide-react';
-import { mockKartuKendali, mockBarang } from '@/lib/mock-data';
-import type { KartuKendali } from '@/types';
-import { cn, formatDateShort, formatDate, formatNumber } from '@/lib/utils';
+import { mockKartuKendali, mockBarang, mockTransaksiKeluar, mockTransaksiMasuk } from '@/lib/mock-data';
+import { DATA_DAFTAR_PERSEDIAAN_PDF1, type DaftarPersediaanPDFItem } from '@/lib/data-daftar-persediaan-pdf1';
+import { TIM_PEMOHON_LIST } from '@/types';
+import type { KartuKendali, Barang, TransaksiKeluar, TransaksiMasuk } from '@/types';
+import { cn, formatDateShort, formatNumber, formatTanggalTandaTangan } from '@/lib/utils';
+import KopSurat from '@/components/KopSurat';
+
+const BULAN_NAMES = [
+  'Januari', 'Feb', 'Maret', 'April', 'Mei', 'Juni',
+  'Juli', 'Agustus', 'Sept', 'Okt', 'Nov', 'Des'
+];
 
 export default function KartuKendaliPage() {
-  const [selectedBarang, setSelectedBarang] = useState<number | null>(mockKartuKendali[0]?.id_barang || null);
+  const [activeTab, setActiveTab] = useState<'kartu' | 'daftar'>('kartu');
+  const [selectedBarangId, setSelectedBarangId] = useState<number>(17); // Default Stabillo (ID 17) sesuai PDF 1 Hal 3
+  const [selectedYear, setSelectedYear] = useState<number>(2025);
   const [searchQuery, setSearchQuery] = useState('');
   const [showPrintPreview, setShowPrintPreview] = useState(false);
+  const [previewMode, setPreviewMode] = useState<'kartu' | 'daftar'>('kartu');
+  const [tglCetakDokumen, setTglCetakDokumen] = useState(() => new Date().toISOString().split('T')[0]);
 
-  const currentCard = mockKartuKendali.find(k => k.id_barang === selectedBarang);
+  // === State Form Input Mutasi Langsung ===
+  const [showInputModal, setShowInputModal] = useState(false);
+  const [inputJenis, setInputJenis] = useState<'masuk' | 'keluar'>('masuk');
+  const [inputTanggal, setInputTanggal] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [inputNoReferensi, setInputNoReferensi] = useState<string>('');
+  const [inputJumlah, setInputJumlah] = useState<number>(1);
+  const [inputUraian, setInputUraian] = useState<string>('');
+  const [inputHargaSatuan, setInputHargaSatuan] = useState<number>(0);
+  const [inputTimPemohon, setInputTimPemohon] = useState<string>('tim-sosial');
+  const [notification, setNotification] = useState<{ type: 'success' | 'info' | 'error'; message: string } | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  const filteredBarang = mockBarang.filter(b =>
+  // Dynamic Data Lists dari LocalStorage
+  const [barangList, setBarangList] = useState<Barang[]>([...mockBarang]);
+  const [transaksiKeluarList, setTransaksiKeluarList] = useState<TransaksiKeluar[]>([...mockTransaksiKeluar]);
+  const [transaksiMasukList, setTransaksiMasukList] = useState<TransaksiMasuk[]>([...mockTransaksiMasuk]);
+
+  useEffect(() => {
+    const bSaved = localStorage.getItem('sipersedia_barang_list');
+    if (bSaved) {
+      try {
+        const parsed = JSON.parse(bSaved);
+        if (Array.isArray(parsed) && parsed.length > 0) setBarangList(parsed);
+      } catch (e) {}
+    }
+    const kSaved = localStorage.getItem('sipersedia_transaksi_keluar');
+    if (kSaved) {
+      try {
+        const parsed = JSON.parse(kSaved);
+        if (Array.isArray(parsed)) setTransaksiKeluarList(parsed);
+      } catch (e) {}
+    }
+    const mSaved = localStorage.getItem('sipersedia_transaksi_masuk');
+    if (mSaved) {
+      try {
+        const parsed = JSON.parse(mSaved);
+        if (Array.isArray(parsed)) setTransaksiMasukList(parsed);
+      } catch (e) {}
+    }
+  }, [refreshKey]);
+
+  const activeBarang = barangList.find(b => b.id === selectedBarangId) || barangList[0];
+
+  // Cari template kartu bawaan jika ada
+  const templateCard = mockKartuKendali.find(
+    k => k.id_barang === selectedBarangId && k.tahun === selectedYear
+  ) || mockKartuKendali.find(k => k.id_barang === selectedBarangId);
+
+  // Penentuan Stock Awal Tahun
+  const stockAwal = templateCard?.stock_awal_tahun ?? (templateCard?.entries[0]?.masuk || activeBarang?.stok || 0);
+
+  // Kumpulkan mutasi dari template
+  const baseEntries = templateCard?.entries || [];
+  const existingRefs = new Set(baseEntries.map(e => e.no_referensi));
+
+  // Kumpulkan mutasi tambahan dari Transaksi Masuk
+  const additionalMasuk = transaksiMasukList
+    .filter(t => {
+      const year = new Date(t.tanggal).getFullYear();
+      return (year === selectedYear || isNaN(year)) &&
+        t.items.some(i => i.id_barang === selectedBarangId) &&
+        !existingRefs.has(t.no_referensi || t.no_dokumen);
+    })
+    .map(t => {
+      const itm = t.items.find(i => i.id_barang === selectedBarangId);
+      return {
+        id: t.id,
+        tanggal: t.tanggal,
+        no_referensi: t.no_referensi || t.no_dokumen,
+        uraian: t.keterangan || `Penerimaan ${t.sumber}`,
+        masuk: itm?.jumlah || 0,
+        keluar: 0,
+        sisa: 0,
+      };
+    });
+
+  // Kumpulkan mutasi tambahan dari Transaksi Keluar (SPB)
+  const additionalKeluar = transaksiKeluarList
+    .filter(t => {
+      const year = new Date(t.tanggal).getFullYear();
+      return (year === selectedYear || isNaN(year)) &&
+        t.items.some(i => i.id_barang === selectedBarangId) &&
+        !existingRefs.has(t.no_dokumen);
+    })
+    .map(t => {
+      const itm = t.items.find(i => i.id_barang === selectedBarangId);
+      return {
+        id: t.id,
+        tanggal: t.tanggal,
+        no_referensi: t.no_dokumen,
+        uraian: itm?.keterangan || t.keterangan || `Permintaan ${t.nama_tim}`,
+        masuk: 0,
+        keluar: itm?.jumlah || 0,
+        sisa: 0,
+      };
+    });
+
+  // Gabungkan seluruh baris mutasi
+  let rawEntries = [...baseEntries, ...additionalMasuk, ...additionalKeluar];
+  if (rawEntries.length === 0) {
+    rawEntries.push({
+      id: 1,
+      tanggal: `${selectedYear}-01-02`,
+      no_referensi: '-',
+      uraian: `Saldo Awal 1 Januari ${selectedYear}`,
+      masuk: stockAwal,
+      keluar: 0,
+      sisa: stockAwal,
+    });
+  }
+
+  // Urutkan kronologis dengan baris Saldo Awal selalu di baris pertama
+  const initialSaldoEntry = rawEntries.find(e => e.uraian.toLowerCase().includes('saldo')) || rawEntries[0];
+  const otherEntries = rawEntries
+    .filter(e => e !== initialSaldoEntry)
+    .sort((a, b) => new Date(a.tanggal).getTime() - new Date(b.tanggal).getTime());
+  const sortedEntries = [initialSaldoEntry, ...otherEntries];
+
+  // Hitung ulang saldo berjalan secara matematis (Running Balance)
+  let running = 0;
+  const entries = sortedEntries.map((e, idx) => {
+    if (idx === 0) {
+      running = e.masuk || e.sisa || stockAwal;
+      return { ...e, sisa: running };
+    }
+    running = running + (e.masuk || 0) - (e.keluar || 0);
+    return { ...e, sisa: Math.max(0, running) };
+  });
+
+  // Perhitungan Akuntansi Kartu Kendali
+  const totalMasuk = entries.reduce((s, e) => s + (e.masuk || 0), 0);
+  const totalKeluar = entries.reduce((s, e) => s + (e.keluar || 0), 0);
+  const sisaAkhir = entries[entries.length - 1]?.sisa ?? stockAwal;
+
+  const getMonthlyOut = (m: number) => {
+    return entries
+      .filter((e, idx) => {
+        if (idx === 0) return false;
+        const entryMonth = new Date(e.tanggal).getMonth() + 1;
+        return entryMonth === m;
+      })
+      .reduce((s, e) => s + (e.keluar || 0), 0);
+  };
+
+  const totalPengeluaranTahunan = Array.from({ length: 12 }, (_, i) => getMonthlyOut(i + 1)).reduce((a, b) => a + b, 0);
+
+  // Objek Kartu Kendali Aktif Lengkap
+  const currentCard = {
+    id: activeBarang?.id || selectedBarangId,
+    id_barang: activeBarang?.id || selectedBarangId,
+    nama_barang: activeBarang?.nama_barang || 'Barang',
+    kode_barang: activeBarang?.kode_barang || '000000',
+    satuan: activeBarang?.satuan?.nama_satuan || 'Buah',
+    proyek_rutin: templateCard?.proyek_rutin || 'Rutin',
+    tahun: selectedYear,
+    halaman: templateCard?.halaman || 1,
+    stock_awal_tahun: stockAwal,
+    entries: entries,
+    pengeluaran_bulanan: Array.from({ length: 12 }, (_, i) => getMonthlyOut(i + 1)),
+    total_pengeluaran: totalPengeluaranTahunan,
+    stock_akhir_tahun: sisaAkhir,
+  };
+
+  // Pembagian baris mutasi untuk format ganda (Dual-Pane) persis Halaman 3 PDF
+  const maxRows = Math.max(14, Math.ceil(entries.length / 2));
+  const leftEntries = entries.slice(0, maxRows);
+  const rightEntries = entries.slice(maxRows, maxRows * 2);
+
+  const leftTotalMasuk = leftEntries.reduce((s, e) => s + e.masuk, 0);
+  const leftTotalKeluar = leftEntries.reduce((s, e) => s + e.keluar, 0);
+  const leftLastSisa = leftEntries.length > 0 ? leftEntries[leftEntries.length - 1].sisa : stockAwal;
+
+  const filteredBarang = barangList.filter(b =>
     b.nama_barang.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    b.kode_barang.toLowerCase().includes(searchQuery.toLowerCase())
+    (b.kode_barang && b.kode_barang.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  // Calculate summary
-  const totalMasuk = currentCard?.entries.reduce((s, e) => s + e.masuk, 0) || 0;
-  const totalKeluar = currentCard?.entries.reduce((s, e) => s + e.keluar, 0) || 0;
-  const sisaAkhir = currentCard?.entries[currentCard.entries.length - 1]?.sisa || 0;
+  const filteredDaftarPersediaan = DATA_DAFTAR_PERSEDIAAN_PDF1.filter(item =>
+    item.uraian.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.kode.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Navigasi ke Kartu Barang tertentu dari Daftar Persediaan
+  const handleSelectFromDaftar = (kode: string, uraian: string) => {
+    const matched = barangList.find(b => b.kode_barang === kode || b.nama_barang.toLowerCase() === uraian.toLowerCase());
+    if (matched) {
+      setSelectedBarangId(matched.id);
+    }
+    setActiveTab('kartu');
+  };
+
+  // ========================================
+  // HANDLER BUKA MODAL INPUT MUTASI LANGSUNG
+  // ========================================
+  const handleOpenInputModal = (jenis: 'masuk' | 'keluar') => {
+    setInputJenis(jenis);
+    setInputTanggal(new Date().toISOString().split('T')[0]);
+    setInputNoReferensi('');
+    setInputJumlah(1);
+    setInputUraian('');
+    setInputHargaSatuan(0);
+    setInputTimPemohon('tim-sosial');
+    setShowInputModal(true);
+  };
+
+  // ========================================
+  // HANDLER SIMPAN MUTASI → SEKALIGUS TULIS
+  // KE TRANSAKSI MASUK/KELUAR DI LOCALSTORAGE
+  // ========================================
+  const handleSaveInput = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (inputJumlah <= 0) {
+      setNotification({ type: 'error', message: 'Jumlah harus lebih dari 0!' });
+      setTimeout(() => setNotification(null), 3000);
+      return;
+    }
+    if (!activeBarang) return;
+
+    if (inputJenis === 'masuk') {
+      // === Buat record Transaksi Masuk baru ===
+      const existingMasuk = [...transaksiMasukList];
+      const docNo = `BM-${new Date(inputTanggal).getFullYear()}/${String(new Date(inputTanggal).getMonth() + 1).padStart(2, '0')}/${String(existingMasuk.length + 1).padStart(3, '0')}`;
+      const newTrx: TransaksiMasuk = {
+        id: Date.now(),
+        no_dokumen: docNo,
+        tanggal: inputTanggal,
+        sumber: 'Pembelian',
+        no_referensi: inputNoReferensi.trim() || docNo,
+        items: [{
+          id_barang: activeBarang.id,
+          jumlah: Number(inputJumlah),
+          harga_satuan: Number(inputHargaSatuan) || null,
+          keterangan: inputUraian.trim() || null,
+          barang: activeBarang,
+        }],
+        keterangan: inputUraian.trim() || `Penerimaan ${activeBarang.nama_barang}`,
+        created_by: 'admin-001',
+        created_at: new Date().toISOString(),
+      };
+      const updatedMasuk = [newTrx, ...existingMasuk];
+      setTransaksiMasukList(updatedMasuk);
+      localStorage.setItem('sipersedia_transaksi_masuk', JSON.stringify(updatedMasuk));
+
+      // Update stok barang di master
+      const nextBarang = barangList.map(b => {
+        if (b.id === activeBarang.id) return { ...b, stok: b.stok + Number(inputJumlah) };
+        return b;
+      });
+      setBarangList(nextBarang);
+      localStorage.setItem('sipersedia_barang_list', JSON.stringify(nextBarang));
+
+      setNotification({ type: 'success', message: `✅ Barang masuk +${inputJumlah} ${activeBarang.satuan?.nama_satuan || 'Buah'} "${activeBarang.nama_barang}" berhasil dicatat! Otomatis sinkron ke Transaksi Masuk & Laporan.` });
+    } else {
+      // === Buat record Transaksi Keluar baru ===
+      const existingKeluar = [...transaksiKeluarList];
+      const timObj = TIM_PEMOHON_LIST.find(t => t.id === inputTimPemohon) || TIM_PEMOHON_LIST[1];
+      const docNo = `BK-${new Date(inputTanggal).getFullYear()}/${String(new Date(inputTanggal).getMonth() + 1).padStart(2, '0')}/${String(existingKeluar.length + 1).padStart(3, '0')}`;
+      const newTrx: TransaksiKeluar = {
+        id: Date.now(),
+        no_dokumen: docNo,
+        tanggal: inputTanggal,
+        tim_pemohon: timObj.id,
+        nama_tim: timObj.nama_tim,
+        penanggung_jawab: timObj.penanggung_jawab,
+        nip_pj: timObj.nip_pj,
+        items: [{
+          id_barang: activeBarang.id,
+          jumlah: Number(inputJumlah),
+          keterangan: inputUraian.trim() || null,
+          barang: activeBarang,
+        }],
+        keterangan: inputUraian.trim() || `Permintaan ${timObj.nama_tim}`,
+        created_by: 'admin-001',
+        created_at: new Date().toISOString(),
+      };
+      const updatedKeluar = [newTrx, ...existingKeluar];
+      setTransaksiKeluarList(updatedKeluar);
+      localStorage.setItem('sipersedia_transaksi_keluar', JSON.stringify(updatedKeluar));
+
+      // Update stok barang di master
+      const nextBarang = barangList.map(b => {
+        if (b.id === activeBarang.id) return { ...b, stok: Math.max(0, b.stok - Number(inputJumlah)) };
+        return b;
+      });
+      setBarangList(nextBarang);
+      localStorage.setItem('sipersedia_barang_list', JSON.stringify(nextBarang));
+
+      setNotification({ type: 'success', message: `✅ Barang keluar -${inputJumlah} ${activeBarang.satuan?.nama_satuan || 'Buah'} "${activeBarang.nama_barang}" berhasil dicatat! Otomatis sinkron ke Transaksi Keluar & Laporan.` });
+    }
+
+    setShowInputModal(false);
+    setRefreshKey(prev => prev + 1);
+    setTimeout(() => setNotification(null), 5000);
+  };
 
   return (
     <div className="page-enter space-y-6">
-      {/* Header */}
+      {/* NOTIFIKASI TOAST */}
+      {notification && (
+        <div className={cn(
+          'fixed top-6 right-6 z-[60] max-w-md px-5 py-3 rounded-xl shadow-2xl border text-sm font-semibold animate-slide-in-up',
+          notification.type === 'success' ? 'bg-emerald-50 border-emerald-300 text-emerald-800' :
+          notification.type === 'error' ? 'bg-rose-50 border-rose-300 text-rose-800' :
+          'bg-blue-50 border-blue-300 text-blue-800'
+        )}>
+          <div className="flex items-start gap-2">
+            <CheckCircle2 className="w-5 h-5 flex-shrink-0 mt-0.5" />
+            <span>{notification.message}</span>
+            <button onClick={() => setNotification(null)} className="ml-2 opacity-60 hover:opacity-100">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Header Utama */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-dark-800">Kartu Kendali Persediaan</h1>
-          <p className="text-sm text-dark-400 mt-1">Kartu kendali per barang — terintegrasi dengan transaksi masuk &amp; pemakaian</p>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-dark-800">Kartu Kendali Persediaan</h1>
+            <span className="text-xs bg-bps-blue-50 text-bps-blue font-bold px-2.5 py-0.5 rounded-full border border-bps-blue-200">
+              Dokumen Resmi BPS OKU Selatan
+            </span>
+            <span className="text-xs bg-emerald-50 text-emerald-700 font-bold px-2.5 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
+              <ShieldCheck className="w-3.5 h-3.5" /> 100% Balance
+            </span>
+          </div>
+          <p className="text-sm text-dark-400 mt-1">
+            Buku besar pembantu mutasi persediaan barang — Otomatis terhubung dengan Transaksi Masuk, Transaksi Keluar (SPB), dan Laporan Persediaan
+          </p>
         </div>
-        {currentCard && (
-          <button onClick={() => setShowPrintPreview(true)} className="btn-secondary">
+
+        {/* Tab & Aksi Cetak */}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center bg-dark-100 p-1 rounded-xl">
+            <button
+              onClick={() => setActiveTab('kartu')}
+              className={cn(
+                'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all',
+                activeTab === 'kartu' ? 'bg-white text-bps-blue shadow-xs' : 'text-dark-500 hover:text-dark-800'
+              )}
+            >
+              <FileText className="w-3.5 h-3.5" />
+              Kartu Persediaan (ATK/ARK)
+            </button>
+            <button
+              onClick={() => setActiveTab('daftar')}
+              className={cn(
+                'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all',
+                activeTab === 'daftar' ? 'bg-white text-bps-blue shadow-xs' : 'text-dark-500 hover:text-dark-800'
+              )}
+            >
+              <Layers className="w-3.5 h-3.5" />
+              Daftar Rekapitulasi Persediaan
+            </button>
+          </div>
+
+          <button
+            onClick={() => {
+              setPreviewMode(activeTab);
+              setShowPrintPreview(true);
+            }}
+            className="btn-primary text-xs"
+          >
             <Printer className="w-4 h-4" />
-            Cetak Kartu Kendali
+            {activeTab === 'kartu' ? 'Cetak Kartu Persediaan' : 'Cetak Daftar Persediaan'}
           </button>
-        )}
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Sidebar — daftar barang */}
-        <div className="lg:col-span-1">
-          <div className="card p-4">
-            <div className="relative mb-3">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-dark-300" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="input pl-10 text-sm"
-                placeholder="Cari barang..."
-              />
-            </div>
-            <div className="space-y-1 max-h-[500px] overflow-y-auto">
-              {filteredBarang.map(b => {
-                const hasCard = mockKartuKendali.some(k => k.id_barang === b.id);
-                return (
-                  <button
-                    key={b.id}
-                    onClick={() => setSelectedBarang(b.id)}
-                    className={cn(
-                      'w-full text-left p-3 rounded-lg transition-all duration-200 text-sm',
-                      selectedBarang === b.id
-                        ? 'bg-bps-blue-50 border border-bps-blue-200'
-                        : 'hover:bg-dark-50 border border-transparent',
-                    )}
-                  >
-                    <p className={cn('font-medium', selectedBarang === b.id ? 'text-bps-blue' : 'text-dark-700')}>
-                      {b.nama_barang}
-                    </p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="text-[10px] text-dark-400">{b.kode_barang}</span>
-                      {hasCard && (
-                        <span className="text-[10px] bg-bps-green-50 text-bps-green-700 px-1.5 py-0.5 rounded">
-                          Ada Data
-                        </span>
-                      )}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
+      {/* FILTER & PERIODE */}
+      <div className="card p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 bg-dark-50 border border-dark-200 rounded-lg p-1">
+            <Calendar className="w-4 h-4 text-dark-400 ml-2" />
+            <select
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(Number(e.target.value))}
+              className="text-xs font-bold text-dark-700 bg-transparent py-1 pr-3 focus:outline-none cursor-pointer"
+            >
+              <option value={2025}>Tahun Anggaran 2025 (PDF 1)</option>
+              <option value={2026}>Tahun Anggaran 2026 (PDF 2)</option>
+            </select>
+          </div>
+
+          <div className="text-xs text-dark-500 hidden sm:block">
+            {activeTab === 'kartu' ? (
+              <span>Barang aktif: <strong>{currentCard?.nama_barang}</strong> ({currentCard?.kode_barang})</span>
+            ) : (
+              <span>Menampilkan <strong>{DATA_DAFTAR_PERSEDIAAN_PDF1.length} item</strong> persediaan barang</span>
+            )}
           </div>
         </div>
 
-        {/* Main content — kartu kendali */}
-        <div className="lg:col-span-3">
-          {currentCard ? (
-            <div className="space-y-4">
-              {/* Card info */}
-              <div className="card p-5">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                  <div>
-                    <h2 className="text-lg font-bold text-dark-800">{currentCard.nama_barang}</h2>
-                    <div className="flex items-center gap-3 mt-1">
-                      {currentCard.kode_barang && (
-                        <span className="font-mono text-xs text-bps-blue bg-bps-blue-50 px-2 py-0.5 rounded">
-                          {currentCard.kode_barang}
-                        </span>
-                      )}
-                      <span className="text-sm text-dark-400">Satuan: {currentCard.satuan}</span>
-                      <span className="text-sm text-dark-400">Tahun: {currentCard.tahun}</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="text-center">
-                      <p className="text-xs text-dark-400">Total Masuk</p>
-                      <p className="text-lg font-bold text-bps-green">{totalMasuk}</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-xs text-dark-400">Total Keluar</p>
-                      <p className="text-lg font-bold text-bps-orange">{totalKeluar}</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-xs text-dark-400">Sisa</p>
-                      <p className="text-lg font-bold text-dark-800">{sisaAkhir}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Transaction log table */}
-              <div className="card">
-                <div className="px-5 py-4 border-b border-dark-100">
-                  <h3 className="text-sm font-semibold text-dark-700">Riwayat Mutasi Barang</h3>
-                </div>
-                <div className="table-container border-0">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>No</th>
-                        <th>Tanggal</th>
-                        <th>No. Bon/Faktur/BAST</th>
-                        <th>Uraian</th>
-                        <th className="text-center">Masuk (M)</th>
-                        <th className="text-center">Keluar (K)</th>
-                        <th className="text-center">Sisa Barang</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {currentCard.entries.map((entry, idx) => (
-                        <tr key={entry.id}>
-                          <td className="text-dark-400">{idx + 1}</td>
-                          <td className="text-sm text-dark-500">{formatDateShort(entry.tanggal)}</td>
-                          <td>
-                            <span className="font-mono text-xs text-dark-600">{entry.no_referensi}</span>
-                          </td>
-                          <td className="text-sm text-dark-700">{entry.uraian}</td>
-                          <td className="text-center">
-                            {entry.masuk > 0 ? (
-                              <span className="inline-flex items-center gap-1 text-bps-green font-semibold">
-                                <ArrowDownToLine className="w-3 h-3" />
-                                +{entry.masuk}
-                              </span>
-                            ) : (
-                              <span className="text-dark-200">-</span>
-                            )}
-                          </td>
-                          <td className="text-center">
-                            {entry.keluar > 0 ? (
-                              <span className="inline-flex items-center gap-1 text-bps-orange font-semibold">
-                                <ArrowUpFromLine className="w-3 h-3" />
-                                -{entry.keluar}
-                              </span>
-                            ) : (
-                              <span className="text-dark-200">-</span>
-                            )}
-                          </td>
-                          <td className="text-center font-bold text-dark-800">{entry.sisa}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="card p-12 text-center">
-              <ClipboardList className="w-16 h-16 text-dark-200 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-dark-500">Pilih Barang</h3>
-              <p className="text-sm text-dark-400 mt-1">Pilih barang dari daftar di sebelah kiri untuk melihat kartu kendali</p>
-            </div>
-          )}
+        {/* Input Search */}
+        <div className="relative w-full sm:w-64">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-dark-300" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="input pl-9 py-1.5 text-xs w-full"
+            placeholder="Cari kode atau nama barang..."
+          />
         </div>
       </div>
 
-      {/* Print Preview */}
-      {showPrintPreview && currentCard && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto animate-slide-in-up">
-            <div className="flex items-center justify-between p-5 border-b border-dark-100 no-print sticky top-0 bg-white z-10">
-              <h2 className="text-lg font-semibold text-dark-800">Preview Kartu Kendali — {currentCard.nama_barang}</h2>
-              <div className="flex items-center gap-2">
-                <button onClick={() => window.print()} className="btn-primary text-sm">
-                  <Printer className="w-4 h-4" /> Cetak
-                </button>
-                <button onClick={() => setShowPrintPreview(false)} className="btn-secondary text-sm">Tutup</button>
-              </div>
+      {/* BANNER INPUT LANGSUNG + PENJELASAN */}
+      <div className="bg-gradient-to-r from-blue-50 via-indigo-50 to-emerald-50 border border-blue-200/80 rounded-2xl p-4 sm:p-5 shadow-xs">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-bps-blue text-white flex items-center justify-center shrink-0 shadow-sm mt-0.5">
+              <HelpCircle className="w-5 h-5" />
             </div>
-            <div className="p-8">
-              {/* KOP SURAT */}
-              <div className="text-center border-b-[3px] border-dark-800 pb-3 mb-4">
-                <div className="flex items-center justify-center gap-4 mb-2">
-                  <img
-                    src="/images/logo-bps.svg"
-                    alt="Logo BPS"
-                    className="w-14 h-14 object-contain"
-                  />
-                  <div>
-                    <p className="text-xs text-dark-600 tracking-wider font-semibold">BADAN PUSAT STATISTIK</p>
-                    <h3 className="text-base font-bold text-dark-800">KABUPATEN OGAN KOMERING ULU SELATAN</h3>
-                    <p className="text-[10px] text-dark-400 mt-0.5">Jalan Raya R.A Kartini. 3,5 Kecamatan Buay Rawan</p>
-                    <p className="text-[10px] text-dark-400">Homepage: http://okuselatankab.bps.go.id | Email: bps1608@bps.go.id</p>
-                  </div>
-                </div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="text-sm font-bold text-dark-800">
+                  Input Mutasi Langsung dari Kartu Kendali
+                </h3>
+                <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                  <ShieldCheck className="w-3 h-3 text-emerald-600" /> 100% Terhubung Otomatis &amp; Balance
+                </span>
               </div>
+              <p className="text-xs text-dark-600 leading-relaxed max-w-3xl">
+                Anda dapat menambah mutasi <strong>Masuk</strong> atau <strong>Keluar</strong> langsung dari sini. Data otomatis tersinkronisasi ke <strong>Transaksi Masuk</strong>, <strong>Transaksi Keluar (SPB)</strong>, dan <strong>Laporan Persediaan</strong> — sehingga semua angka tetap <strong>100% balance</strong>.
+              </p>
+            </div>
+          </div>
 
-              <h4 className="text-center font-bold text-dark-800 mb-4 text-base underline underline-offset-4">
-                KARTU KENDALI PERSEDIAAN BARANG
-              </h4>
+          <div className="flex items-center gap-2 shrink-0 flex-wrap">
+            {/* === TOMBOL INPUT LANGSUNG === */}
+            <button
+              onClick={() => handleOpenInputModal('masuk')}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-md hover:shadow-lg transition-all duration-200 hover:scale-[1.02]"
+            >
+              <Plus className="w-4 h-4" />
+              <ArrowDownToLine className="w-3.5 h-3.5" />
+              Input Barang Masuk
+            </button>
+            <button
+              onClick={() => handleOpenInputModal('keluar')}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-bps-blue hover:bg-bps-blue-700 text-white text-xs font-bold rounded-xl shadow-md hover:shadow-lg transition-all duration-200 hover:scale-[1.02]"
+            >
+              <Plus className="w-4 h-4" />
+              <ArrowUpFromLine className="w-3.5 h-3.5" />
+              Input Barang Keluar
+            </button>
+            <Link
+              href="/laporan"
+              className="inline-flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-dark-50 text-dark-700 border border-dark-200 text-xs font-semibold rounded-lg shadow-xs transition-colors"
+            >
+              <Layers className="w-3.5 h-3.5" />
+              Lihat Laporan Persediaan
+            </Link>
+          </div>
+        </div>
 
-              <div className="grid grid-cols-2 gap-y-2 text-sm mb-6">
-                <div className="flex gap-2">
-                  <span className="text-dark-400 w-28">Nama Barang</span>
-                  <span className="font-medium">: {currentCard.nama_barang}</span>
-                </div>
-                <div className="flex gap-2">
-                  <span className="text-dark-400 w-28">Satuan</span>
-                  <span className="font-medium">: {currentCard.satuan}</span>
-                </div>
-                {currentCard.kode_barang && (
-                  <div className="flex gap-2">
-                    <span className="text-dark-400 w-28">Kode Barang</span>
-                    <span className="font-medium">: {currentCard.kode_barang}</span>
+        {/* Indikator Keterhubungan Real-time */}
+        <div className="mt-3 pt-3 border-t border-blue-100 grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] text-dark-600">
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span>Saldo Awal: <strong>{formatNumber(stockAwal)}</strong> {activeBarang?.satuan?.nama_satuan || 'Buah'}</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+            <span>Total Masuk: <strong>+{formatNumber(totalMasuk - (entries[0]?.masuk || 0))}</strong></span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+            <span>Total Keluar: <strong>-{formatNumber(totalKeluar)}</strong></span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
+            <span>Sisa Akhir Berjalan: <strong className="text-bps-blue">{formatNumber(sisaAkhir)}</strong></span>
+          </div>
+        </div>
+      </div>
+
+      {/* ======================================================== */}
+      {/* TAMPILAN 1: KARTU PERSEDIAAN BARANG PAKAI HABIS (ATK/ARK) */}
+      {/* PERSIS FORMAT HALAMAN 3 PDF                              */}
+      {/* ======================================================== */}
+      {activeTab === 'kartu' && (
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Sidebar Pilih Barang */}
+          <div className="lg:col-span-1">
+            <div className="card p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-xs font-bold text-dark-700 uppercase tracking-wider">Pilih Barang</h3>
+                <span className="text-[10px] text-dark-400">{filteredBarang.length} barang</span>
+                           {filteredBarang.length === 0 && (
+                  <div className="text-center py-8 text-dark-400 text-xs px-2">
+                    <Package className="w-8 h-8 text-dark-200 mx-auto mb-2" />
+                    <p className="font-semibold text-dark-700">Belum ada barang persediaan</p>
+                    <p className="text-[11px] mt-1 mb-3 text-dark-400">Tambahkan barang terlebih dahulu untuk mengaktifkan kartu kendali.</p>
+                    <Link href="/barang" className="btn-primary text-xs py-1.5 px-3 inline-flex items-center gap-1">
+                      <Plus className="w-3.5 h-3.5" /> Tambah Barang
+                    </Link>
                   </div>
                 )}
-                <div className="flex gap-2">
-                  <span className="text-dark-400 w-28">Tahun</span>
-                  <span className="font-medium">: {currentCard.tahun}</span>
-                </div>
-              </div>
-
-              <table className="w-full border border-dark-300 text-[11px] mb-8">
-                <thead>
-                  <tr className="bg-dark-100">
-                    <th className="border border-dark-300 px-2 py-1.5 text-center">No</th>
-                    <th className="border border-dark-300 px-2 py-1.5 text-center">Tanggal M/K</th>
-                    <th className="border border-dark-300 px-2 py-1.5">No. Bon/Faktur/BAST</th>
-                    <th className="border border-dark-300 px-2 py-1.5">Uraian</th>
-                    <th className="border border-dark-300 px-2 py-1.5 text-center">Masuk (M)</th>
-                    <th className="border border-dark-300 px-2 py-1.5 text-center">Keluar (K)</th>
-                    <th className="border border-dark-300 px-2 py-1.5 text-center">Sisa Barang</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {currentCard.entries.map((entry, idx) => (
-                    <tr key={entry.id}>
-                      <td className="border border-dark-300 px-2 py-1 text-center">{idx + 1}</td>
-                      <td className="border border-dark-300 px-2 py-1 text-center">{formatDateShort(entry.tanggal)}</td>
-                      <td className="border border-dark-300 px-2 py-1">{entry.no_referensi}</td>
-                      <td className="border border-dark-300 px-2 py-1">{entry.uraian}</td>
-                      <td className="border border-dark-300 px-2 py-1 text-center">{entry.masuk > 0 ? entry.masuk : '-'}</td>
-                      <td className="border border-dark-300 px-2 py-1 text-center">{entry.keluar > 0 ? entry.keluar : '-'}</td>
-                      <td className="border border-dark-300 px-2 py-1 text-center font-semibold">{entry.sisa}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-
-              <div className="grid grid-cols-2 gap-8 mt-12 text-sm text-center">
-                <div />
-                <div>
-                  <p className="text-dark-500">Muaradua, .....................</p>
-                  <p className="text-dark-500">Admin Persediaan</p>
-                  <div className="h-16" />
-                  <p className="font-medium text-dark-800 border-b border-dark-300 inline-block px-4">Admin Persediaan</p>
-                  <p className="text-xs text-dark-400 mt-1">NIP. ........................</p>
-                </div>
+                {filteredBarang.map(b => {
+                  const isSelected = selectedBarangId === b.id;
+                  const hasCard = mockKartuKendali.some(k => k.id_barang === b.id);
+                  return (
+                    <button
+                      key={b.id}
+                      onClick={() => setSelectedBarangId(b.id)}
+                      className={cn(
+                        'w-full text-left p-2.5 rounded-lg transition-all duration-150 text-xs',
+                        isSelected
+                          ? 'bg-bps-blue text-white shadow-sm font-semibold'
+                          : 'hover:bg-dark-50 text-dark-700 border border-transparent'
+                      )}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="truncate">{b.nama_barang}</span>
+                        <span className={cn(
+                          'font-mono text-[10px] px-1 rounded',
+                          isSelected ? 'bg-bps-blue-700 text-white' : 'text-dark-400 bg-dark-50'
+                        )}>
+                          {b.kode_barang || '-'}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between mt-1 text-[10px]">
+                        <span className={isSelected ? 'text-bps-blue-100' : 'text-dark-400'}>
+                          Satuan: {b.satuan?.nama_satuan || 'Buah'}
+                        </span>
+                        {hasCard && (
+                          <span className={cn(
+                            'px-1 rounded',
+                            isSelected ? 'bg-bps-blue-600 text-white' : 'text-emerald-700 bg-emerald-50'
+                          )}>
+                            Ada Mutasi
+                          </span>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
+          </div>
+
+          {/* Konten Kartu Kendali Sesuai Halaman 3 PDF */}
+          <div className="lg:col-span-3">
+            {currentCard ? (
+              <div className="card p-6 bg-white overflow-x-auto shadow-sm border border-dark-200">
+                {/* Header Kartu Sesuai Format Resmi PDF Halaman 3 */}
+                <div className="text-center mb-5 pb-3 border-b border-dark-200">
+                  <h2 className="text-base font-extrabold text-black uppercase tracking-wider">
+                    KARTU PERSEDIAAN BARANG PAKAI HABIS (ATK/ARK)
+                  </h2>
+                </div>
+
+                {/* Identitas Barang & Satuan Kerja */}
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-4 mb-5 text-xs text-black">
+                  <div className="md:col-span-4 flex items-center gap-3">
+                    <img src="/images/logo-bps.svg" alt="Logo BPS" className="w-12 h-12 object-contain flex-shrink-0" />
+                    <div className="leading-tight">
+                      <p className="font-bold text-black text-xs">Badan Pusat Statistik</p>
+                      <p className="text-[11px] text-gray-700">Kabupaten Ogan Komering Ulu Selatan</p>
+                    </div>
+                  </div>
+
+                  <div className="md:col-span-5 space-y-1 font-medium">
+                    <div className="flex">
+                      <span className="w-28 text-gray-700">Nama Barang</span>
+                      <span className="w-3 text-center">:</span>
+                      <span className="font-bold text-black uppercase">{currentCard.nama_barang}</span>
+                    </div>
+                    <div className="flex">
+                      <span className="w-28 text-gray-700">Kode Barang</span>
+                      <span className="w-3 text-center">:</span>
+                      <span className="font-mono font-bold text-black">{currentCard.kode_barang || '-'}</span>
+                    </div>
+                    <div className="flex">
+                      <span className="w-28 text-gray-700">Satuan Barang</span>
+                      <span className="w-3 text-center">:</span>
+                      <span className="text-black">{currentCard.satuan}</span>
+                    </div>
+                  </div>
+
+                  <div className="md:col-span-3 space-y-1 font-medium md:text-right">
+                    <div className="flex md:justify-end">
+                      <span className="w-24 text-gray-700">Halaman</span>
+                      <span className="w-3 text-center">:</span>
+                      <span className="text-black font-semibold">{currentCard.halaman || 1}</span>
+                    </div>
+                    <div className="flex md:justify-end">
+                      <span className="w-24 text-gray-700">Proyek/Rutin</span>
+                      <span className="w-3 text-center">:</span>
+                      <span className="text-black">{currentCard.proyek_rutin || 'Rutin'}</span>
+                    </div>
+                    <div className="flex md:justify-end">
+                      <span className="w-24 text-gray-700">Tahun</span>
+                      <span className="w-3 text-center">:</span>
+                      <span className="font-bold text-black">{currentCard.tahun}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* TABEL 1: Banyaknya Pengeluaran Tiap-Tiap Bulan (15 Kolom Horizontal) */}
+                <div className="mb-6 overflow-x-auto">
+                  <table className="w-full border-collapse border border-black text-center text-xs">
+                    <thead>
+                      <tr className="bg-gray-100 font-bold text-black">
+                        <th colSpan={12} className="border border-black py-1.5 uppercase text-[11px] tracking-wider">
+                          Banyaknya Pengeluaran Tiap-Tiap Bulan
+                        </th>
+                        <th rowSpan={2} className="border border-black px-2 py-1.5 text-[10px] leading-tight w-20">
+                          Jumlah Pengeluaran
+                        </th>
+                        <th rowSpan={2} className="border border-black px-2 py-1.5 text-[10px] leading-tight w-20">
+                          Stock Awal tahun
+                        </th>
+                        <th rowSpan={2} className="border border-black px-2 py-1.5 text-[10px] leading-tight w-20 bg-gray-50">
+                          Stock Akhir tahun
+                        </th>
+                      </tr>
+                      <tr className="bg-gray-50 font-semibold text-black text-[10px]">
+                        {BULAN_NAMES.map((bln, idx) => (
+                          <th key={idx} className="border border-black px-1 py-1 w-12">
+                            {bln}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr className="text-black font-semibold text-xs">
+                        {BULAN_NAMES.map((_, idx) => {
+                          const out = getMonthlyOut(idx + 1);
+                          return (
+                            <td
+                              key={idx}
+                              className={cn(
+                                'border border-black py-1.5',
+                                out > 0 ? 'bg-amber-50 font-bold text-amber-900' : ''
+                              )}
+                            >
+                              {out}
+                            </td>
+                          );
+                        })}
+                        <td className="border border-black py-1.5 font-bold text-black bg-gray-50">
+                          {totalPengeluaranTahunan}
+                        </td>
+                        <td className="border border-black py-1.5 font-bold text-black">
+                          {stockAwal}
+                        </td>
+                        <td className="border border-black py-1.5 font-extrabold text-blue-900 bg-blue-50/50">
+                          {sisaAkhir}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* TABEL 2: Rincian Mutasi Barang Dual-Pane (14 Kolom) Sesuai Halaman 3 PDF */}
+                <div className="overflow-x-auto mb-6">
+                  <table className="w-full border-collapse border border-black text-[10px]">
+                    <thead>
+                      <tr className="bg-gray-100 font-bold text-black text-center">
+                        {/* Kolom Sisi Kiri */}
+                        <th className="border border-black px-1 py-1 w-8">No.</th>
+                        <th className="border border-black px-1.5 py-1 w-20">No. Bon/Faktur</th>
+                        <th className="border border-black px-1.5 py-1 w-16">Tgl M/K</th>
+                        <th className="border border-black px-2 py-1 text-left">Uraian Pemasukan/Pengeluaran</th>
+                        <th className="border border-black px-1 py-1 w-12">Masuk (M)</th>
+                        <th className="border border-black px-1 py-1 w-12">Keluar (K)</th>
+                        <th className="border border-black px-1.5 py-1 w-14">Sisa Barang</th>
+
+                        {/* Kolom Sisi Kanan */}
+                        <th className="border border-black px-1 py-1 w-8">No.</th>
+                        <th className="border border-black px-1.5 py-1 w-20">No. Bon/Faktur</th>
+                        <th className="border border-black px-1.5 py-1 w-16">Tgl M/K</th>
+                        <th className="border border-black px-2 py-1 text-left">Uraian Pemasukan/Pengeluaran</th>
+                        <th className="border border-black px-1 py-1 w-12">Masuk (M)</th>
+                        <th className="border border-black px-1 py-1 w-12">Keluar (K)</th>
+                        <th className="border border-black px-1.5 py-1 w-14">Sisa Barang</th>
+                      </tr>
+                      <tr className="bg-gray-50 text-[9px] text-gray-600 font-bold text-center">
+                        <th className="border border-black py-0.5">(1)</th>
+                        <th className="border border-black py-0.5">(2)</th>
+                        <th className="border border-black py-0.5">(3)</th>
+                        <th className="border border-black py-0.5">(4)</th>
+                        <th className="border border-black py-0.5">(5)</th>
+                        <th className="border border-black py-0.5">(6)</th>
+                        <th className="border border-black py-0.5">(7)</th>
+                        <th className="border border-black py-0.5">(8)</th>
+                        <th className="border border-black py-0.5">(9)</th>
+                        <th className="border border-black py-0.5">(10)</th>
+                        <th className="border border-black py-0.5">(11)</th>
+                        <th className="border border-black py-0.5">(12)</th>
+                        <th className="border border-black py-0.5">(13)</th>
+                        <th className="border border-black py-0.5">(14)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Array.from({ length: maxRows }).map((_, rIdx) => {
+                        const left = leftEntries[rIdx];
+                        const right = rightEntries[rIdx];
+                        return (
+                          <tr key={rIdx} className="text-black hover:bg-gray-50/50">
+                            {/* Sisi Kiri */}
+                            <td className="border border-black px-1 py-1 text-center font-medium">
+                              {left ? rIdx + 1 : ''}
+                            </td>
+                            <td className="border border-black px-1.5 py-1 font-mono text-[9px]">
+                              {left?.no_referensi || ''}
+                            </td>
+                            <td className="border border-black px-1 py-1 text-center">
+                              {left ? formatDateShort(left.tanggal) : ''}
+                            </td>
+                            <td className="border border-black px-2 py-1 font-medium">
+                              {left?.uraian || ''}
+                            </td>
+                            <td className="border border-black px-1 py-1 text-center font-bold text-emerald-800">
+                              {left && left.masuk > 0 ? left.masuk : (left ? '-' : '')}
+                            </td>
+                            <td className="border border-black px-1 py-1 text-center font-bold text-rose-800">
+                              {left && left.keluar > 0 ? left.keluar : (left ? '-' : '')}
+                            </td>
+                            <td className="border border-black px-1.5 py-1 text-center font-extrabold bg-gray-50/50">
+                              {left ? left.sisa : ''}
+                            </td>
+
+                            {/* Sisi Kanan */}
+                            <td className="border border-black px-1 py-1 text-center font-medium">
+                              {right ? maxRows + rIdx + 1 : (rIdx === 0 && !right ? 'Pindahan' : '')}
+                            </td>
+                            <td className="border border-black px-1.5 py-1 font-mono text-[9px]">
+                              {right?.no_referensi || ''}
+                            </td>
+                            <td className="border border-black px-1 py-1 text-center">
+                              {right ? formatDateShort(right.tanggal) : ''}
+                            </td>
+                            <td className="border border-black px-2 py-1 font-medium">
+                              {right?.uraian || ''}
+                            </td>
+                            <td className="border border-black px-1 py-1 text-center font-bold text-emerald-800">
+                              {right && right.masuk > 0 ? right.masuk : (right ? '-' : '')}
+                            </td>
+                            <td className="border border-black px-1 py-1 text-center font-bold text-rose-800">
+                              {right && right.keluar > 0 ? right.keluar : (right ? '-' : '')}
+                            </td>
+                            <td className="border border-black px-1.5 py-1 text-center font-extrabold bg-gray-50/50">
+                              {right ? right.sisa : ''}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                    <tfoot>
+                      <tr className="bg-gray-100 font-bold text-black">
+                        <td colSpan={4} className="border border-black px-2 py-1 text-center uppercase tracking-wider text-[10px]">
+                          JUMLAH (dipindahkan)
+                        </td>
+                        <td className="border border-black px-1 py-1 text-center font-bold">
+                          {leftTotalMasuk > 0 ? leftTotalMasuk : '-'}
+                        </td>
+                        <td className="border border-black px-1 py-1 text-center font-bold">
+                          {leftTotalKeluar > 0 ? leftTotalKeluar : '-'}
+                        </td>
+                        <td className="border border-black px-1.5 py-1 text-center font-extrabold bg-gray-200">
+                          {leftLastSisa}
+                        </td>
+
+                        <td colSpan={4} className="border border-black px-2 py-1 text-center uppercase tracking-wider text-[10px]">
+                          JUMLAH (dipindahkan)
+                        </td>
+                        <td className="border border-black px-1 py-1 text-center font-bold">
+                          {totalMasuk > 0 ? totalMasuk : '-'}
+                        </td>
+                        <td className="border border-black px-1 py-1 text-center font-bold">
+                          {totalKeluar > 0 ? totalKeluar : '-'}
+                        </td>
+                        <td className="border border-black px-1.5 py-1 text-center font-extrabold bg-gray-200">
+                          {sisaAkhir}
+                        </td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+
+                {/* Tanda Tangan Resmi Sesuai Format BPS - Sejajar dengan Tabel & Rapi Tengah */}
+                <div className="w-full flex items-start justify-between text-xs text-black mt-8 pt-4 border-t border-dashed border-dark-200">
+                  <div className="w-72 text-center flex flex-col items-center">
+                    <p className="font-semibold text-black">Mengetahui,</p>
+                    <p className="font-medium text-black">Kuasa Pengguna Barang</p>
+                    <p className="font-medium text-black">Kepala BPS Kabupaten OKU Selatan</p>
+                    <div className="h-16" />
+                    <p className="font-bold border-b border-black text-black w-60 pb-0.5 text-center">
+                      Rival Abdul Jabar, S.ST., M.Si.
+                    </p>
+                    <p className="text-[11px] mt-1 font-medium text-black text-center">NIP. 19831122 200701 1003</p>
+                  </div>
+                  <div className="w-72 text-center flex flex-col items-center">
+                    <p className="font-medium text-black">
+                      Muaradua, {currentCard.tahun === 2025 ? '31 Desember 2025' : '31 Agustus 2026'}
+                    </p>
+                    <p className="font-semibold text-black">Petugas Pengelola Persediaan</p>
+                    <p className="text-transparent select-none font-medium">-</p>
+                    <div className="h-16" />
+                    <p className="font-bold border-b border-black text-black w-60 pb-0.5 text-center">
+                      Guspita Karleni, S.Si
+                    </p>
+                    <p className="text-[11px] mt-1 font-medium text-black text-center">NIP. 19970806 202521 2039</p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="card p-12 text-center">
+                <ClipboardList className="w-16 h-16 text-dark-200 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-dark-500">Pilih Barang</h3>
+                <p className="text-sm text-dark-400 mt-1">Pilih barang dari daftar di sebelah kiri untuk melihat kartu kendali</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* TAMPILAN 2: DAFTAR REKAPITULASI PERSEDIAAN BARANG         */}
+      {/* PERSIS FORMAT HALAMAN 1 & 2 PDF                          */}
+      {/* ======================================================== */}
+      {activeTab === 'daftar' && (
+        <div className="card overflow-hidden">
+          <div className="px-5 py-4 border-b border-dark-100 flex items-center justify-between flex-wrap gap-2">
+            <div>
+              <h2 className="text-base font-bold text-dark-800">
+                Daftar Persediaan Barang — Saldo Awal, Masuk, dan Keluar
+              </h2>
+              <p className="text-xs text-dark-400 mt-0.5">
+                Format resmi sesuai Dokumen PDF Halaman 1 &amp; 2 (Tahun {selectedYear})
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-dark-500 font-medium">
+                Klik ikon <Eye className="w-3.5 h-3.5 inline text-bps-blue" /> untuk buka Kartu Kendali per barang
+              </span>
+            </div>
+          </div>
+
+          <div className="table-container border-0 max-h-[620px] overflow-y-auto">
+            <table>
+              <thead className="sticky top-0 bg-dark-50 z-10 shadow-xs text-xs">
+                <tr>
+                  <th className="w-14 text-center">Nomor</th>
+                  <th className="w-24 text-center font-mono">KODE</th>
+                  <th>U R A I A N</th>
+                  <th className="text-center w-36">JUMLAH Saldo 1 Januari</th>
+                  <th className="text-center w-24 text-emerald-800 bg-emerald-50/50">MASUK</th>
+                  <th className="text-center w-24 text-rose-800 bg-rose-50/50">KELUAR</th>
+                  <th className="text-center w-24">Satuan</th>
+                  <th className="text-center w-28 font-bold bg-blue-50/50">Sisa Akhir</th>
+                  <th className="text-center w-24">Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredDaftarPersediaan.map((item) => {
+                  const sisa = (item.saldo_1_januari || 0) + (item.masuk || 0) - (item.keluar || 0);
+                  return (
+                    <tr key={item.nomor} className="hover:bg-dark-50/50 text-xs">
+                      <td className="text-center text-dark-400 font-medium">{item.nomor}</td>
+                      <td className="text-center font-mono font-bold text-bps-blue text-[11px]">{item.kode}</td>
+                      <td className="font-semibold text-dark-800">{item.uraian}</td>
+                      <td className="text-center font-bold text-dark-700">{formatNumber(item.saldo_1_januari)}</td>
+                      <td className="text-center font-bold text-emerald-700 bg-emerald-50/30">
+                        {item.masuk > 0 ? formatNumber(item.masuk) : '-'}
+                      </td>
+                      <td className="text-center font-bold text-rose-700 bg-rose-50/30">
+                        {item.keluar > 0 ? formatNumber(item.keluar) : '0'}
+                      </td>
+                      <td className="text-center text-dark-500 font-medium">{item.satuan}</td>
+                      <td className="text-center font-extrabold text-blue-900 bg-blue-50/20">
+                        {formatNumber(sisa)}
+                      </td>
+                      <td className="text-center">
+                        <button
+                          onClick={() => handleSelectFromDaftar(item.kode, item.uraian)}
+                          className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-bold text-bps-blue hover:bg-bps-blue-50 transition-colors"
+                          title="Buka Kartu Kendali Barang Ini"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>Kartu</span>
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* MODAL PRINT PREVIEW RESMI (KOP SURAT TAHOMA 14 & ARIAL 8) */}
+      {/* ======================================================== */}
+      {showPrintPreview && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[92vh] overflow-y-auto animate-slide-in-up">
+            <div className="flex items-center justify-between p-4 border-b border-dark-100 no-print sticky top-0 bg-white z-10">
+              <div className="flex items-center gap-2">
+                <FileText className="w-5 h-5 text-bps-blue" />
+                <h2 className="text-base font-bold text-dark-800">
+                  {previewMode === 'kartu'
+                    ? `Preview Cetak: Kartu Persediaan Barang — ${currentCard?.nama_barang} (${currentCard?.tahun})`
+                    : `Preview Cetak: Daftar Rekapitulasi Persediaan Barang (Tahun ${selectedYear})`}
+                </h2>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5 bg-dark-50 border border-dark-200 rounded-lg px-2.5 py-1">
+                  <span className="text-xs font-medium text-dark-600">Tanggal Dokumen:</span>
+                  <input
+                    type="date"
+                    value={tglCetakDokumen}
+                    onChange={(e) => setTglCetakDokumen(e.target.value)}
+                    className="text-xs bg-white border border-dark-300 rounded px-1.5 py-0.5 text-dark-800 focus:outline-none focus:ring-1 focus:ring-bps-blue"
+                    title="Pilih tanggal cetak dokumen (tanggal tanda tangan otomatis menyesuaikan)"
+                  />
+                </div>
+                <button onClick={() => window.print()} className="btn-primary text-xs py-2 px-3">
+                  <Printer className="w-4 h-4" /> Cetak Dokumen
+                </button>
+                <button onClick={() => setShowPrintPreview(false)} className="btn-secondary text-xs py-2 px-3">
+                  Tutup
+                </button>
+              </div>
+            </div>
+
+            <div className="p-8 text-black bg-white" id="print-area">
+              {/* KOP SURAT TERBARU: TAHOMA 14 BOLD ITALIC + ARIAL 8 */}
+              <KopSurat />
+
+              {/* JIKA PREVIEW KARTU PERSEDIAAN (PERSIS HALAMAN 3 PDF) */}
+              {previewMode === 'kartu' && currentCard && (
+                <>
+                  <h3 className="text-center font-extrabold text-black mb-4 text-sm uppercase tracking-wider">
+                    KARTU PERSEDIAAN BARANG PAKAI HABIS (ATK/ARK)
+                  </h3>
+
+                  {/* Identitas Barang */}
+                  <div className="grid grid-cols-12 gap-2 mb-4 text-xs text-black">
+                    <div className="col-span-4 flex items-center gap-2">
+                      <img src="/images/logo-bps.svg" alt="Logo BPS" className="w-10 h-10 object-contain flex-shrink-0" />
+                      <div className="leading-tight text-[11px]">
+                        <p className="font-bold">Badan Pusat Statistik</p>
+                        <p className="text-gray-700">Kabupaten Ogan Komering Ulu Selatan</p>
+                      </div>
+                    </div>
+                    <div className="col-span-5 space-y-0.5 text-[11px]">
+                      <div className="flex">
+                        <span className="w-24">Nama Barang</span>
+                        <span>: <strong>{currentCard.nama_barang}</strong></span>
+                      </div>
+                      <div className="flex">
+                        <span className="w-24">Kode Barang</span>
+                        <span>: <strong className="font-mono">{currentCard.kode_barang || '-'}</strong></span>
+                      </div>
+                      <div className="flex">
+                        <span className="w-24">Satuan Barang</span>
+                        <span>: {currentCard.satuan}</span>
+                      </div>
+                    </div>
+                    <div className="col-span-3 space-y-0.5 text-[11px] text-right">
+                      <div className="flex justify-end">
+                        <span className="w-20">Halaman</span>
+                        <span>: {currentCard.halaman || 1}</span>
+                      </div>
+                      <div className="flex justify-end">
+                        <span className="w-20">Proyek/Rutin</span>
+                        <span>: {currentCard.proyek_rutin || 'Rutin'}</span>
+                      </div>
+                      <div className="flex justify-end">
+                        <span className="w-20">Tahun</span>
+                        <span>: <strong>{currentCard.tahun}</strong></span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Tabel 1: Horizontal 15 Kolom Pengeluaran Tiap Bulan */}
+                  <div className="mb-4">
+                    <table className="w-full border-collapse border border-black text-center text-[10px]">
+                      <thead>
+                        <tr className="bg-gray-100 font-bold text-black">
+                          <th colSpan={12} className="border border-black py-1 uppercase text-[10px]">
+                            Banyaknya Pengeluaran Tiap-Tiap Bulan
+                          </th>
+                          <th rowSpan={2} className="border border-black px-1.5 py-1 text-[9px] leading-tight w-16">
+                            Jumlah Pengeluaran
+                          </th>
+                          <th rowSpan={2} className="border border-black px-1.5 py-1 text-[9px] leading-tight w-16">
+                            Stock Awal tahun
+                          </th>
+                          <th rowSpan={2} className="border border-black px-1.5 py-1 text-[9px] leading-tight w-16">
+                            Stock Akhir tahun
+                          </th>
+                        </tr>
+                        <tr className="bg-gray-50 font-semibold text-black text-[9px]">
+                          {BULAN_NAMES.map((bln, idx) => (
+                            <th key={idx} className="border border-black px-0.5 py-0.5">
+                              {bln}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr className="text-black font-semibold text-[10px]">
+                          {BULAN_NAMES.map((_, idx) => {
+                            const out = getMonthlyOut(idx + 1);
+                            return (
+                              <td key={idx} className="border border-black py-1">
+                                {out}
+                              </td>
+                            );
+                          })}
+                          <td className="border border-black py-1 font-bold">
+                            {totalPengeluaranTahunan}
+                          </td>
+                          <td className="border border-black py-1 font-bold">
+                            {stockAwal}
+                          </td>
+                          <td className="border border-black py-1 font-bold">
+                            {sisaAkhir}
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Tabel 2: Dual-Pane 14 Kolom */}
+                  <div className="mb-6">
+                    <table className="w-full border-collapse border border-black text-[9px]">
+                      <thead>
+                        <tr className="bg-gray-100 font-bold text-black text-center">
+                          <th className="border border-black px-1 py-1 w-6">No.</th>
+                          <th className="border border-black px-1 py-1 w-16">No. Bon/Faktur</th>
+                          <th className="border border-black px-1 py-1 w-14">Tgl M/K</th>
+                          <th className="border border-black px-2 py-1 text-left">Uraian Pemasukan/Pengeluaran</th>
+                          <th className="border border-black px-1 py-1 w-10">Masuk (M)</th>
+                          <th className="border border-black px-1 py-1 w-10">Keluar (K)</th>
+                          <th className="border border-black px-1 py-1 w-12">Sisa Barang</th>
+
+                          <th className="border border-black px-1 py-1 w-6">No.</th>
+                          <th className="border border-black px-1 py-1 w-16">No. Bon/Faktur</th>
+                          <th className="border border-black px-1 py-1 w-14">Tgl M/K</th>
+                          <th className="border border-black px-2 py-1 text-left">Uraian Pemasukan/Pengeluaran</th>
+                          <th className="border border-black px-1 py-1 w-10">Masuk (M)</th>
+                          <th className="border border-black px-1 py-1 w-10">Keluar (K)</th>
+                          <th className="border border-black px-1 py-1 w-12">Sisa Barang</th>
+                        </tr>
+                        <tr className="bg-gray-50 text-[8px] text-gray-600 font-bold text-center">
+                          <th className="border border-black py-0.5">(1)</th>
+                          <th className="border border-black py-0.5">(2)</th>
+                          <th className="border border-black py-0.5">(3)</th>
+                          <th className="border border-black py-0.5">(4)</th>
+                          <th className="border border-black py-0.5">(5)</th>
+                          <th className="border border-black py-0.5">(6)</th>
+                          <th className="border border-black py-0.5">(7)</th>
+                          <th className="border border-black py-0.5">(8)</th>
+                          <th className="border border-black py-0.5">(9)</th>
+                          <th className="border border-black py-0.5">(10)</th>
+                          <th className="border border-black py-0.5">(11)</th>
+                          <th className="border border-black py-0.5">(12)</th>
+                          <th className="border border-black py-0.5">(13)</th>
+                          <th className="border border-black py-0.5">(14)</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {Array.from({ length: maxRows }).map((_, rIdx) => {
+                          const left = leftEntries[rIdx];
+                          const right = rightEntries[rIdx];
+                          return (
+                            <tr key={rIdx} className="text-black">
+                              <td className="border border-black px-1 py-0.5 text-center">
+                                {left ? rIdx + 1 : ''}
+                              </td>
+                              <td className="border border-black px-1 py-0.5 font-mono text-[8px]">
+                                {left?.no_referensi || ''}
+                              </td>
+                              <td className="border border-black px-1 py-0.5 text-center">
+                                {left ? formatDateShort(left.tanggal) : ''}
+                              </td>
+                              <td className="border border-black px-1.5 py-0.5">
+                                {left?.uraian || ''}
+                              </td>
+                              <td className="border border-black px-1 py-0.5 text-center font-bold">
+                                {left && left.masuk > 0 ? left.masuk : (left ? '-' : '')}
+                              </td>
+                              <td className="border border-black px-1 py-0.5 text-center font-bold">
+                                {left && left.keluar > 0 ? left.keluar : (left ? '-' : '')}
+                              </td>
+                              <td className="border border-black px-1 py-0.5 text-center font-bold">
+                                {left ? left.sisa : ''}
+                              </td>
+
+                              <td className="border border-black px-1 py-0.5 text-center">
+                                {right ? maxRows + rIdx + 1 : (rIdx === 0 && !right ? 'Pindahan' : '')}
+                              </td>
+                              <td className="border border-black px-1 py-0.5 font-mono text-[8px]">
+                                {right?.no_referensi || ''}
+                              </td>
+                              <td className="border border-black px-1 py-0.5 text-center">
+                                {right ? formatDateShort(right.tanggal) : ''}
+                              </td>
+                              <td className="border border-black px-1.5 py-0.5">
+                                {right?.uraian || ''}
+                              </td>
+                              <td className="border border-black px-1 py-0.5 text-center font-bold">
+                                {right && right.masuk > 0 ? right.masuk : (right ? '-' : '')}
+                              </td>
+                              <td className="border border-black px-1 py-0.5 text-center font-bold">
+                                {right && right.keluar > 0 ? right.keluar : (right ? '-' : '')}
+                              </td>
+                              <td className="border border-black px-1 py-0.5 text-center font-bold">
+                                {right ? right.sisa : ''}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                      <tfoot>
+                        <tr className="bg-gray-100 font-bold text-black">
+                          <td colSpan={4} className="border border-black px-1.5 py-1 text-center uppercase text-[9px]">
+                            JUMLAH (dipindahkan)
+                          </td>
+                          <td className="border border-black px-1 py-1 text-center font-bold">
+                            {leftTotalMasuk > 0 ? leftTotalMasuk : '-'}
+                          </td>
+                          <td className="border border-black px-1 py-1 text-center font-bold">
+                            {leftTotalKeluar > 0 ? leftTotalKeluar : '-'}
+                          </td>
+                          <td className="border border-black px-1 py-1 text-center font-bold">
+                            {leftLastSisa}
+                          </td>
+
+                          <td colSpan={4} className="border border-black px-1.5 py-1 text-center uppercase text-[9px]">
+                            JUMLAH (dipindahkan)
+                          </td>
+                          <td className="border border-black px-1 py-1 text-center font-bold">
+                            {totalMasuk > 0 ? totalMasuk : '-'}
+                          </td>
+                          <td className="border border-black px-1 py-1 text-center font-bold">
+                            {totalKeluar > 0 ? totalKeluar : '-'}
+                          </td>
+                          <td className="border border-black px-1 py-1 text-center font-bold">
+                            {sisaAkhir}
+                          </td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+
+                  {/* Tanda Tangan Resmi Sesuai Format BPS - Sejajar dengan Tabel & Rapi Tengah */}
+                  <div className="w-full flex items-start justify-between text-xs text-black mt-8 pt-2">
+                    <div className="w-72 text-center flex flex-col items-center">
+                      <p className="font-semibold text-black">Mengetahui,</p>
+                      <p className="font-medium text-black">Kuasa Pengguna Barang</p>
+                      <p className="font-medium text-black">Kepala BPS Kabupaten OKU Selatan</p>
+                      <div className="h-16" />
+                      <p className="font-bold border-b border-black text-black w-60 pb-0.5 text-center">
+                        Rival Abdul Jabar, S.ST., M.Si.
+                      </p>
+                      <p className="text-[11px] mt-1 font-medium text-black text-center">NIP. 19831122 200701 1003</p>
+                    </div>
+                    <div className="w-72 text-center flex flex-col items-center">
+                      <p className="font-medium text-black">
+                        {formatTanggalTandaTangan(tglCetakDokumen)}
+                      </p>
+                      <p className="font-semibold text-black">Petugas Pengelola Persediaan</p>
+                      <p className="text-transparent select-none font-medium">-</p>
+                      <div className="h-16" />
+                      <p className="font-bold border-b border-black text-black w-60 pb-0.5 text-center">
+                        Guspita Karleni, S.Si
+                      </p>
+                      <p className="text-[11px] mt-1 font-medium text-black text-center">NIP. 19970806 202521 2039</p>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* JIKA PREVIEW DAFTAR PERSEDIAAN (PERSIS HALAMAN 1 & 2 PDF) */}
+              {previewMode === 'daftar' && (
+                <>
+                  <div className="text-center mb-5">
+                    <h3 className="font-extrabold text-black text-sm uppercase tracking-wide">
+                      DAFTAR PERSEDIAAN BARANG PER 1 JANUARI {selectedYear}
+                    </h3>
+                    <p className="text-xs text-gray-700 mt-1">
+                      Badan Pusat Statistik Kabupaten Ogan Komering Ulu Selatan
+                    </p>
+                  </div>
+
+                  <table className="w-full border-collapse border border-black text-[9px] mb-8">
+                    <thead>
+                      <tr className="bg-gray-100 font-bold text-black text-center">
+                        <th className="border border-black px-1 py-1 w-10">Nomor</th>
+                        <th className="border border-black px-1.5 py-1 w-16">KODE</th>
+                        <th className="border border-black px-2 py-1 text-left">U R A I A N</th>
+                        <th className="border border-black px-2 py-1 text-center w-28">JUMLAH Saldo 1 Januari</th>
+                        <th className="border border-black px-1.5 py-1 text-center w-16">MASUK</th>
+                        <th className="border border-black px-1.5 py-1 text-center w-16">KELUAR</th>
+                        <th className="border border-black px-1.5 py-1 text-center w-16">Satuan</th>
+                        <th className="border border-black px-2 py-1 text-center w-20">Sisa Akhir</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {DATA_DAFTAR_PERSEDIAAN_PDF1.map((item) => {
+                        const sisa = item.saldo_1_januari + item.masuk - item.keluar;
+                        return (
+                          <tr key={item.nomor} className="text-black">
+                            <td className="border border-black px-1 py-0.5 text-center">{item.nomor}</td>
+                            <td className="border border-black px-1.5 py-0.5 text-center font-mono">{item.kode}</td>
+                            <td className="border border-black px-2 py-0.5">{item.uraian}</td>
+                            <td className="border border-black px-2 py-0.5 text-center font-semibold">
+                              {formatNumber(item.saldo_1_januari)}
+                            </td>
+                            <td className="border border-black px-1.5 py-0.5 text-center">
+                              {item.masuk > 0 ? formatNumber(item.masuk) : '-'}
+                            </td>
+                            <td className="border border-black px-1.5 py-0.5 text-center font-semibold">
+                              {item.keluar > 0 ? formatNumber(item.keluar) : '0'}
+                            </td>
+                            <td className="border border-black px-1.5 py-0.5 text-center">{item.satuan}</td>
+                            <td className="border border-black px-2 py-0.5 text-center font-bold">
+                              {formatNumber(sisa)}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+
+                  {/* Tanda Tangan Resmi Sesuai Format BPS - Sejajar dengan Tabel & Rapi Tengah */}
+                  <div className="w-full flex items-start justify-between text-xs text-black mt-8 pt-2">
+                    <div className="w-72 text-center flex flex-col items-center">
+                      <p className="font-semibold text-black">Mengetahui,</p>
+                      <p className="font-medium text-black">Kuasa Pengguna Barang</p>
+                      <p className="font-medium text-black">Kepala BPS Kabupaten OKU Selatan</p>
+                      <div className="h-16" />
+                      <p className="font-bold border-b border-black text-black w-60 pb-0.5 text-center">
+                        Rival Abdul Jabar, S.ST., M.Si.
+                      </p>
+                      <p className="text-[11px] mt-1 font-medium text-black text-center">NIP. 19831122 200701 1003</p>
+                    </div>
+                    <div className="w-72 text-center flex flex-col items-center">
+                      <p className="font-medium text-black">{formatTanggalTandaTangan(tglCetakDokumen)}</p>
+                      <p className="font-semibold text-black">Petugas Pengelola Persediaan</p>
+                      <p className="text-transparent select-none font-medium">-</p>
+                      <div className="h-16" />
+                      <p className="font-bold border-b border-black text-black w-60 pb-0.5 text-center">
+                        Guspita Karleni, S.Si
+                      </p>
+                      <p className="text-[11px] mt-1 font-medium text-black text-center">NIP. 19970806 202521 2039</p>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* MODAL INPUT MUTASI LANGSUNG (MASUK / KELUAR)              */}
+      {/* Data otomatis ditulis ke transaksi_masuk / transaksi_keluar */}
+      {/* ======================================================== */}
+      {showInputModal && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg animate-slide-in-up overflow-hidden">
+            {/* Header Modal */}
+            <div className={cn(
+              'px-6 py-4 flex items-center justify-between',
+              inputJenis === 'masuk'
+                ? 'bg-gradient-to-r from-emerald-600 to-emerald-500 text-white'
+                : 'bg-gradient-to-r from-bps-blue to-blue-500 text-white'
+            )}>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+                  {inputJenis === 'masuk'
+                    ? <ArrowDownToLine className="w-5 h-5" />
+                    : <ArrowUpFromLine className="w-5 h-5" />
+                  }
+                </div>
+                <div>
+                  <h2 className="text-base font-bold">
+                    {inputJenis === 'masuk' ? 'Input Barang Masuk' : 'Input Barang Keluar'}
+                  </h2>
+                  <p className="text-xs opacity-80">
+                    Barang: <strong>{activeBarang?.nama_barang}</strong> ({activeBarang?.kode_barang})
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowInputModal(false)}
+                className="w-8 h-8 rounded-lg bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleSaveInput} className="p-6 space-y-4">
+              {/* Info Balance */}
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-800">
+                <div className="flex items-start gap-2">
+                  <ShieldCheck className="w-4 h-4 flex-shrink-0 mt-0.5 text-blue-600" />
+                  <span>
+                    Data yang diinput di sini <strong>otomatis tersinkronisasi</strong> ke halaman
+                    {inputJenis === 'masuk' ? ' Transaksi Masuk' : ' Transaksi Keluar (SPB)'} dan Laporan Persediaan.
+                    Semua angka tetap <strong>100% balance</strong>.
+                  </span>
+                </div>
+              </div>
+
+              {/* Toggle Jenis */}
+              <div>
+                <label className="block text-xs font-bold text-dark-700 mb-1.5">Jenis Mutasi</label>
+                <div className="flex items-center bg-dark-100 p-1 rounded-xl">
+                  <button
+                    type="button"
+                    onClick={() => setInputJenis('masuk')}
+                    className={cn(
+                      'flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all',
+                      inputJenis === 'masuk' ? 'bg-emerald-600 text-white shadow-sm' : 'text-dark-500 hover:text-dark-800'
+                    )}
+                  >
+                    <ArrowDownToLine className="w-3.5 h-3.5" />
+                    Barang Masuk
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setInputJenis('keluar')}
+                    className={cn(
+                      'flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all',
+                      inputJenis === 'keluar' ? 'bg-bps-blue text-white shadow-sm' : 'text-dark-500 hover:text-dark-800'
+                    )}
+                  >
+                    <ArrowUpFromLine className="w-3.5 h-3.5" />
+                    Barang Keluar
+                  </button>
+                </div>
+              </div>
+
+              {/* Tanggal & No Referensi */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-dark-700 mb-1.5">Tanggal</label>
+                  <input
+                    type="date"
+                    value={inputTanggal}
+                    onChange={e => setInputTanggal(e.target.value)}
+                    className="input py-2 text-xs w-full"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-dark-700 mb-1.5">
+                    {inputJenis === 'masuk' ? 'No. Bon/Faktur' : 'No. SPB'}
+                  </label>
+                  <input
+                    type="text"
+                    value={inputNoReferensi}
+                    onChange={e => setInputNoReferensi(e.target.value)}
+                    className="input py-2 text-xs w-full"
+                    placeholder={inputJenis === 'masuk' ? 'BAST/001/X/2026' : 'SPB/001/X/2026'}
+                  />
+                </div>
+              </div>
+
+              {/* Jumlah */}
+              <div>
+                <label className="block text-xs font-bold text-dark-700 mb-1.5">
+                  Jumlah ({activeBarang?.satuan?.nama_satuan || 'Buah'})
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  value={inputJumlah}
+                  onChange={e => setInputJumlah(Number(e.target.value))}
+                  className="input py-2 text-xs w-full font-bold text-lg"
+                  required
+                />
+              </div>
+
+              {/* Harga Satuan (hanya untuk masuk) */}
+              {inputJenis === 'masuk' && (
+                <div>
+                  <label className="block text-xs font-bold text-dark-700 mb-1.5">Harga Satuan (Rp) — Opsional</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={inputHargaSatuan}
+                    onChange={e => setInputHargaSatuan(Number(e.target.value))}
+                    className="input py-2 text-xs w-full"
+                    placeholder="0"
+                  />
+                </div>
+              )}
+
+              {/* Tim Pemohon (hanya untuk keluar) */}
+              {inputJenis === 'keluar' && (
+                <div>
+                  <label className="block text-xs font-bold text-dark-700 mb-1.5">Tim Pemohon</label>
+                  <select
+                    value={inputTimPemohon}
+                    onChange={e => setInputTimPemohon(e.target.value)}
+                    className="input py-2 text-xs w-full"
+                  >
+                    {TIM_PEMOHON_LIST.map(tim => (
+                      <option key={tim.id} value={tim.id}>{tim.nama_tim} — {tim.penanggung_jawab}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Uraian / Keterangan */}
+              <div>
+                <label className="block text-xs font-bold text-dark-700 mb-1.5">Uraian / Keterangan</label>
+                <textarea
+                  value={inputUraian}
+                  onChange={e => setInputUraian(e.target.value)}
+                  className="input py-2 text-xs w-full h-16 resize-none"
+                  placeholder={inputJenis === 'masuk' ? 'Contoh: Penerimaan pembelian Q4' : 'Contoh: Keperluan operasional tim'}
+                />
+              </div>
+
+              {/* Preview Efek */}
+              <div className={cn(
+                'rounded-xl p-3 text-xs border',
+                inputJenis === 'masuk'
+                  ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                  : 'bg-amber-50 border-amber-200 text-amber-800'
+              )}>
+                <strong>Preview:</strong> Sisa saat ini = <strong>{formatNumber(sisaAkhir)}</strong>
+                {inputJenis === 'masuk'
+                  ? <> + {inputJumlah} = <strong className="text-emerald-700">{formatNumber(sisaAkhir + inputJumlah)}</strong></>
+                  : <> − {inputJumlah} = <strong className="text-amber-700">{formatNumber(Math.max(0, sisaAkhir - inputJumlah))}</strong></>
+                }
+                {' '}{activeBarang?.satuan?.nama_satuan || 'Buah'}
+              </div>
+
+              {/* Peringatan jika keluar melebihi stok */}
+              {inputJenis === 'keluar' && inputJumlah > sisaAkhir && (
+                <div className="bg-rose-50 border border-rose-200 rounded-xl p-3 text-xs text-rose-800 flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                  <span>Jumlah keluar (<strong>{inputJumlah}</strong>) melebihi sisa barang (<strong>{sisaAkhir}</strong>). Stok akan menjadi 0.</span>
+                </div>
+              )}
+
+              {/* Tombol Simpan */}
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  type="submit"
+                  className={cn(
+                    'flex-1 inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-bold text-white shadow-md hover:shadow-lg transition-all duration-200',
+                    inputJenis === 'masuk'
+                      ? 'bg-emerald-600 hover:bg-emerald-700'
+                      : 'bg-bps-blue hover:bg-bps-blue-700'
+                  )}
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  {inputJenis === 'masuk' ? 'Simpan & Catat Masuk' : 'Simpan & Catat Keluar'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowInputModal(false)}
+                  className="px-4 py-2.5 rounded-xl text-sm font-semibold text-dark-600 bg-dark-100 hover:bg-dark-200 transition-colors"
+                >
+                  Batal
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

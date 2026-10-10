@@ -1,7 +1,7 @@
 {
-  "name": "sipersedia-bps-okus",
+  "name": "sipersedia-gudang-persediaan",
   "version": "1.0.0",
-  "description": "Sistem Informasi Persediaan Barang - BPS Kab. OKU Selatan",
+  "description": "Sistem Informasi Gudang Persediaan - BPS Kab. OKU Selatan",
   "private": true,
   "scripts": {
     "dev": "next dev",

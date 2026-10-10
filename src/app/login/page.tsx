@@ -27,7 +27,7 @@ export default function LoginPage() {
       localStorage.setItem('sipersedia_user', JSON.stringify({
         id: 'usr-001',
         name: 'Ahmad Fauzi (Pegawai BPS)',
-        email: 'user@bps-okus.go.id',
+        email: 'pegawai@bps-okus.go.id',
         role: 'user',
         bidang: 'Tim Statistik Sosial',
       }));
@@ -45,25 +45,25 @@ export default function LoginPage() {
     const input = usernameOrEmail.trim().toLowerCase();
     const pass = password.trim();
 
-    // Cek apakah Admin (ketik admin atau admin@bps-okus.go.id)
+    // Cek apakah Admin Persediaan
     if (
-      (input === 'admin' || input === 'admin@bps-okus.go.id') &&
-      (pass === 'admin' || pass === 'admin123')
+      (input === 'admin_persediaan' || input === 'admin' || input === 'admin@bps-okus.go.id') &&
+      (pass === 'admin123' || pass === 'admin')
     ) {
       performLogin('admin');
       return;
     }
 
-    // Cek apakah User (ketik user atau user@bps-okus.go.id)
+    // Cek apakah Pegawai
     if (
-      (input === 'user' || input === 'user@bps-okus.go.id') &&
-      (pass === 'user' || pass === 'user123')
+      (input === 'pegawai' || input === 'user' || input === 'pegawai@bps-okus.go.id') &&
+      (pass === 'pegawai123' || pass === 'pegawai' || pass === 'user' || pass === 'user123')
     ) {
       performLogin('user');
       return;
     }
 
-    setError('Username atau password salah. Ketik "admin" atau "user"');
+    setError('Username atau password salah. Gunakan kredensial yang tertera di bawah.');
     setIsLoading(false);
   };
 
@@ -71,11 +71,11 @@ export default function LoginPage() {
     setActiveRoleTab(role);
     setError('');
     if (role === 'admin') {
-      setUsernameOrEmail('admin');
+      setUsernameOrEmail('admin_persediaan');
       setPassword('admin123');
     } else {
-      setUsernameOrEmail('user');
-      setPassword('user123');
+      setUsernameOrEmail('pegawai');
+      setPassword('pegawai123');
     }
   };
 
@@ -109,7 +109,7 @@ export default function LoginPage() {
             SIPERSEDIA
           </h1>
           <p className="text-white/80 text-sm font-medium mt-0.5">
-            Sistem Informasi Persediaan Barang
+            Sistem Informasi Gudang Persediaan
           </p>
           <p className="text-bps-orange-300 text-xs font-semibold tracking-wider mt-1 uppercase">
             BPS KABUPATEN OGAN KOMERING ULU SELATAN
@@ -125,8 +125,7 @@ export default function LoginPage() {
             <div className="text-center mb-5">
               <h2 className="text-lg font-bold text-dark-800">Masuk ke Sistem</h2>
               <p className="text-dark-400 text-xs mt-1">
-                Ketik <span className="font-semibold text-bps-blue">admin</span> atau{' '}
-                <span className="font-semibold text-bps-green">user</span> untuk masuk
+                Silakan masuk menggunakan kredensial akun Anda
               </p>
             </div>
 
@@ -142,7 +141,7 @@ export default function LoginPage() {
                 }`}
               >
                 <div className="w-2 h-2 rounded-full bg-bps-orange" />
-                <span>Admin (Gudang)</span>
+                <span>Admin Persediaan</span>
               </button>
 
               <button
@@ -150,12 +149,12 @@ export default function LoginPage() {
                 onClick={() => selectRole('user')}
                 className={`py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
                   activeRoleTab === 'user'
-                    ? 'bg-gradient-to-r from-bps-green to-bps-green-700 text-white shadow-md'
-                    : 'text-dark-600 hover:text-bps-green hover:bg-white/80'
+                    ? 'bg-gradient-to-r from-bps-blue-600 to-bps-blue text-white shadow-md'
+                    : 'text-dark-600 hover:text-bps-blue hover:bg-white/80'
                 }`}
               >
                 <div className="w-2 h-2 rounded-full bg-bps-blue" />
-                <span>User (Pegawai)</span>
+                <span>Pegawai</span>
               </button>
             </div>
 
@@ -169,7 +168,7 @@ export default function LoginPage() {
             <form onSubmit={handleLogin} className="space-y-4">
               <div>
                 <label htmlFor="usernameOrEmail" className="input-label text-xs font-semibold text-dark-700">
-                  Username atau Email
+                  Username
                 </label>
                 <div className="relative">
                   <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-dark-400" />
@@ -179,7 +178,7 @@ export default function LoginPage() {
                     value={usernameOrEmail}
                     onChange={(e) => setUsernameOrEmail(e.target.value)}
                     className="input pl-10 pr-4 py-2.5 text-sm rounded-xl border-dark-200 focus:border-bps-blue focus:ring-bps-blue/20"
-                    placeholder="Ketik 'admin' atau 'user'"
+                    placeholder="Masukkan username"
                     required
                   />
                 </div>
@@ -197,7 +196,7 @@ export default function LoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="input pl-10 pr-10 py-2.5 text-sm rounded-xl border-dark-200 focus:border-bps-blue focus:ring-bps-blue/20"
-                    placeholder="admin123 / user123 (atau 'admin' / 'user')"
+                    placeholder="Masukkan password"
                     required
                   />
                   <button
@@ -222,71 +221,21 @@ export default function LoginPage() {
                   </div>
                 ) : (
                   <>
-                    <span>Masuk ke Sistem</span>
+                    <span>Masuk</span>
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}
               </button>
             </form>
 
-            {/* Quick 1-Click Access Cards with BPS Colors */}
-            <div className="mt-6 pt-5 border-t border-dark-100">
-              <p className="text-[11px] font-semibold text-dark-400 uppercase tracking-wider text-center mb-3">
-                Akses Cepat Kredensial:
+            {/* Akses Default Kredensial - teks biasa tanpa kartu besar */}
+            <div className="mt-5 pt-4 border-t border-dark-100">
+              <p className="text-[11px] text-dark-400 text-center leading-relaxed">
+                <span className="font-semibold text-dark-500">Akses Default Kredensial:</span>{' '}
+                Admin (<code className="font-mono text-bps-blue font-semibold">admin_persediaan</code> / <code className="font-mono text-bps-blue font-semibold">admin123</code>)
+                {' '}<span className="text-dark-300">|</span>{' '}
+                Pegawai (<code className="font-mono text-bps-blue font-semibold">pegawai</code> / <code className="font-mono text-bps-blue font-semibold">pegawai123</code>)
               </p>
-              <div className="space-y-2">
-                <button
-                  type="button"
-                  onClick={() => performLogin('admin')}
-                  className="w-full text-left p-3 rounded-xl border border-bps-orange/30 bg-gradient-to-r from-bps-orange-50/70 to-white hover:border-bps-orange hover:shadow-sm transition-all group"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-lg bg-bps-orange text-white flex items-center justify-center font-bold text-xs shadow-sm">
-                        AD
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold text-dark-800 group-hover:text-bps-orange-700 transition-colors">
-                          Masuk sebagai Admin
-                        </p>
-                        <p className="text-[11px] text-dark-400">
-                          Username: <code className="text-dark-600 font-mono">admin</code> · Password:{' '}
-                          <code className="text-dark-600 font-mono">admin</code>
-                        </p>
-                      </div>
-                    </div>
-                    <span className="badge bg-bps-orange-100 text-bps-orange-700 text-[10px] font-bold">
-                      ADMINISTRATOR
-                    </span>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => performLogin('user')}
-                  className="w-full text-left p-3 rounded-xl border border-bps-green/30 bg-gradient-to-r from-bps-green-50/70 to-white hover:border-bps-green hover:shadow-sm transition-all group"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-lg bg-bps-green text-white flex items-center justify-center font-bold text-xs shadow-sm">
-                        US
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold text-dark-800 group-hover:text-bps-green-700 transition-colors">
-                          Masuk sebagai User Pegawai
-                        </p>
-                        <p className="text-[11px] text-dark-400">
-                          Username: <code className="text-dark-600 font-mono">user</code> · Password:{' '}
-                          <code className="text-dark-600 font-mono">user</code>
-                        </p>
-                      </div>
-                    </div>
-                    <span className="badge bg-bps-green-100 text-bps-green-700 text-[10px] font-bold">
-                      USER PEGAWAI
-                    </span>
-                  </div>
-                </button>
-              </div>
             </div>
           </div>
         </div>

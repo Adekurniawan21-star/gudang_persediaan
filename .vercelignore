@@ -1,6 +1,6 @@
-vendor
-node_modules
 .git
-.env
-storage/logs
-bootstrap/cache/*.php
+.vscode
+*.code-workspace
+.agents
+skills-lock.json
+_backup*
