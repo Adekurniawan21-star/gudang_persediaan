@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { mockTransaksiKeluar, mockBarang } from '@/lib/mock-data';
 import { TIM_PEMOHON_LIST } from '@/types';
-import type { TransaksiKeluar } from '@/types';
+import type { TransaksiKeluar, Barang } from '@/types';
 import { cn, formatDateShort, formatDate, formatTanggalTandaTangan } from '@/lib/utils';
 import KopSurat from '@/components/KopSurat';
 
@@ -20,6 +20,8 @@ interface FormItem {
 export default function TransaksiKeluarPage() {
   const [showModal, setShowModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [filterTim, setFilterTim] = useState<string>('all');
+  const [filterBarang, setFilterBarang] = useState<string>('all');
   const [showPrintPreview, setShowPrintPreview] = useState<TransaksiKeluar | null>(null);
   const [tglCetakDokumen, setTglCetakDokumen] = useState(() => new Date().toISOString().split('T')[0]);
   const [editItem, setEditItem] = useState<TransaksiKeluar | null>(null);
@@ -27,8 +29,9 @@ export default function TransaksiKeluarPage() {
   const [notification, setNotification] = useState<{ type: 'success' | 'info'; message: string } | null>(null);
 
   const [selectedTim, setSelectedTim] = useState('tim-sosial');
+  const [barangList, setBarangList] = useState<Barang[]>([...mockBarang]);
   const [formItems, setFormItems] = useState<FormItem[]>([
-    { id_barang: 17, jumlah: 1, keterangan: '' }
+    { id_barang: mockBarang[0]?.id || 1, jumlah: 1, keterangan: '' }
   ]);
   const [tglPermintaan, setTglPermintaan] = useState<string>(new Date().toISOString().split('T')[0]);
   const [keteranganPermintaan, setKeteranganPermintaan] = useState<string>('');
@@ -51,6 +54,19 @@ export default function TransaksiKeluarPage() {
     if (savedTrx) {
       try {
         setTransaksiList(JSON.parse(savedTrx));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    // Load persisted barang list if any
+    const savedBarang = localStorage.getItem('sipersedia_barang_list');
+    if (savedBarang) {
+      try {
+        const parsed = JSON.parse(savedBarang);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setBarangList(parsed);
+        }
       } catch (e) {
         console.error(e);
       }
@@ -83,7 +99,9 @@ export default function TransaksiKeluarPage() {
     const matchSearch = t.no_dokumen.toLowerCase().includes(searchQuery.toLowerCase()) ||
                         t.nama_tim.toLowerCase().includes(searchQuery.toLowerCase()) ||
                         t.items.some(item => item.barang?.nama_barang.toLowerCase().includes(searchQuery.toLowerCase()));
-    return matchSearch;
+    const matchTim = filterTim === 'all' || t.tim_pemohon === filterTim;
+    const matchBarang = filterBarang === 'all' || t.items.some(item => item.id_barang === Number(filterBarang));
+    return matchSearch && matchTim && matchBarang;
   });
 
   const handleCreateNew = () => {
@@ -92,7 +110,7 @@ export default function TransaksiKeluarPage() {
     setTglPermintaan(new Date().toISOString().split('T')[0]);
     setKeteranganPermintaan('');
     setFormItems([
-      { id_barang: mockBarang[0]?.id || 1, jumlah: 1, keterangan: '' }
+      { id_barang: barangList[0]?.id || mockBarang[0]?.id || 1, jumlah: 1, keterangan: '' }
     ]);
     setShowModal(true);
   };
@@ -138,7 +156,7 @@ export default function TransaksiKeluarPage() {
   const handleAddItemRow = () => {
     setFormItems(prev => [
       ...prev,
-      { id_barang: mockBarang[0]?.id || 1, jumlah: 1, keterangan: '' }
+      { id_barang: barangList[0]?.id || mockBarang[0]?.id || 1, jumlah: 1, keterangan: '' }
     ]);
   };
 
@@ -160,7 +178,7 @@ export default function TransaksiKeluarPage() {
   const handleSave = () => {
     const timObj = TIM_PEMOHON_LIST.find(t => t.id === selectedTim) || TIM_PEMOHON_LIST[1];
     const preparedItems = formItems.map(fItem => {
-      const bObj = mockBarang.find(b => b.id === fItem.id_barang) || mockBarang[0];
+      const bObj = barangList.find(b => b.id === fItem.id_barang) || mockBarang.find(b => b.id === fItem.id_barang) || mockBarang[0];
       return {
         id_barang: fItem.id_barang,
         jumlah: Number(fItem.jumlah) || 1,
@@ -285,17 +303,45 @@ export default function TransaksiKeluarPage() {
         </div>
       </div>
 
-      {/* Search */}
-      <div className="card p-4">
-        <div className="relative">
+      {/* Search & Filter Dropdown (Tim & Barang) */}
+      <div className="card p-4 flex flex-col md:flex-row items-center gap-3">
+        <div className="relative flex-1 w-full">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-dark-300" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="input pl-10"
+            className="input pl-10 text-xs py-2 w-full"
             placeholder="Cari nomor surat, tim pemohon, atau nama barang..."
           />
+        </div>
+        <div className="flex items-center gap-2 w-full md:w-auto">
+          {/* Dropdown Filter Tim */}
+          <select
+            value={filterTim}
+            onChange={(e) => setFilterTim(e.target.value)}
+            className="input text-xs py-2 md:w-48 bg-white"
+          >
+            <option value="all">Semua Tim / Subbag</option>
+            {TIM_PEMOHON_LIST.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.nama_tim}
+              </option>
+            ))}
+          </select>
+          {/* Dropdown Filter Barang */}
+          <select
+            value={filterBarang}
+            onChange={(e) => setFilterBarang(e.target.value)}
+            className="input text-xs py-2 md:w-56 bg-white"
+          >
+            <option value="all">Semua Barang Persediaan</option>
+            {barangList.map((b) => (
+              <option key={b.id} value={String(b.id)}>
+                {b.nama_barang}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
@@ -517,14 +563,18 @@ export default function TransaksiKeluarPage() {
                       </div>
 
                       <div>
+                        <label className="input-label text-[11px] font-semibold text-dark-600 mb-1">
+                          Pilih Barang Persediaan <span className="text-red-500">*</span>
+                        </label>
                         <select
                           value={fItem.id_barang}
                           onChange={(e) => handleItemChange(idx, 'id_barang', Number(e.target.value))}
-                          className="input text-xs"
+                          className="input text-xs font-medium"
+                          required
                         >
-                          {mockBarang.map(b => (
+                          {barangList.map(b => (
                             <option key={b.id} value={b.id}>
-                              [{b.kode_barang}] {b.nama_barang} (Sisa Stok: {b.stok} {b.satuan?.nama_satuan})
+                              [{b.kode_barang}] {b.nama_barang} (Sisa Stok: {b.stok} {b.satuan?.nama_satuan || 'Buah'})
                             </option>
                           ))}
                         </select>

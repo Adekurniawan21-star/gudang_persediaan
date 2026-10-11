@@ -264,7 +264,7 @@ export default function LaporanPage() {
               >
                 {Array.from({ length: 12 }, (_, i) => (
                   <option key={i + 1} value={i + 1}>
-                    {getMonthName(i + 1)} {i + 1 === 8 ? '(Data Resmi Mbak Guspita)' : ''}
+                    {getMonthName(i + 1)}
                   </option>
                 ))}
               </select>
@@ -321,7 +321,7 @@ export default function LaporanPage() {
         {bulan === 8 && (
           <div className="bg-bps-blue-50 border border-bps-blue-200 rounded-lg p-3 text-xs text-bps-blue-800 flex items-center justify-between">
             <span>
-              ℹ️ Menampilkan <strong>81 item barang</strong> resmi dari Excel Rekapitulasi Persediaan Bulan Agustus 2026 (Mbak Guspita Karleni - BPS OKU Selatan).
+              ℹ️ Menampilkan <strong>81 item barang</strong> resmi dari Rekapitulasi Persediaan BPS Kabupaten OKU Selatan.
             </span>
             <span className="font-semibold text-bps-blue">Status: Terverifikasi</span>
           </div>
@@ -623,7 +623,7 @@ export default function LaporanPage() {
                   <th rowSpan={2} className="text-center w-16">Sisa</th>
                 </tr>
                 <tr>
-                  <th className="text-center text-dark-700">Umum</th>
+                  <th className="text-center text-dark-700">Subbag Umum</th>
                   <th className="text-center text-dark-700">Sosial</th>
                   <th className="text-center text-dark-700">IPDS</th>
                   <th className="text-center text-dark-700">Pertanian</th>
@@ -765,7 +765,7 @@ export default function LaporanPage() {
                       <th rowSpan={2} className="border border-black px-2 py-1 text-center w-10">Sisa</th>
                     </tr>
                     <tr className="bg-gray-50 text-[9px] text-gray-700 font-bold text-center">
-                      <th className="border border-black px-1 py-0.5">Umum</th>
+                      <th className="border border-black px-1 py-0.5">Subbag Umum</th>
                       <th className="border border-black px-1 py-0.5">Tim Sosial</th>
                       <th className="border border-black px-1 py-0.5">IPDS</th>
                       <th className="border border-black px-1 py-0.5">Pertanian</th>

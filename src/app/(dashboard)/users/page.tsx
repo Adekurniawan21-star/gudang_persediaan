@@ -681,7 +681,6 @@ export default function UsersPage() {
                     onChange={(e) => setFormData({ ...formData, bidang: e.target.value })}
                   >
                     <option value="Subbagian Umum">Subbagian Umum</option>
-                    <option value="Tim Umum">Tim Umum</option>
                     <option value="Tim Statistik Sosial">Tim Statistik Sosial</option>
                     <option value="Tim Statistik Distribusi">Tim Statistik Distribusi</option>
                     <option value="Tim Pertanian & Kehutanan">Tim Pertanian &amp; Kehutanan</option>

@@ -83,7 +83,7 @@ export const PENGELOLA_PERSEDIAAN = {
 
 export const TIM_PEMOHON_LIST: TimPemohon[] = [
   { id: 'kepala', nama_tim: 'Kepala BPS', penanggung_jawab: 'RIVAL ABDUL JABAR, S.ST., M.Si.', nip_pj: '19831122 200701 1003' },
-  { id: 'tim-umum', nama_tim: 'Tim Umum', penanggung_jawab: 'SURYA WAGITO, SST', nip_pj: '19910814 201412 1001' },
+  { id: 'tim-umum', nama_tim: 'Subbagian Umum', penanggung_jawab: 'SURYA WAGITO, SST', nip_pj: '19910814 201412 1001' },
   { id: 'tim-sosial', nama_tim: 'Tim Statistik Sosial', penanggung_jawab: 'FATONAH AMINI, S.Tr.Stat.', nip_pj: '19990317 202104 2001' },
   { id: 'tim-distribusi', nama_tim: 'Tim Statistik Distribusi', penanggung_jawab: 'USWAR M. ALGHIFARI A.P, S.Tr.Stat.', nip_pj: '19980512 202012 1002' },
   { id: 'tim-pertanian', nama_tim: 'Tim Pertanian & Kehutanan', penanggung_jawab: 'HERA YUDHO KARTIKO, SP', nip_pj: '19861024 201003 1002' },

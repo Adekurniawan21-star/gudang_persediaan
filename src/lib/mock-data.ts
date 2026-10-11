@@ -4,6 +4,7 @@
 // ==========================================
 
 import type { Barang, TransaksiMasuk, TransaksiKeluar, DashboardStats, ChartDataPoint, User, KartuKendali } from '@/types';
+import { DATA_REKAPITULASI_AGUSTUS } from './data-rekapitulasi-agustus';
 
 export const mockCurrentUser: User = {
   id: 'admin-001',
@@ -24,7 +25,7 @@ export const mockUsers: User[] = [
   { id: 'usr-003', name: 'Budi Santoso', nip: '199307252014011004', email: 'budi@bps-okus.go.id', role: 'user', bidang: 'Tim Statistik Distribusi', avatar_url: null, is_active: true, created_at: '2026-02-01' },
   { id: 'usr-004', name: 'Dewi Lestari', nip: '199408122015012005', email: 'dewi@bps-okus.go.id', role: 'user', bidang: 'Tim IPDS', avatar_url: null, is_active: true, created_at: '2026-02-01' },
   { id: 'usr-005', name: 'Riko Pratama', nip: '199510302016011006', email: 'riko@bps-okus.go.id', role: 'user', bidang: 'Tim Nerwilis', avatar_url: null, is_active: true, created_at: '2026-03-01' },
-  { id: 'usr-006', name: 'Maya Anggraini', nip: '199601172017012007', email: 'maya@bps-okus.go.id', role: 'user', bidang: 'Tim Umum', avatar_url: null, is_active: true, created_at: '2026-03-01' },
+  { id: 'usr-006', name: 'Maya Anggraini', nip: '199601172017012007', email: 'maya@bps-okus.go.id', role: 'user', bidang: 'Subbagian Umum', avatar_url: null, is_active: true, created_at: '2026-03-01' },
   { id: 'usr-007', name: 'Hendra Wijaya', nip: '199703082018011008', email: 'hendra@bps-okus.go.id', role: 'user', bidang: 'Tim PEK dan KTIP', avatar_url: null, is_active: true, created_at: '2026-04-01' },
   { id: 'usr-008', name: 'Putri Rahayu', nip: '199809212019012009', email: 'putri@bps-okus.go.id', role: 'user', bidang: 'Kepala', avatar_url: null, is_active: false, created_at: '2026-04-01' },
 ];
@@ -87,8 +88,51 @@ export const SAMPLE_BARANG_BPS: Barang[] = [
   },
 ];
 
-// Data Barang Resmi BPS Aktif
-export const mockBarang: Barang[] = [...SAMPLE_BARANG_BPS];
+// Gabungan 81 Item Resmi BPS Berdasarkan Rekapitulasi Fisik Agustus 2026
+export const ALL_81_BARANG_BPS: Barang[] = DATA_REKAPITULASI_AGUSTUS.map((item) => {
+  const existing = SAMPLE_BARANG_BPS.find(s => 
+    s.id === item.no || 
+    s.nama_barang.toLowerCase() === item.uraian_barang.toLowerCase()
+  );
+  if (existing) {
+    return {
+      ...existing,
+      stok: item.total_persediaan,
+    };
+  }
+
+  const lower = item.uraian_barang.toLowerCase();
+  let idKat = 1;
+  let namaKat = 'Alat Tulis Kantor';
+  if (lower.includes('toner') || lower.includes('tinta') || lower.includes('kabel') || lower.includes('flash disk') || lower.includes('memori') || lower.includes('lampu') || lower.includes('baterai') || lower.includes('maintenance')) {
+    idKat = 2;
+    namaKat = 'Peralatan Komputer / Elektronik';
+  } else if (lower.includes('rompi') || lower.includes('plastik dokumen') || lower.includes('kotak arsip')) {
+    idKat = 5;
+    namaKat = 'Perlengkapan Lapangan & Arsip';
+  }
+
+  return {
+    id: item.no,
+    kode_barang: String(item.no).padStart(6, '0'),
+    nama_barang: item.uraian_barang,
+    id_kategori: idKat,
+    id_satuan: 1,
+    id_lokasi: 2,
+    stok: item.total_persediaan,
+    stok_minimum: 5,
+    foto_url: null,
+    deskripsi: `Persediaan resmi BPS: ${item.uraian_barang}`,
+    created_at: '2025-01-01',
+    updated_at: '2026-08-31',
+    kategori: { id: idKat, nama_kategori: namaKat, deskripsi: null, created_at: '' },
+    satuan: { id: 1, nama_satuan: item.satuan, created_at: '' },
+    lokasi: { id: 2, nama_lokasi: 'Gudang ATK', deskripsi: null, created_at: '' },
+  };
+});
+
+// Data Barang Resmi BPS Aktif (81 Item Lengkap)
+export const mockBarang: Barang[] = ALL_81_BARANG_BPS;
 
 // Data Contoh Transaksi Masuk — per No. Dokumen (Master-Detail)
 export const SAMPLE_TRANSAKSI_MASUK: TransaksiMasuk[] = [
@@ -194,7 +238,7 @@ export const SAMPLE_TRANSAKSI_KELUAR: TransaksiKeluar[] = [
     no_dokumen: 'BK-2026/08/002',
     tanggal: '2026-08-27',
     tim_pemohon: 'tim-umum',
-    nama_tim: 'Tim Umum',
+    nama_tim: 'Subbagian Umum',
     penanggung_jawab: 'SURYA WAGITO, SST',
     nip_pj: '19910814 201412 1001',
     items: [
@@ -293,7 +337,7 @@ export const SAMPLE_TRANSAKSI_KELUAR: TransaksiKeluar[] = [
     no_dokumen: 'BK-2026/09/004',
     tanggal: '2026-09-30',
     tim_pemohon: 'tim-umum',
-    nama_tim: 'Tim Umum',
+    nama_tim: 'Subbagian Umum',
     penanggung_jawab: 'SURYA WAGITO, SST',
     nip_pj: '19910814 201412 1001',
     items: [
@@ -406,7 +450,7 @@ export const SAMPLE_KARTU_KENDALI: KartuKendali[] = [
       { id: 5, tanggal: '2026-06-10', no_referensi: 'BAST/006/VI/2026', uraian: 'Pembelian Pengadaan Juni', masuk: 48, keluar: 0, sisa: 70 },
       { id: 6, tanggal: '2026-06-25', no_referensi: 'BK-2026/06/003', uraian: 'Pengeluaran Juni', masuk: 0, keluar: 17, sisa: 53 },
       { id: 7, tanggal: '2026-07-20', no_referensi: 'BK-2026/07/003', uraian: 'Pengeluaran Juli', masuk: 0, keluar: 20, sisa: 33 },
-      { id: 8, tanggal: '2026-08-27', no_referensi: 'BK-2026/08/002', uraian: 'Permintaan Tim Umum (Kearsipan)', masuk: 0, keluar: 20, sisa: 13 },
+      { id: 8, tanggal: '2026-08-27', no_referensi: 'BK-2026/08/002', uraian: 'Permintaan Subbagian Umum (Kearsipan)', masuk: 0, keluar: 20, sisa: 13 },
       { id: 9, tanggal: '2026-08-28', no_referensi: 'BK-2026/08/003', uraian: 'Permintaan Tim Distribusi (Survei)', masuk: 0, keluar: 10, sisa: 3 },
     ],
   },
@@ -425,7 +469,7 @@ export const SAMPLE_KARTU_KENDALI: KartuKendali[] = [
       { id: 1, tanggal: '2026-01-02', no_referensi: 'BA-OPN/12/2025', uraian: 'Saldo 31 Desember 2025', masuk: 140, keluar: 0, sisa: 140 },
       { id: 2, tanggal: '2026-06-25', no_referensi: 'BK-2026/06/004', uraian: 'Pengeluaran Juni', masuk: 0, keluar: 25, sisa: 115 },
       { id: 3, tanggal: '2026-08-25', no_referensi: 'BK-2026/08/001', uraian: 'Permintaan Tim Sosial (80 buah)', masuk: 0, keluar: 80, sisa: 35 },
-      { id: 4, tanggal: '2026-08-27', no_referensi: 'BK-2026/08/002', uraian: 'Permintaan Tim Umum (7 buah)', masuk: 0, keluar: 7, sisa: 28 },
+      { id: 4, tanggal: '2026-08-27', no_referensi: 'BK-2026/08/002', uraian: 'Permintaan Subbagian Umum (7 buah)', masuk: 0, keluar: 7, sisa: 28 },
       { id: 5, tanggal: '2026-08-28', no_referensi: 'BK-2026/08/003', uraian: 'Permintaan Tim Distribusi (15 buah)', masuk: 0, keluar: 15, sisa: 13 },
     ],
   },
@@ -448,7 +492,7 @@ export const SAMPLE_KARTU_KENDALI: KartuKendali[] = [
       { id: 5, tanggal: '2026-06-25', no_referensi: 'BK-2026/06/005', uraian: 'Pengeluaran Juni', masuk: 0, keluar: 36, sisa: 464 },
       { id: 6, tanggal: '2026-07-25', no_referensi: 'BK-2026/07/005', uraian: 'Pengeluaran Juli', masuk: 0, keluar: 19, sisa: 445 },
       { id: 7, tanggal: '2026-08-25', no_referensi: 'BK-2026/08/001', uraian: 'Permintaan Tim Statistik Sosial (40 buah)', masuk: 0, keluar: 40, sisa: 405 },
-      { id: 8, tanggal: '2026-08-27', no_referensi: 'BK-2026/08/002', uraian: 'Permintaan Tim Umum (7 buah)', masuk: 0, keluar: 7, sisa: 398 },
+      { id: 8, tanggal: '2026-08-27', no_referensi: 'BK-2026/08/002', uraian: 'Permintaan Subbagian Umum (7 buah)', masuk: 0, keluar: 7, sisa: 398 },
       { id: 9, tanggal: '2026-08-28', no_referensi: 'BK-2026/08/003', uraian: 'Permintaan Tim Distribusi (10 buah)', masuk: 0, keluar: 10, sisa: 388 },
       { id: 10, tanggal: '2026-08-29', no_referensi: 'BK-2026/08/004', uraian: 'Permintaan Tim Neraca (5 buah)', masuk: 0, keluar: 5, sisa: 383 },
       { id: 11, tanggal: '2026-08-30', no_referensi: 'BK-2026/08/005', uraian: 'Permintaan Tim Lainnya (IPDS 3, Pertanian 4, PEK 5)', masuk: 0, keluar: 12, sisa: 371 },

@@ -441,10 +441,16 @@ export default function KartuKendaliPage() {
           {/* Sidebar Pilih Barang */}
           <div className="lg:col-span-1">
             <div className="card p-4">
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center justify-between mb-3 pb-2 border-b border-dark-100">
                 <h3 className="text-xs font-bold text-dark-700 uppercase tracking-wider">Pilih Barang</h3>
-                <span className="text-[10px] text-dark-400">{filteredBarang.length} barang</span>
-                           {filteredBarang.length === 0 && (
+                <span className="text-[10px] bg-dark-100 text-dark-600 px-2 py-0.5 rounded-full font-semibold">
+                  {filteredBarang.length} barang
+                </span>
+              </div>
+
+              {/* Daftar Tombol Barang — Scroll Vertikal Rapi */}
+              <div className="space-y-1.5 max-h-[620px] overflow-y-auto pr-1">
+                {filteredBarang.length === 0 && (
                   <div className="text-center py-8 text-dark-400 text-xs px-2">
                     <Package className="w-8 h-8 text-dark-200 mx-auto mb-2" />
                     <p className="font-semibold text-dark-700">Belum ada barang persediaan</p>
@@ -462,17 +468,17 @@ export default function KartuKendaliPage() {
                       key={b.id}
                       onClick={() => setSelectedBarangId(b.id)}
                       className={cn(
-                        'w-full text-left p-2.5 rounded-lg transition-all duration-150 text-xs',
+                        'w-full text-left p-2.5 rounded-lg transition-all duration-150 text-xs border',
                         isSelected
-                          ? 'bg-bps-blue text-white shadow-sm font-semibold'
-                          : 'hover:bg-dark-50 text-dark-700 border border-transparent'
+                          ? 'bg-bps-blue text-white shadow-sm font-semibold border-bps-blue-600'
+                          : 'hover:bg-dark-50 text-dark-700 border-dark-100/70 bg-white'
                       )}
                     >
                       <div className="flex items-center justify-between">
                         <span className="truncate">{b.nama_barang}</span>
                         <span className={cn(
                           'font-mono text-[10px] px-1 rounded',
-                          isSelected ? 'bg-bps-blue-700 text-white' : 'text-dark-400 bg-dark-50'
+                          isSelected ? 'bg-bps-blue-700 text-white' : 'text-dark-500 bg-dark-100'
                         )}>
                           {b.kode_barang || '-'}
                         </span>
@@ -483,8 +489,8 @@ export default function KartuKendaliPage() {
                         </span>
                         {hasCard && (
                           <span className={cn(
-                            'px-1 rounded',
-                            isSelected ? 'bg-bps-blue-600 text-white' : 'text-emerald-700 bg-emerald-50'
+                            'px-1.5 py-0.2 rounded font-medium text-[9px]',
+                            isSelected ? 'bg-bps-blue-600 text-white' : 'text-emerald-700 bg-emerald-50 border border-emerald-200'
                           )}>
                             Ada Mutasi
                           </span>

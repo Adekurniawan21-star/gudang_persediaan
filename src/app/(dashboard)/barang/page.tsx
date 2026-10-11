@@ -892,6 +892,27 @@ export default function BarangPage() {
             </div>
 
             <form onSubmit={handleQuickRequestSubmit} className="p-5 space-y-4">
+              {/* Dropdown Pilihan Item Barang */}
+              <div>
+                <label className="input-label text-xs font-semibold text-dark-700">
+                  Pilih Item Barang Persediaan <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={quickRequestItem.id}
+                  onChange={(e) => {
+                    const selected = barangList.find((b) => b.id === Number(e.target.value));
+                    if (selected) setQuickRequestItem(selected);
+                  }}
+                  className="input text-xs font-medium"
+                >
+                  {barangList.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      [{b.kode_barang}] {b.nama_barang} (Sisa Stok: {b.stok} {b.satuan?.nama_satuan || 'Buah'})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               {/* Info Barang yang Diminta */}
               <div className="p-3.5 bg-bps-blue-50/60 rounded-xl border border-bps-blue/15 flex items-start gap-3">
                 <Package className="w-5 h-5 text-bps-blue flex-shrink-0 mt-0.5" />
