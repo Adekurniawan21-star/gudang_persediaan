@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
-import { SAMPLE_BARANG_BPS } from '@/lib/mock-data';
+import { initOrMigrateStore } from '@/lib/data-management';
 import { cn } from '@/lib/utils';
 
 interface UserData {
@@ -61,15 +61,8 @@ export default function DashboardLayout({
 
     loadUser();
 
-    // Inisialisasi awal data barang resmi BPS
-    try {
-      const storedBarang = localStorage.getItem('sipersedia_barang_list');
-      if (!storedBarang || storedBarang === '[]') {
-        localStorage.setItem('sipersedia_barang_list', JSON.stringify(SAMPLE_BARANG_BPS));
-      }
-    } catch (e) {
-      console.error(e);
-    }
+    // Inisialisasi awal / migrasi data bersih untuk pengujian fitur per fitur
+    initOrMigrateStore();
 
     const handleProfileUpdate = () => {
       loadUser();

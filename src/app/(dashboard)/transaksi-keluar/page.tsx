@@ -141,13 +141,27 @@ export default function TransaksiKeluarPage() {
   const confirmDelete = () => {
     if (deleteCandidate) {
       const docNo = deleteCandidate.no_dokumen;
+
+      // Kembalikan stok master barang yang pernah dikeluarkan
+      let nextBarang = [...barangList];
+      deleteCandidate.items.forEach(itm => {
+        nextBarang = nextBarang.map(b => {
+          if (b.id === itm.id_barang) {
+            return { ...b, stok: b.stok + itm.jumlah };
+          }
+          return b;
+        });
+      });
+      setBarangList(nextBarang);
+      localStorage.setItem('sipersedia_barang_list', JSON.stringify(nextBarang));
+
       const updated = transaksiList.filter(t => t.id !== deleteCandidate.id);
       setTransaksiList(updated);
       localStorage.setItem('sipersedia_transaksi_keluar', JSON.stringify(updated));
       setDeleteCandidate(null);
       setNotification({
         type: 'success',
-        message: `Surat permintaan ${docNo} berhasil dihapus.`,
+        message: `Surat permintaan ${docNo} berhasil dihapus & stok barang dikembalikan.`,
       });
       setTimeout(() => setNotification(null), 4000);
     }
@@ -224,10 +238,24 @@ export default function TransaksiKeluarPage() {
       const updatedList = [newTrx, ...transaksiList];
       setTransaksiList(updatedList);
       localStorage.setItem('sipersedia_transaksi_keluar', JSON.stringify(updatedList));
+
+      // Kurangi stok master barang sesuai jumlah barang keluar
+      let nextBarang = [...barangList];
+      preparedItems.forEach(pItem => {
+        nextBarang = nextBarang.map(b => {
+          if (b.id === pItem.id_barang) {
+            return { ...b, stok: Math.max(0, b.stok - pItem.jumlah) };
+          }
+          return b;
+        });
+      });
+      setBarangList(nextBarang);
+      localStorage.setItem('sipersedia_barang_list', JSON.stringify(nextBarang));
+
       setShowModal(false);
       setNotification({
         type: 'success',
-        message: `Surat permintaan ${newTrx.no_dokumen} berhasil diajukan.`,
+        message: `Surat permintaan ${newTrx.no_dokumen} berhasil diajukan dan stok persediaan telah disesuaikan.`,
       });
       setTimeout(() => setNotification(null), 4000);
       setShowPrintPreview(newTrx);
@@ -449,7 +477,10 @@ export default function TransaksiKeluarPage() {
                 <tr>
                   <td colSpan={7} className="text-center py-12">
                     <FileText className="w-12 h-12 text-dark-200 mx-auto mb-3" />
-                    <p className="text-dark-400 text-sm">Belum ada data permintaan barang</p>
+                    <p className="text-dark-700 font-semibold text-sm">Belum Ada Permintaan / Pengeluaran Barang</p>
+                    <p className="text-dark-400 text-xs mt-1 max-w-md mx-auto leading-relaxed">
+                      Data transaksi telah di-reset bersih. Silakan klik tombol <strong>&quot;{isUser ? 'Buat Permintaan Baru' : 'Catat Barang Keluar'}&quot;</strong> di atas untuk mencoba simulasi alur Surat Permintaan Barang (SPB).
+                    </p>
                   </td>
                 </tr>
               )}

@@ -411,8 +411,12 @@ export default function TransaksiMasukPage() {
 
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="text-center py-10 text-dark-400 text-sm">
-                    Tidak ada transaksi masuk ditemukan.
+                  <td colSpan={7} className="text-center py-12">
+                    <ArrowDownToLine className="w-12 h-12 text-dark-200 mx-auto mb-3" />
+                    <p className="text-dark-700 font-semibold text-sm">Belum Ada Transaksi Barang Masuk</p>
+                    <p className="text-dark-400 text-xs mt-1 max-w-md mx-auto leading-relaxed">
+                      Data transaksi telah di-reset bersih. Silakan klik tombol <strong>&quot;Tambah Transaksi&quot;</strong> di atas untuk mencoba mencatat penerimaan barang masuk ke gudang.
+                    </p>
                   </td>
                 </tr>
               )}

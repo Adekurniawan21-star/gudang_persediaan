@@ -5,11 +5,12 @@ import { useSearchParams } from 'next/navigation';
 import {
   BarChart3, Shield, Database, Globe, Info, User, Lock,
   Camera, CheckCircle2, Save, X, Building, KeyRound, Sparkles,
-  Users, Copy, Check, CheckCircle, ExternalLink, Trash2, Image as ImageIcon
+  Users, Copy, Check, CheckCircle, ExternalLink, Trash2, Image as ImageIcon,
+  RotateCcw, RefreshCw
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { TIM_PEMOHON_LIST, PEJABAT_KPB, PENGELOLA_PERSEDIAAN } from '@/types';
-import { SAMPLE_BARANG_BPS, SAMPLE_TRANSAKSI_MASUK, SAMPLE_TRANSAKSI_KELUAR } from '@/lib/mock-data';
+import { resetToTestingMode, loadSimulationData, wipeAllData } from '@/lib/data-management';
 
 interface UserProfile {
   id: string;
@@ -199,28 +200,26 @@ function PengaturanContent() {
     setTimeout(() => setCopiedNip(null), 2500);
   };
 
-  const handleClearAllData = () => {
-    if (confirm('Apakah Anda yakin ingin mengosongkan semua data persediaan dan transaksi? Anda dapat mulai mencoba input fitur per fitur dari awal!')) {
-      localStorage.setItem('sipersedia_barang_list', JSON.stringify([]));
-      localStorage.setItem('sipersedia_transaksi_masuk', JSON.stringify([]));
-      localStorage.setItem('sipersedia_transaksi_keluar', JSON.stringify([]));
-      localStorage.setItem('sipersedia_clean_start_v1', 'true');
-      Object.keys(localStorage).forEach(key => {
-        if (key.startsWith('sipersedia_laporan_data_')) {
-          localStorage.removeItem(key);
-        }
-      });
-      alert('Semua data persediaan dan transaksi berhasil dikosongkan. Halaman akan dimuat ulang.');
+  const handleResetTestingData = () => {
+    if (confirm('Reset ke Mode Uji Coba Bersih?\n\n✓ 81 Master Barang resmi BPS disiapkan dengan stok baseline\n✓ Transaksi Masuk dikosongkan (0 dokumen)\n✓ Permintaan / Transaksi Keluar dikosongkan (0 dokumen)\n✓ Kartu Kendali bersih siap menerima mutasi baru\n\nLanjutkan reset?')) {
+      resetToTestingMode();
+      alert('Data persediaan berhasil di-reset ke kondisi awal siap uji coba fitur!');
       window.location.reload();
     }
   };
 
   const handleLoadSampleData = () => {
-    if (confirm('Muat kembali data sampel resmi BPS OKU Selatan (81 barang rekapitulasi & transaksi contoh)?')) {
-      localStorage.setItem('sipersedia_barang_list', JSON.stringify(SAMPLE_BARANG_BPS));
-      localStorage.setItem('sipersedia_transaksi_masuk', JSON.stringify(SAMPLE_TRANSAKSI_MASUK));
-      localStorage.setItem('sipersedia_transaksi_keluar', JSON.stringify(SAMPLE_TRANSAKSI_KELUAR));
-      alert('Data sampel resmi BPS berhasil dimuat. Halaman akan dimuat ulang.');
+    if (confirm('Muat kembali data simulasi lengkap (81 barang resmi BPS + contoh transaksi masuk & pengeluaran)?')) {
+      loadSimulationData();
+      alert('Data sampel simulasi resmi BPS berhasil dimuat!');
+      window.location.reload();
+    }
+  };
+
+  const handleClearAllData = () => {
+    if (confirm('PERINGATAN: Apakah Anda yakin ingin mengosongkan semua data (0 barang, 0 transaksi)? Anda harus memasukkan master barang secara manual dari nol.')) {
+      wipeAllData();
+      alert('Seluruh data persediaan dan transaksi berhasil dikosongkan.');
       window.location.reload();
     }
   };
@@ -678,32 +677,87 @@ function PengaturanContent() {
 
             {/* Bagian Uji Coba & Manajemen Data Persediaan */}
             <div className="mt-6 pt-5 border-t border-dark-100">
-              <h4 className="text-sm font-bold text-dark-800 mb-1 flex items-center gap-2">
-                <Database className="w-4 h-4 text-bps-blue" />
-                Manajemen & Uji Coba Data Persediaan
-              </h4>
+              <div className="flex items-center justify-between gap-4 mb-2">
+                <h4 className="text-sm font-bold text-dark-800 flex items-center gap-2">
+                  <Database className="w-4 h-4 text-bps-blue" />
+                  Manajemen &amp; Reset Data Persediaan (Uji Coba Sistem)
+                </h4>
+                <span className="badge bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold">
+                  Fitur Pengujian
+                </span>
+              </div>
               <p className="text-xs text-dark-400 mb-4">
-                Fitur ini memungkinkan Anda mengosongkan seluruh data untuk menguji alur fitur per fitur dari awal, atau memuat kembali 81 data resmi BPS.
+                Pilih opsi di bawah untuk mengatur ulang data persediaan sesuai kebutuhan pengujian alur sistem per fitur.
               </p>
 
-              <div className="flex flex-wrap items-center gap-3">
-                <button
-                  type="button"
-                  onClick={handleClearAllData}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 transition-all shadow-xs"
-                >
-                  <Trash2 className="w-4 h-4 text-red-600" />
-                  <span>Kosongkan Semua Data (Mulai dari Nol)</span>
-                </button>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+                {/* Opsi 1: Reset Bersih Siap Uji Coba (Rekomendasi Utama) */}
+                <div className="p-4 rounded-2xl border-2 border-emerald-300 bg-emerald-50/50 flex flex-col justify-between relative overflow-hidden shadow-xs hover:border-emerald-400 transition-all">
+                  <div className="absolute top-2 right-2">
+                    <span className="text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-emerald-600 text-white">
+                      Rekomendasi
+                    </span>
+                  </div>
+                  <div>
+                    <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center mb-2.5">
+                      <RotateCcw className="w-4 h-4" />
+                    </div>
+                    <h5 className="text-xs font-bold text-dark-800">Mode Uji Coba Bersih</h5>
+                    <p className="text-[11px] text-dark-500 mt-1 leading-relaxed">
+                      81 Master barang siap dengan stok baseline. Transaksi masuk &amp; keluar 0. Siap untuk uji coba input transaksi masuk, permintaan (SPB), persetujuan, dan kartu kendali.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleResetTestingData}
+                    className="mt-4 w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition-all shadow-xs active:scale-95"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span>Reset untuk Uji Coba</span>
+                  </button>
+                </div>
 
-                <button
-                  type="button"
-                  onClick={handleLoadSampleData}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-bps-blue bg-bps-blue-50 hover:bg-bps-blue-100 border border-bps-blue/20 transition-all shadow-xs"
-                >
-                  <Database className="w-4 h-4 text-bps-blue" />
-                  <span>Muat Data Sampel BPS (81 Barang Resmi)</span>
-                </button>
+                {/* Opsi 2: Muat Data Simulasi Lengkap */}
+                <div className="p-4 rounded-2xl border border-bps-blue/20 bg-bps-blue-50/40 flex flex-col justify-between shadow-xs hover:border-bps-blue/40 transition-all">
+                  <div>
+                    <div className="w-8 h-8 rounded-xl bg-bps-blue-100 text-bps-blue flex items-center justify-center mb-2.5">
+                      <Database className="w-4 h-4" />
+                    </div>
+                    <h5 className="text-xs font-bold text-dark-800">Data Simulasi Penuh</h5>
+                    <p className="text-[11px] text-dark-500 mt-1 leading-relaxed">
+                      Memuat 81 barang BPS lengkap beserta contoh riwayat transaksi masuk dan keluar (Agustus - September) untuk demonstrasi instan.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleLoadSampleData}
+                    className="mt-4 w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-bps-blue bg-white hover:bg-bps-blue-50 border border-bps-blue/30 transition-all shadow-xs active:scale-95"
+                  >
+                    <Database className="w-3.5 h-3.5" />
+                    <span>Muat Data Simulasi</span>
+                  </button>
+                </div>
+
+                {/* Opsi 3: Kosongkan Total */}
+                <div className="p-4 rounded-2xl border border-red-200 bg-red-50/40 flex flex-col justify-between shadow-xs hover:border-red-300 transition-all">
+                  <div>
+                    <div className="w-8 h-8 rounded-xl bg-red-100 text-red-600 flex items-center justify-center mb-2.5">
+                      <Trash2 className="w-4 h-4" />
+                    </div>
+                    <h5 className="text-xs font-bold text-dark-800">Kosongkan Total</h5>
+                    <p className="text-[11px] text-dark-500 mt-1 leading-relaxed">
+                      Mengosongkan semua data (0 barang, 0 transaksi masuk, 0 transaksi keluar) jika ingin mencoba input master barang dari formulir kosong.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleClearAllData}
+                    className="mt-4 w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-red-700 bg-white hover:bg-red-50 border border-red-300 transition-all shadow-xs active:scale-95"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Kosongkan Semua Data</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>

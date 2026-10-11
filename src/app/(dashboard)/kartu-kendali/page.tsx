@@ -22,7 +22,7 @@ const BULAN_NAMES = [
 export default function KartuKendaliPage() {
   const [activeTab, setActiveTab] = useState<'kartu' | 'daftar'>('kartu');
   const [selectedBarangId, setSelectedBarangId] = useState<number>(17); // Default Stabillo (ID 17) sesuai PDF 1 Hal 3
-  const [selectedYear, setSelectedYear] = useState<number>(2025);
+  const [selectedYear, setSelectedYear] = useState<number>(2026);
   const [searchQuery, setSearchQuery] = useState('');
   const [showPrintPreview, setShowPrintPreview] = useState(false);
   const [previewMode, setPreviewMode] = useState<'kartu' | 'daftar'>('kartu');

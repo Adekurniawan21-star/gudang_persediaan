@@ -14,6 +14,7 @@ import {
   FileText,
   Boxes,
   CheckCircle2,
+  RotateCcw,
 } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -49,8 +50,16 @@ export default function DashboardPage() {
     if (b) {
       try {
         const parsed = JSON.parse(b);
-        if (Array.isArray(parsed)) setBarangList(parsed);
-      } catch (e) {}
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setBarangList(parsed);
+        } else {
+          setBarangList(mockBarang);
+        }
+      } catch (e) {
+        setBarangList(mockBarang);
+      }
+    } else {
+      setBarangList(mockBarang);
     }
 
     const m = localStorage.getItem('sipersedia_transaksi_masuk');
@@ -171,10 +180,22 @@ export default function DashboardPage() {
         </div>
 
         {/* Status Bar */}
-        <div className="bg-black/20 px-6 py-2 border-t border-white/10 flex items-center text-[11px] text-white/70">
+        <div className="bg-black/25 px-6 py-2.5 border-t border-white/10 flex flex-wrap items-center justify-between gap-3 text-[11px] text-white/80">
           <div className="flex items-center gap-2">
             <ShieldCheck className="w-3.5 h-3.5 text-bps-green" />
             <span>Koneksi Sistem Aktif · Database Supabase BPS OKU Selatan</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-white/70">
+              Mode Uji Coba: <strong className="text-white font-bold">{totalBarang} Master Barang Siap</strong> · <strong className="text-white font-bold">{totalTransaksiMasuk} Transaksi Masuk</strong> · <strong className="text-white font-bold">{totalTransaksiKeluar} Permintaan</strong>
+            </span>
+            <Link
+              href="/pengaturan?tab=sistem"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/15 hover:bg-white/25 text-white font-semibold transition-all border border-white/20 active:scale-95"
+            >
+              <RotateCcw className="w-3 h-3" />
+              <span>Reset Data Uji Coba</span>
+            </Link>
           </div>
         </div>
       </div>
