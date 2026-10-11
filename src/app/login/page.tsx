@@ -12,7 +12,6 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [activeRoleTab, setActiveRoleTab] = useState<'admin' | 'user' | null>(null);
 
   const performLogin = (role: 'admin' | 'user') => {
     if (role === 'admin') {
@@ -63,20 +62,27 @@ export default function LoginPage() {
       return;
     }
 
-    setError('Username atau password salah. Gunakan kredensial yang tertera di bawah.');
-    setIsLoading(false);
-  };
-
-  const selectRole = (role: 'admin' | 'user') => {
-    setActiveRoleTab(role);
-    setError('');
-    if (role === 'admin') {
-      setUsernameOrEmail('admin_persediaan');
-      setPassword('admin123');
-    } else {
-      setUsernameOrEmail('pegawai');
-      setPassword('pegawai123');
+    // Cek di database user terdaftar jika ada
+    try {
+      const storedUsers = localStorage.getItem('sipersedia_users_list');
+      if (storedUsers) {
+        const userList = JSON.parse(storedUsers);
+        const matched = userList.find((u: any) =>
+          (u.email?.toLowerCase() === input || u.nip === input || u.name?.toLowerCase() === input) &&
+          (u.password ? u.password === pass : (pass === 'user123' || pass === 'admin123'))
+        );
+        if (matched) {
+          localStorage.setItem('sipersedia_user', JSON.stringify(matched));
+          router.push('/dashboard');
+          return;
+        }
+      }
+    } catch (e) {
+      console.error(e);
     }
+
+    setError('Username atau password tidak valid. Silakan periksa kembali.');
+    setIsLoading(false);
   };
 
   return (
@@ -122,40 +128,11 @@ export default function LoginPage() {
           <div className="h-1.5 w-full bg-gradient-to-r from-bps-blue via-bps-orange to-bps-green" />
 
           <div className="p-6 sm:p-8">
-            <div className="text-center mb-5">
+            <div className="text-center mb-6">
               <h2 className="text-lg font-bold text-dark-800">Masuk ke Sistem</h2>
               <p className="text-dark-400 text-xs mt-1">
-                Silakan masuk menggunakan kredensial akun Anda
+                Silakan masuk menggunakan kredensial akun kedinasan Anda
               </p>
-            </div>
-
-            {/* Role Shortcut Tabs */}
-            <div className="grid grid-cols-2 gap-2 mb-5 p-1 rounded-xl bg-dark-50 border border-dark-100">
-              <button
-                type="button"
-                onClick={() => selectRole('admin')}
-                className={`py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
-                  activeRoleTab === 'admin'
-                    ? 'bg-gradient-to-r from-bps-blue to-bps-blue-700 text-white shadow-md'
-                    : 'text-dark-600 hover:text-bps-blue hover:bg-white/80'
-                }`}
-              >
-                <div className="w-2 h-2 rounded-full bg-bps-orange" />
-                <span>Admin Persediaan</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => selectRole('user')}
-                className={`py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
-                  activeRoleTab === 'user'
-                    ? 'bg-gradient-to-r from-bps-blue-600 to-bps-blue text-white shadow-md'
-                    : 'text-dark-600 hover:text-bps-blue hover:bg-white/80'
-                }`}
-              >
-                <div className="w-2 h-2 rounded-full bg-bps-blue" />
-                <span>Pegawai</span>
-              </button>
             </div>
 
             {error && (

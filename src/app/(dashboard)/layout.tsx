@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
 import { SAMPLE_BARANG_BPS } from '@/lib/mock-data';
@@ -21,6 +21,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [user, setUser] = useState<UserData | null>(null);
@@ -31,14 +32,29 @@ export default function DashboardLayout({
     const loadUser = () => {
       const stored = localStorage.getItem('sipersedia_user');
       if (!stored) {
-        router.push('/login');
+        router.replace('/login');
         return;
       }
       try {
         const parsed = JSON.parse(stored);
+        // Proteksi rute khusus Admin jika pengguna login sebagai Pegawai (User)
+        const ADMIN_ONLY_ROUTES = [
+          '/users',
+          '/transaksi-masuk',
+          '/laporan',
+          '/kartu-kendali',
+          '/kategori',
+          '/satuan',
+          '/lokasi'
+        ];
+        if (parsed.role !== 'admin' && ADMIN_ONLY_ROUTES.some(r => pathname.startsWith(r))) {
+          router.replace('/dashboard');
+          return;
+        }
         setUser(parsed);
       } catch {
-        router.push('/login');
+        router.replace('/login');
+        return;
       }
       setIsLoading(false);
     };
