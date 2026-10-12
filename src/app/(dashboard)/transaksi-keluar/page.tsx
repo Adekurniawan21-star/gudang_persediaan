@@ -262,6 +262,15 @@ export default function TransaksiKeluarPage() {
     }
   };
 
+  const handlePrint = () => {
+    const originalTitle = document.title;
+    document.title = ' ';
+    window.print();
+    setTimeout(() => {
+      document.title = originalTitle;
+    }, 1000);
+  };
+
   return (
     <div className="page-enter space-y-6">
       {/* Header — Dinamis sesuai Role Admin vs User */}
@@ -744,7 +753,7 @@ export default function TransaksiKeluarPage() {
                     title="Pilih tanggal cetak dokumen (tanggal tanda tangan akan otomatis menyesuaikan)"
                   />
                 </div>
-                <button onClick={() => window.print()} className="btn-primary text-xs py-2 px-3">
+                <button onClick={handlePrint} className="btn-primary text-xs py-2 px-3">
                   <Printer className="w-4 h-4" /> Cetak Dokumen
                 </button>
                 <button onClick={() => setShowPrintPreview(null)} className="p-1.5 rounded-lg text-dark-400 hover:bg-dark-50">
@@ -752,6 +761,16 @@ export default function TransaksiKeluarPage() {
                 </button>
               </div>
             </div>
+
+            {/* Injeksi Style Cetak: Transaksi Keluar / SPB Harus A4 PORTRAIT */}
+            <style dangerouslySetInnerHTML={{ __html: `
+              @media print {
+                @page {
+                  size: A4 portrait !important;
+                  margin: 10mm 12mm 10mm 12mm !important;
+                }
+              }
+            `}} />
 
             <div className="p-8 text-black bg-white" id="print-area">
               {/* KOP SURAT RESMI BPS */}
@@ -829,15 +848,17 @@ export default function TransaksiKeluarPage() {
                 </tbody>
               </table>
 
-              {/* Tanda Tangan Format Resmi BPS - Sejajar dengan Tabel & Rapi Tengah */}
+              {/* Tanda Tangan Format Resmi BPS - Garis Mengikuti Panjang Nama */}
               <div className="w-full flex items-start justify-between text-xs text-black mt-8 pt-2">
                 {/* Kolom Kiri: Administrator Gudang */}
                 <div className="w-72 text-center flex flex-col items-center">
                   <p className="font-semibold text-black">Administrator Gudang</p>
                   <p className="font-semibold text-black">Kuasa Pengguna Barang</p>
                   <div className="h-16" />
-                  <p className="border-b border-black w-60 pb-0.5 font-bold text-black text-center">
-                    Guspita Karleni, S.Si
+                  <p className="text-center">
+                    <span className="border-b border-black pb-0.5 font-bold text-black inline-block">
+                      Guspita Karleni, S.Si
+                    </span>
                   </p>
                   <p className="mt-1 text-black font-medium text-[11px] text-center">NIP. 19970806 202521 2039</p>
                 </div>
@@ -847,8 +868,10 @@ export default function TransaksiKeluarPage() {
                   <p className="text-black font-medium">{formatTanggalTandaTangan(tglCetakDokumen)}</p>
                   <p className="font-semibold text-black">Penanggung Jawab</p>
                   <div className="h-16" />
-                  <p className="border-b border-black w-60 pb-0.5 font-bold text-black text-center">
-                    {showPrintPreview.penanggung_jawab || '............................................................'}
+                  <p className="text-center">
+                    <span className="border-b border-black pb-0.5 font-bold text-black inline-block">
+                      {showPrintPreview.penanggung_jawab || '............................................................'}
+                    </span>
                   </p>
                   <p className="mt-1 text-black font-medium text-[11px] text-center">NIP. {showPrintPreview.nip_pj || '....................................'}</p>
                 </div>

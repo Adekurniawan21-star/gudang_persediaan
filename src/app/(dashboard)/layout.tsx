@@ -68,11 +68,27 @@ export default function DashboardLayout({
       loadUser();
     };
 
+    // Bersihkan judul 'SIPERSEDIA' saat mencetak dokumen agar header browser tidak memunculkan teks sipersedia
+    let savedTitle = '';
+    const handleBeforePrint = () => {
+      savedTitle = document.title;
+      document.title = ' ';
+    };
+    const handleAfterPrint = () => {
+      if (savedTitle) {
+        document.title = savedTitle;
+      }
+    };
+
     window.addEventListener('storage', handleProfileUpdate);
     window.addEventListener('profileUpdated', handleProfileUpdate);
+    window.addEventListener('beforeprint', handleBeforePrint);
+    window.addEventListener('afterprint', handleAfterPrint);
     return () => {
       window.removeEventListener('storage', handleProfileUpdate);
       window.removeEventListener('profileUpdated', handleProfileUpdate);
+      window.removeEventListener('beforeprint', handleBeforePrint);
+      window.removeEventListener('afterprint', handleAfterPrint);
     };
   }, [router]);
 

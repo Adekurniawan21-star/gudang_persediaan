@@ -266,6 +266,15 @@ export default function TransaksiMasukPage() {
     showToast(`Transaksi ${targetDoc} berhasil dihapus & stok disesuaikan.`, 'info');
   };
 
+  const handlePrint = () => {
+    const originalTitle = document.title;
+    document.title = ' ';
+    window.print();
+    setTimeout(() => {
+      document.title = originalTitle;
+    }, 1000);
+  };
+
   return (
     <div className="page-enter space-y-6">
       {/* Header */}
@@ -660,7 +669,7 @@ export default function TransaksiMasukPage() {
                     className="bg-transparent font-semibold text-dark-800 focus:outline-none cursor-pointer"
                   />
                 </div>
-                <button onClick={() => window.print()} className="btn-primary text-xs py-2 px-3">
+                <button onClick={handlePrint} className="btn-primary text-xs py-2 px-3">
                   <Printer className="w-4 h-4" />
                   Cetak Dokumen
                 </button>
@@ -669,6 +678,16 @@ export default function TransaksiMasukPage() {
                 </button>
               </div>
             </div>
+
+            {/* Injeksi Style Cetak: Transaksi Masuk Harus A4 PORTRAIT */}
+            <style dangerouslySetInnerHTML={{ __html: `
+              @media print {
+                @page {
+                  size: A4 portrait !important;
+                  margin: 10mm 12mm 10mm 12mm !important;
+                }
+              }
+            `}} />
 
             <div className="p-8 text-black bg-white" id="print-area">
               {/* KOP SURAT RESMI BPS */}
@@ -753,8 +772,10 @@ export default function TransaksiMasukPage() {
                   <p className="text-black font-medium">{formatTanggalTandaTangan(tglCetakDokumen)}</p>
                   <p className="font-semibold text-black">Petugas Pengelola Persediaan</p>
                   <div className="h-16" />
-                  <p className="font-bold text-black border-b border-black w-60 pb-0.5 text-center">
-                    Guspita Karleni, S.Si
+                  <p className="text-center">
+                    <span className="font-bold text-black border-b border-black pb-0.5 inline-block">
+                      Guspita Karleni, S.Si
+                    </span>
                   </p>
                   <p className="text-[11px] text-black mt-1 font-medium text-center">NIP. 19970806 202521 2039</p>
                 </div>

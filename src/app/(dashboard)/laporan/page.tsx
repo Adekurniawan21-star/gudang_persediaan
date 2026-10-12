@@ -211,6 +211,15 @@ export default function LaporanPage() {
     });
   };
 
+  const handlePrint = () => {
+    const originalTitle = document.title;
+    document.title = ' ';
+    window.print();
+    setTimeout(() => {
+      document.title = originalTitle;
+    }, 1000);
+  };
+
   return (
     <div className="page-enter space-y-6">
       {/* Header */}
@@ -681,7 +690,7 @@ export default function LaporanPage() {
                     title="Pilih tanggal cetak (hari dan tanggal pada dokumen akan menyesuaikan otomatis)"
                   />
                 </div>
-                <button onClick={() => window.print()} className="btn-primary text-xs py-2 px-3">
+                <button onClick={handlePrint} className="btn-primary text-xs py-2 px-3">
                   <Printer className="w-4 h-4" /> Cetak Dokumen
                 </button>
                 <button onClick={() => setShowPreview(false)} className="p-1.5 rounded-lg text-dark-400 hover:bg-dark-50">
@@ -689,6 +698,16 @@ export default function LaporanPage() {
                 </button>
               </div>
             </div>
+
+            {/* Injeksi Style Cetak: Laporan Harus A4 PORTRAIT */}
+            <style dangerouslySetInnerHTML={{ __html: `
+              @media print {
+                @page {
+                  size: A4 portrait !important;
+                  margin: 10mm 12mm 10mm 12mm !important;
+                }
+              }
+            `}} />
 
             <div className="p-8 text-black bg-white" id="print-area">
               {/* KOP SURAT RESMI BPS */}
@@ -795,7 +814,7 @@ export default function LaporanPage() {
                 </table>
               )}
 
-              {/* Tanda Tangan Resmi Sesuai Format BPS - Gambar 2 Revisi */}
+              {/* Tanda Tangan Resmi Sesuai Format BPS - Garis Mengikuti Panjang Nama */}
               <div className="w-full flex items-start justify-between text-xs text-black mt-8 pt-2">
                 {/* Kolom Kiri: Mengetahui KPB */}
                 <div className="w-72 text-center flex flex-col items-center">
@@ -803,8 +822,10 @@ export default function LaporanPage() {
                   <p className="font-medium text-black">Penanggung Jawab KPB</p>
                   <p className="font-medium text-black">Kepala BPS Kabupaten OKU Selatan</p>
                   <div className="h-20" />
-                  <p className="font-bold border-b border-black text-black w-60 pb-0.5 text-center">
-                    Rival Abdul Jabar, S.ST., M.Si.
+                  <p className="text-center">
+                    <span className="font-bold border-b border-black text-black pb-0.5 inline-block">
+                      Rival Abdul Jabar, S.ST., M.Si.
+                    </span>
                   </p>
                   <p className="text-[11px] mt-1 font-medium text-black text-center">NIP. 19831122 200701 1003</p>
                 </div>
@@ -815,8 +836,10 @@ export default function LaporanPage() {
                   <p className="font-semibold text-black">Petugas Pengelola Persediaan</p>
                   <p className="text-transparent select-none font-medium">-</p>
                   <div className="h-20" />
-                  <p className="font-bold border-b border-black text-black w-60 pb-0.5 text-center">
-                    Guspita Karleni, S.Si
+                  <p className="text-center">
+                    <span className="font-bold border-b border-black text-black pb-0.5 inline-block">
+                      Guspita Karleni, S.Si
+                    </span>
                   </p>
                   <p className="text-[11px] mt-1 font-medium text-black text-center">NIP. 19970806 202521 2039</p>
                 </div>
