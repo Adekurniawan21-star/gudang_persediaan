@@ -667,7 +667,7 @@ export default function KartuKendaliPage() {
                     <tbody>
                       {Array.from({ length: activeRowCount }).map((_, rIdx) => {
                           const left = leftEntries[rIdx];
-                          const isPindahanRow = rIdx === 0 && rightEntries.length > 0;
+                          const isPindahanRow = rIdx === 0;
                           const right = rIdx > 0 ? rightEntries[rIdx - 1] : null;
 
                           return (
@@ -1158,7 +1158,7 @@ export default function KartuKendaliPage() {
                       <tbody>
                         {Array.from({ length: activeRowCount }).map((_, rIdx) => {
                             const left = leftEntries[rIdx];
-                            const isPindahanRow = rIdx === 0 && rightEntries.length > 0;
+                            const isPindahanRow = rIdx === 0;
                             const right = rIdx > 0 ? rightEntries[rIdx - 1] : null;
 
                             return (
