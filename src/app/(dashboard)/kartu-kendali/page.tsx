@@ -182,7 +182,8 @@ export default function KartuKendaliPage() {
   const LEFT_CAPACITY = 12;
   const leftEntries = entries.slice(0, LEFT_CAPACITY);
   const rightEntries = entries.slice(LEFT_CAPACITY);
-  const TOTAL_ROWS = 25;
+  // Baris dinamis: hanya menampilkan baris yang terisi (1 item = 1 baris, 2 item = 2 baris, dst.)
+  const activeRowCount = Math.max(1, Math.max(leftEntries.length, rightEntries.length > 0 ? rightEntries.length + 1 : 0));
 
   const leftTotalMasuk = leftEntries.reduce((s, e) => s + e.masuk, 0);
   const leftTotalKeluar = leftEntries.reduce((s, e) => s + e.keluar, 0);
@@ -664,9 +665,9 @@ export default function KartuKendaliPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {Array.from({ length: TOTAL_ROWS }).map((_, rIdx) => {
+                      {Array.from({ length: activeRowCount }).map((_, rIdx) => {
                           const left = leftEntries[rIdx];
-                          const isPindahanRow = rIdx === 0;
+                          const isPindahanRow = rIdx === 0 && rightEntries.length > 0;
                           const right = rIdx > 0 ? rightEntries[rIdx - 1] : null;
 
                           return (
@@ -1155,9 +1156,9 @@ export default function KartuKendaliPage() {
                         </tr>
                       </thead>
                       <tbody>
-                        {Array.from({ length: TOTAL_ROWS }).map((_, rIdx) => {
+                        {Array.from({ length: activeRowCount }).map((_, rIdx) => {
                             const left = leftEntries[rIdx];
-                            const isPindahanRow = rIdx === 0;
+                            const isPindahanRow = rIdx === 0 && rightEntries.length > 0;
                             const right = rIdx > 0 ? rightEntries[rIdx - 1] : null;
 
                             return (
