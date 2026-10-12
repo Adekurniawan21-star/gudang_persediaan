@@ -192,12 +192,12 @@ export default function KartuKendaliPage() {
   };
 
   // Pembagian baris mutasi untuk format ganda (Dual-Pane) persis Halaman 3 PDF
-  // Revisi Mentor: Garis/baris hanya dimunculkan jika ada isinya saja (tidak ada baris kosong bergaris).
-  // Kolom kiri diisi terlebih dahulu (kapasitas 15 baris), jika melebihi 15 baris dilanjutkan ke kolom kanan.
+  // Sesuai Gambar 2 (Format Resmi Cetak Kartu Kendali BPS):
+  // Menampilkan penuh 15 baris mutasi bergaris rapi persis seperti formulir Excel/cetak fisik
   const LEFT_PANE_LIMIT = 15;
   const leftEntries = entries.length <= LEFT_PANE_LIMIT ? entries : entries.slice(0, LEFT_PANE_LIMIT);
   const rightEntries = entries.length <= LEFT_PANE_LIMIT ? [] : entries.slice(LEFT_PANE_LIMIT, LEFT_PANE_LIMIT * 2);
-  const activeRowCount = Math.max(leftEntries.length, rightEntries.length);
+  const activeRowCount = 15;
 
   const leftTotalMasuk = leftEntries.reduce((s, e) => s + e.masuk, 0);
   const leftTotalKeluar = leftEntries.reduce((s, e) => s + e.keluar, 0);
@@ -528,10 +528,10 @@ export default function KartuKendaliPage() {
                 </div>
 
                 {/* Identitas Barang & Satuan Kerja Sesuai Format Gambar Excel */}
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-4 mb-5 text-xs text-black">
-                  <div className="md:col-span-4 flex flex-col items-start justify-center">
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-3 mb-4 text-xs text-black items-start">
+                  <div className="md:col-span-4 flex flex-col items-start justify-start pt-0">
                     <div className="flex flex-col items-center text-center">
-                      <img src="/images/logo-bps.svg" alt="Logo BPS" className="h-10 w-auto object-contain mb-1" />
+                      <img src="/images/logo-bps.svg" alt="Logo BPS" className="h-14 w-auto object-contain mb-1" />
                       <div
                         style={{
                           fontFamily: 'Arial, sans-serif',
@@ -546,7 +546,7 @@ export default function KartuKendaliPage() {
                     </div>
                   </div>
 
-                  <div className="md:col-span-5 space-y-1 font-medium" style={{ fontFamily: 'Arial, sans-serif' }}>
+                  <div className="md:col-span-5 space-y-1 font-medium items-start pt-0" style={{ fontFamily: 'Arial, sans-serif' }}>
                     <div className="flex items-center">
                       <span className="w-28 text-black">Nama Barang</span>
                       <span className="w-3 text-center">:</span>
@@ -564,7 +564,7 @@ export default function KartuKendaliPage() {
                     </div>
                   </div>
 
-                  <div className="md:col-span-3 space-y-1 font-medium" style={{ fontFamily: 'Arial, sans-serif' }}>
+                  <div className="md:col-span-3 space-y-1 font-medium items-start pt-0" style={{ fontFamily: 'Arial, sans-serif' }}>
                     <div className="flex items-center">
                       <span className="w-24 text-black">Halaman</span>
                       <span className="w-3 text-center">:</span>
@@ -683,67 +683,59 @@ export default function KartuKendaliPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {activeRowCount === 0 ? (
-                        <tr>
-                          <td colSpan={14} className="border border-black py-4 text-center text-xs text-gray-500">
-                            Belum ada data mutasi barang
-                          </td>
-                        </tr>
-                      ) : (
-                        Array.from({ length: activeRowCount }).map((_, rIdx) => {
+                      {Array.from({ length: 15 }).map((_, rIdx) => {
                           const left = leftEntries[rIdx];
                           const right = rightEntries[rIdx];
                           return (
-                            <tr key={rIdx} className="text-black hover:bg-gray-50/50">
+                            <tr key={rIdx} className="text-black hover:bg-gray-50/50 h-5">
                               {/* Sisi Kiri */}
-                              <td className="border border-black px-1 py-1 text-center font-medium">
+                              <td className="border border-black px-1 py-0.5 text-center font-medium">
                                 {left ? rIdx + 1 : ''}
                               </td>
-                              <td className="border border-black px-1.5 py-1 font-mono text-[9px]">
+                              <td className="border border-black px-1.5 py-0.5 font-mono text-[9px]">
                                 {left?.no_referensi || ''}
                               </td>
-                              <td className="border border-black px-1 py-1 text-center">
+                              <td className="border border-black px-1 py-0.5 text-center">
                                 {left ? formatDateShort(left.tanggal) : ''}
                               </td>
-                              <td className="border border-black px-2 py-1 font-medium">
+                              <td className="border border-black px-2 py-0.5 font-medium">
                                 {left?.uraian || ''}
                               </td>
-                              <td className="border border-black px-1 py-1 text-center font-bold text-emerald-800">
+                              <td className="border border-black px-1 py-0.5 text-center font-bold text-emerald-800">
                                 {left && left.masuk > 0 ? left.masuk : (left ? '-' : '')}
                               </td>
-                              <td className="border border-black px-1 py-1 text-center font-bold text-rose-800">
+                              <td className="border border-black px-1 py-0.5 text-center font-bold text-rose-800">
                                 {left && left.keluar > 0 ? left.keluar : (left ? '-' : '')}
                               </td>
-                              <td className="border border-black px-1.5 py-1 text-center font-extrabold bg-gray-50/50">
+                              <td className="border border-black px-1.5 py-0.5 text-center font-extrabold bg-gray-50/50">
                                 {left ? left.sisa : ''}
                               </td>
 
                               {/* Sisi Kanan */}
-                              <td className="border border-black px-1 py-1 text-center font-medium">
+                              <td className="border border-black px-1 py-0.5 text-center font-medium">
                                 {right ? LEFT_PANE_LIMIT + rIdx + 1 : ''}
                               </td>
-                              <td className="border border-black px-1.5 py-1 font-mono text-[9px]">
+                              <td className="border border-black px-1.5 py-0.5 font-mono text-[9px]">
                                 {right?.no_referensi || ''}
                               </td>
-                              <td className="border border-black px-1 py-1 text-center">
+                              <td className="border border-black px-1 py-0.5 text-center">
                                 {right ? formatDateShort(right.tanggal) : ''}
                               </td>
-                              <td className="border border-black px-2 py-1 font-medium">
-                                {right?.uraian || ''}
+                              <td className="border border-black px-2 py-0.5 font-medium text-center">
+                                {right ? right.uraian : (rIdx === 0 && rightEntries.length === 0 ? 'Pindahan' : '')}
                               </td>
-                              <td className="border border-black px-1 py-1 text-center font-bold text-emerald-800">
+                              <td className="border border-black px-1 py-0.5 text-center font-bold text-emerald-800">
                                 {right && right.masuk > 0 ? right.masuk : (right ? '-' : '')}
                               </td>
-                              <td className="border border-black px-1 py-1 text-center font-bold text-rose-800">
+                              <td className="border border-black px-1 py-0.5 text-center font-bold text-rose-800">
                                 {right && right.keluar > 0 ? right.keluar : (right ? '-' : '')}
                               </td>
-                              <td className="border border-black px-1.5 py-1 text-center font-extrabold bg-gray-50/50">
+                              <td className="border border-black px-1.5 py-0.5 text-center font-extrabold bg-gray-50/50">
                                 {right ? right.sisa : ''}
                               </td>
                             </tr>
                           );
-                        })
-                      )}
+                        })}
                     </tbody>
                     <tfoot>
                       <tr className="bg-gray-100 font-bold text-black">
@@ -933,7 +925,22 @@ export default function KartuKendaliPage() {
               @media print {
                 @page {
                   size: A4 landscape !important;
-                  margin: 8mm 10mm 8mm 10mm !important;
+                  margin: 6mm 10mm 6mm 10mm !important;
+                }
+                body {
+                  -webkit-print-color-adjust: exact !important;
+                  print-color-adjust: exact !important;
+                }
+                #print-area {
+                  padding: 0 !important;
+                  margin: 0 !important;
+                  width: 100% !important;
+                  page-break-inside: avoid !important;
+                  break-inside: avoid !important;
+                }
+                table, tr, td, th {
+                  page-break-inside: avoid !important;
+                  break-inside: avoid !important;
                 }
               }
             `}} />
@@ -945,15 +952,15 @@ export default function KartuKendaliPage() {
               {/* JIKA PREVIEW KARTU PERSEDIAAN (PERSIS HALAMAN 3 PDF & EXCEL) */}
               {previewMode === 'kartu' && currentCard && (
                 <>
-                  <h3 className="text-center font-extrabold text-black mb-4 text-sm uppercase tracking-wider">
+                  <h3 className="text-center font-extrabold text-black mb-3 text-sm uppercase tracking-wider">
                     KARTU PERSEDIAAN BARANG PAKAI HABIS (ATK/ARK)
                   </h3>
 
                   {/* Identitas Barang & Logo Sesuai Format Gambar Excel */}
-                  <div className="grid grid-cols-12 gap-2 mb-4 text-xs text-black">
-                    <div className="col-span-4 flex flex-col items-start justify-center">
+                  <div className="grid grid-cols-12 gap-3 mb-3 text-xs text-black items-start">
+                    <div className="col-span-4 flex flex-col items-start justify-start pt-0">
                       <div className="flex flex-col items-center text-center">
-                        <img src="/images/logo-bps.svg" alt="Logo BPS" className="h-9 w-auto object-contain mb-1" />
+                        <img src="/images/logo-bps.svg" alt="Logo BPS" className="h-14 w-auto object-contain mb-1" />
                         <div
                           style={{
                             fontFamily: 'Arial, sans-serif',
@@ -967,7 +974,7 @@ export default function KartuKendaliPage() {
                         </div>
                       </div>
                     </div>
-                    <div className="col-span-5 space-y-0.5 text-[11px]" style={{ fontFamily: 'Arial, sans-serif' }}>
+                    <div className="col-span-5 space-y-0.5 text-[11px] items-start pt-0" style={{ fontFamily: 'Arial, sans-serif' }}>
                       <div className="flex items-center">
                         <span className="w-24 text-black">Nama Barang</span>
                         <span className="w-3 text-center">:</span>
@@ -984,7 +991,7 @@ export default function KartuKendaliPage() {
                         <span className="text-black">{currentCard.satuan}</span>
                       </div>
                     </div>
-                    <div className="col-span-3 space-y-0.5 text-[11px] text-left" style={{ fontFamily: 'Arial, sans-serif' }}>
+                    <div className="col-span-3 space-y-0.5 text-[11px] text-left items-start pt-0" style={{ fontFamily: 'Arial, sans-serif' }}>
                       <div className="flex items-center text-left">
                         <span className="w-20 text-black text-left">Halaman</span>
                         <span className="w-3 text-center">:</span>
@@ -1095,18 +1102,11 @@ export default function KartuKendaliPage() {
                         </tr>
                       </thead>
                       <tbody>
-                        {activeRowCount === 0 ? (
-                          <tr>
-                            <td colSpan={14} className="border border-black py-2 text-center text-[9px] text-gray-500">
-                              Belum ada data mutasi barang
-                            </td>
-                          </tr>
-                        ) : (
-                          Array.from({ length: activeRowCount }).map((_, rIdx) => {
+                        {Array.from({ length: 15 }).map((_, rIdx) => {
                             const left = leftEntries[rIdx];
                             const right = rightEntries[rIdx];
                             return (
-                              <tr key={rIdx} className="text-black">
+                              <tr key={rIdx} className="text-black h-5">
                                 <td className="border border-black px-1 py-0.5 text-center">
                                   {left ? rIdx + 1 : ''}
                                 </td>
@@ -1138,8 +1138,8 @@ export default function KartuKendaliPage() {
                                 <td className="border border-black px-1 py-0.5 text-center">
                                   {right ? formatDateShort(right.tanggal) : ''}
                                 </td>
-                                <td className="border border-black px-1.5 py-0.5">
-                                  {right?.uraian || ''}
+                                <td className="border border-black px-1.5 py-0.5 text-center">
+                                  {right ? right.uraian : (rIdx === 0 && rightEntries.length === 0 ? 'Pindahan' : '')}
                                 </td>
                                 <td className="border border-black px-1 py-0.5 text-center font-bold">
                                   {right && right.masuk > 0 ? right.masuk : (right ? '-' : '')}
@@ -1152,8 +1152,7 @@ export default function KartuKendaliPage() {
                                 </td>
                               </tr>
                             );
-                          })
-                        )}
+                          })}
                       </tbody>
                       <tfoot>
                         <tr className="bg-gray-100 font-bold text-black">
@@ -1188,18 +1187,18 @@ export default function KartuKendaliPage() {
                   </div>
 
                   {/* Tanda Tangan Resmi Sesuai Format BPS - Garis Mengikuti Panjang Nama */}
-                  <div className="w-full flex items-start justify-between text-xs text-black mt-8 pt-2">
+                  <div className="w-full flex items-start justify-between text-xs text-black mt-3 pt-1 print:mt-2">
                     <div className="w-72 text-center flex flex-col items-center">
                       <p className="font-semibold text-black">Mengetahui,</p>
                       <p className="font-medium text-black">Kuasa Pengguna Barang</p>
                       <p className="font-medium text-black">Kepala BPS Kabupaten OKU Selatan</p>
-                      <div className="h-16" />
+                      <div className="h-11 print:h-9" />
                       <p className="text-center">
                         <span className="font-bold border-b border-black text-black pb-0.5 inline-block">
                           Rival Abdul Jabar, S.ST., M.Si.
                         </span>
                       </p>
-                      <p className="text-[11px] mt-1 font-medium text-black text-center">NIP. 19831122 200701 1003</p>
+                      <p className="text-[11px] mt-0.5 font-medium text-black text-center">NIP. 19831122 200701 1003</p>
                     </div>
                     <div className="w-72 text-center flex flex-col items-center">
                       <p className="font-medium text-black">
@@ -1207,13 +1206,13 @@ export default function KartuKendaliPage() {
                       </p>
                       <p className="font-semibold text-black">Petugas Pengelola Persediaan</p>
                       <p className="text-transparent select-none font-medium">-</p>
-                      <div className="h-16" />
+                      <div className="h-11 print:h-9" />
                       <p className="text-center">
                         <span className="font-bold border-b border-black text-black pb-0.5 inline-block">
                           Guspita Karleni, S.Si
                         </span>
                       </p>
-                      <p className="text-[11px] mt-1 font-medium text-black text-center">NIP. 19970806 202521 2039</p>
+                      <p className="text-[11px] mt-0.5 font-medium text-black text-center">NIP. 19970806 202521 2039</p>
                     </div>
                   </div>
                 </>
