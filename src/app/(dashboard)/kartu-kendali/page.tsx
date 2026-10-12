@@ -530,18 +530,19 @@ export default function KartuKendaliPage() {
                 {/* Identitas Barang & Satuan Kerja Sesuai Format Gambar Excel */}
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-4 mb-5 text-xs text-black">
                   <div className="md:col-span-4 flex flex-col items-start justify-center">
-                    <img src="/images/logo-bps.svg" alt="Logo BPS" className="h-10 w-auto object-contain mb-1.5" />
-                    <div
-                      style={{
-                        fontFamily: 'Arial, sans-serif',
-                        fontSize: '9pt',
-                        lineHeight: 1.25,
-                        textAlign: 'left',
-                      }}
-                      className="font-bold text-black text-left"
-                    >
-                      <p>Badan Pusat Statistik</p>
-                      <p>Kabupaten Ogan Komering Ulu Selatan</p>
+                    <div className="flex flex-col items-center text-center">
+                      <img src="/images/logo-bps.svg" alt="Logo BPS" className="h-10 w-auto object-contain mb-1" />
+                      <div
+                        style={{
+                          fontFamily: 'Arial, sans-serif',
+                          fontSize: '9pt',
+                          lineHeight: 1.25,
+                        }}
+                        className="font-bold italic text-black text-center"
+                      >
+                        <p>Badan Pusat Statistik</p>
+                        <p>Kabupaten Ogan Komering Ulu Selatan</p>
+                      </div>
                     </div>
                   </div>
 
@@ -951,18 +952,19 @@ export default function KartuKendaliPage() {
                   {/* Identitas Barang & Logo Sesuai Format Gambar Excel */}
                   <div className="grid grid-cols-12 gap-2 mb-4 text-xs text-black">
                     <div className="col-span-4 flex flex-col items-start justify-center">
-                      <img src="/images/logo-bps.svg" alt="Logo BPS" className="h-9 w-auto object-contain mb-1" />
-                      <div
-                        style={{
-                          fontFamily: 'Arial, sans-serif',
-                          fontSize: '9pt',
-                          lineHeight: 1.25,
-                          textAlign: 'left',
-                        }}
-                        className="font-bold text-black text-left"
-                      >
-                        <p>Badan Pusat Statistik</p>
-                        <p>Kabupaten Ogan Komering Ulu Selatan</p>
+                      <div className="flex flex-col items-center text-center">
+                        <img src="/images/logo-bps.svg" alt="Logo BPS" className="h-9 w-auto object-contain mb-1" />
+                        <div
+                          style={{
+                            fontFamily: 'Arial, sans-serif',
+                            fontSize: '9pt',
+                            lineHeight: 1.25,
+                          }}
+                          className="font-bold italic text-black text-center"
+                        >
+                          <p>Badan Pusat Statistik</p>
+                          <p>Kabupaten Ogan Komering Ulu Selatan</p>
+                        </div>
                       </div>
                     </div>
                     <div className="col-span-5 space-y-0.5 text-[11px]" style={{ fontFamily: 'Arial, sans-serif' }}>
