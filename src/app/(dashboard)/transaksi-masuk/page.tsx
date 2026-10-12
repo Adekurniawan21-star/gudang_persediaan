@@ -754,10 +754,11 @@ export default function TransaksiMasukPage() {
                     {showPrintPreview.sumber === 'Pembelian' ? 'Rekanan / Vendor' : 'BPS Provinsi Sumatera Selatan'}
                   </p>
                   <div className="h-16" />
-                  <p className="font-bold text-black border-b border-black w-60 pb-0.5 text-center">
-                    (............................................................)
+                  <p className="text-center">
+                    <span className="font-bold text-black border-b border-black pb-0.5 inline-block">
+                      (&nbsp;................................&nbsp;)
+                    </span>
                   </p>
-                  <p className="text-[11px] text-black mt-1 font-medium text-center">NIP/Tanda Pengenal: ..........................</p>
                 </div>
                 <div className="w-72 text-center flex flex-col items-center">
                   <p className="text-black font-medium">{formatTanggalTandaTangan(tglCetakDokumen)}</p>
