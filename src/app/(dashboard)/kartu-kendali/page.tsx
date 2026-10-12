@@ -15,7 +15,7 @@ import { cn, formatDateShort, formatNumber, formatTanggalTandaTangan } from '@/l
 import KopSurat from '@/components/KopSurat';
 
 const BULAN_NAMES = [
-  'Januari', 'Feb', 'Maret', 'April', 'Mei', 'Juni',
+  'Januari', 'Feb', 'Maret', 'Maret', 'April', 'Mei', 'Juni',
   'Juli', 'Agustus', 'Sept', 'Okt', 'Nov', 'Des'
 ];
 
@@ -27,6 +27,7 @@ export default function KartuKendaliPage() {
   const [showPrintPreview, setShowPrintPreview] = useState(false);
   const [previewMode, setPreviewMode] = useState<'kartu' | 'daftar'>('kartu');
   const [tglCetakDokumen, setTglCetakDokumen] = useState(() => new Date().toISOString().split('T')[0]);
+  const [tampilkanTandaTanganKartu, setTampilkanTandaTanganKartu] = useState(false);
 
   // === State Form Input Mutasi Langsung ===
   const [showInputModal, setShowInputModal] = useState(false);
@@ -71,16 +72,21 @@ export default function KartuKendaliPage() {
 
   const activeBarang = barangList.find(b => b.id === selectedBarangId) || barangList[0];
 
+  // Cari di daftar persediaan PDF1 untuk saldo 1 januari resmi BPS
+  const itemPdf = DATA_DAFTAR_PERSEDIAAN_PDF1.find(
+    p => p.kode === activeBarang?.kode_barang || p.uraian.toLowerCase() === activeBarang?.nama_barang.toLowerCase()
+  );
+
   // Cari template kartu bawaan jika ada
   const templateCard = mockKartuKendali.find(
     k => k.id_barang === selectedBarangId && k.tahun === selectedYear
   ) || mockKartuKendali.find(k => k.id_barang === selectedBarangId);
 
-  // Penentuan Stock Awal Tahun
-  const stockAwal = templateCard?.stock_awal_tahun ?? (templateCard?.entries[0]?.masuk || activeBarang?.stok || 0);
+  // Penentuan Stock Awal Tahun: utamakan dokumen resmi PDF1, lalu template, lalu master barang
+  const stockAwal = itemPdf?.saldo_1_januari ?? templateCard?.stock_awal_tahun ?? (activeBarang?.stok || 0);
 
-  // Kumpulkan mutasi dari template
-  const baseEntries = templateCard?.entries || [];
+  // Kumpulkan mutasi dari template (filter keluar baris saldo awal jika ada agar tidak muncul di tabel 2)
+  const baseEntries = (templateCard?.entries || []).filter(e => !e.uraian.toLowerCase().includes('saldo'));
   const existingRefs = new Set(baseEntries.map(e => e.no_referensi));
 
   // Kumpulkan mutasi tambahan dari Transaksi Masuk
@@ -125,34 +131,13 @@ export default function KartuKendaliPage() {
       };
     });
 
-  // Gabungkan seluruh baris mutasi
-  let rawEntries = [...baseEntries, ...additionalMasuk, ...additionalKeluar];
-  if (rawEntries.length === 0) {
-    rawEntries.push({
-      id: 1,
-      tanggal: `${selectedYear}-01-02`,
-      no_referensi: '-',
-      uraian: `Saldo Awal 1 Januari ${selectedYear}`,
-      masuk: stockAwal,
-      keluar: 0,
-      sisa: stockAwal,
-    });
-  }
+  // Gabungkan seluruh baris mutasi riil (kronologis)
+  const rawEntries = [...baseEntries, ...additionalMasuk, ...additionalKeluar];
+  const sortedEntries = [...rawEntries].sort((a, b) => new Date(a.tanggal).getTime() - new Date(b.tanggal).getTime());
 
-  // Urutkan kronologis dengan baris Saldo Awal selalu di baris pertama
-  const initialSaldoEntry = rawEntries.find(e => e.uraian.toLowerCase().includes('saldo')) || rawEntries[0];
-  const otherEntries = rawEntries
-    .filter(e => e !== initialSaldoEntry)
-    .sort((a, b) => new Date(a.tanggal).getTime() - new Date(b.tanggal).getTime());
-  const sortedEntries = [initialSaldoEntry, ...otherEntries];
-
-  // Hitung ulang saldo berjalan secara matematis (Running Balance)
-  let running = 0;
-  const entries = sortedEntries.map((e, idx) => {
-    if (idx === 0) {
-      running = e.masuk || e.sisa || stockAwal;
-      return { ...e, sisa: running };
-    }
+  // Hitung ulang saldo berjalan secara matematis (Running Balance dari stockAwal)
+  let running = stockAwal;
+  const entries = sortedEntries.map((e) => {
     running = running + (e.masuk || 0) - (e.keluar || 0);
     return { ...e, sisa: Math.max(0, running) };
   });
@@ -160,12 +145,11 @@ export default function KartuKendaliPage() {
   // Perhitungan Akuntansi Kartu Kendali
   const totalMasuk = entries.reduce((s, e) => s + (e.masuk || 0), 0);
   const totalKeluar = entries.reduce((s, e) => s + (e.keluar || 0), 0);
-  const sisaAkhir = entries[entries.length - 1]?.sisa ?? stockAwal;
+  const sisaAkhir = entries.length > 0 ? entries[entries.length - 1].sisa : stockAwal;
 
   const getMonthlyOut = (m: number) => {
     return entries
-      .filter((e, idx) => {
-        if (idx === 0) return false;
+      .filter((e) => {
         const entryMonth = new Date(e.tanggal).getMonth() + 1;
         return entryMonth === m;
       })
@@ -191,17 +175,21 @@ export default function KartuKendaliPage() {
     stock_akhir_tahun: sisaAkhir,
   };
 
-  // Pembagian baris mutasi untuk format ganda (Dual-Pane) persis Halaman 3 PDF
-  // Sesuai Gambar 2 (Format Resmi Cetak Kartu Kendali BPS):
-  // Menampilkan penuh 15 baris mutasi bergaris rapi persis seperti formulir Excel/cetak fisik
-  const LEFT_PANE_LIMIT = 15;
-  const leftEntries = entries.length <= LEFT_PANE_LIMIT ? entries : entries.slice(0, LEFT_PANE_LIMIT);
-  const rightEntries = entries.length <= LEFT_PANE_LIMIT ? [] : entries.slice(LEFT_PANE_LIMIT, LEFT_PANE_LIMIT * 2);
-  const activeRowCount = 15;
+  // Pembagian baris mutasi untuk format ganda (Dual-Pane) persis Halaman 3 PDF & Formulir Fisik BPS:
+  // - Sisi kiri memuat transaksi mutasi 1 s.d. 12 (atau batas kapasitas)
+  // - Sisi kanan baris pertama adalah "Pindahan", dan transaksi mutasi berikutnya berlanjut di baris ke-2 dengan nomor 13, 14, dst.
+  // - Total baris cetak: 25 baris penuh untuk memenuhi satu halaman A4 Landscape rapi
+  const LEFT_CAPACITY = 12;
+  const leftEntries = entries.slice(0, LEFT_CAPACITY);
+  const rightEntries = entries.slice(LEFT_CAPACITY);
+  const TOTAL_ROWS = 25;
 
   const leftTotalMasuk = leftEntries.reduce((s, e) => s + e.masuk, 0);
   const leftTotalKeluar = leftEntries.reduce((s, e) => s + e.keluar, 0);
   const leftLastSisa = leftEntries.length > 0 ? leftEntries[leftEntries.length - 1].sisa : stockAwal;
+
+  const rightTotalMasuk = rightEntries.reduce((s, e) => s + e.masuk, 0);
+  const rightTotalKeluar = rightEntries.reduce((s, e) => s + e.keluar, 0);
 
   // Handler cetak dokumen bersih (tanpa tulisan SIPERSEDIA di header browser)
   const handlePrint = () => {
@@ -603,39 +591,32 @@ export default function KartuKendaliPage() {
                       </tr>
                       <tr className="bg-gray-50 font-semibold text-black text-[10px]">
                         {BULAN_NAMES.map((bln, idx) => (
-                          <th key={idx} className="border border-black px-1 py-1 w-12">
+                          <th key={idx} className="border border-black px-1 py-1 w-11">
                             {bln}
                           </th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
-                      <tr className="text-black font-semibold text-xs">
+                      <tr className="text-black font-semibold text-xs h-7">
                         {BULAN_NAMES.map((_, idx) => {
-                          const out = getMonthlyOut(idx + 1);
-                          // Bulan Januari menampilkan saldo awal tahun (18 atau 12) sesuai instruksi mentor
-                          // Bulan Feb s.d. Des menampilkan pengeluaran jika ada, atau kosong jika belum ada (sesuai format Excel mentor)
-                          const val = idx === 0 ? stockAwal : (out > 0 ? out : '');
+                          const m = idx <= 2 ? idx + 1 : idx;
+                          const out = getMonthlyOut(m);
+                          const val = idx === 0 ? (out > 0 ? out : '0') : (out > 0 ? out : '');
                           return (
-                            <td
-                              key={idx}
-                              className={cn(
-                                'border border-black py-1.5',
-                                idx === 0 ? 'bg-amber-50/70 font-bold text-amber-950' : (out > 0 ? 'bg-amber-50 font-bold text-amber-900' : '')
-                              )}
-                            >
-                              {val !== '' ? val : ''}
+                            <td key={idx} className="border border-black py-1.5">
+                              {val}
                             </td>
                           );
                         })}
                         <td className="border border-black py-1.5 font-bold text-black bg-gray-50">
-                          {totalPengeluaranTahunan > 0 ? totalPengeluaranTahunan : '0'}
+                          {totalPengeluaranTahunan > 0 ? totalPengeluaranTahunan : ''}
                         </td>
                         <td className="border border-black py-1.5 font-bold text-black">
                           {stockAwal}
                         </td>
                         <td className="border border-black py-1.5 font-extrabold text-blue-900 bg-blue-50/50">
-                          {sisaAkhir}
+                          {totalPengeluaranTahunan > 0 || totalMasuk > 0 ? sisaAkhir : ''}
                         </td>
                       </tr>
                     </tbody>
@@ -676,18 +657,20 @@ export default function KartuKendaliPage() {
                         <th className="border border-black py-0.5">(8)</th>
                         <th className="border border-black py-0.5">(9)</th>
                         <th className="border border-black py-0.5">(10)</th>
-                        <th className="border border-black py-0.5">(11)</th>
+                        <th className="border border-black py-0.5">(13)</th>
                         <th className="border border-black py-0.5">(12)</th>
                         <th className="border border-black py-0.5">(13)</th>
                         <th className="border border-black py-0.5">(14)</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {Array.from({ length: 15 }).map((_, rIdx) => {
+                      {Array.from({ length: TOTAL_ROWS }).map((_, rIdx) => {
                           const left = leftEntries[rIdx];
-                          const right = rightEntries[rIdx];
+                          const isPindahanRow = rIdx === 0;
+                          const right = rIdx > 0 ? rightEntries[rIdx - 1] : null;
+
                           return (
-                            <tr key={rIdx} className="text-black hover:bg-gray-50/50 h-5">
+                            <tr key={rIdx} className="text-black hover:bg-gray-50/50 h-[20px]">
                               {/* Sisi Kiri */}
                               <td className="border border-black px-1 py-0.5 text-center font-medium">
                                 {left ? rIdx + 1 : ''}
@@ -707,13 +690,13 @@ export default function KartuKendaliPage() {
                               <td className="border border-black px-1 py-0.5 text-center font-bold text-rose-800">
                                 {left && left.keluar > 0 ? left.keluar : (left ? '-' : '')}
                               </td>
-                              <td className="border border-black px-1.5 py-0.5 text-center font-extrabold bg-gray-50/50">
+                              <td className="border border-black px-1.5 py-0.5 text-center font-bold">
                                 {left ? left.sisa : ''}
                               </td>
 
                               {/* Sisi Kanan */}
                               <td className="border border-black px-1 py-0.5 text-center font-medium">
-                                {right ? LEFT_PANE_LIMIT + rIdx + 1 : ''}
+                                {right ? leftEntries.length + rIdx : ''}
                               </td>
                               <td className="border border-black px-1.5 py-0.5 font-mono text-[9px]">
                                 {right?.no_referensi || ''}
@@ -722,7 +705,7 @@ export default function KartuKendaliPage() {
                                 {right ? formatDateShort(right.tanggal) : ''}
                               </td>
                               <td className="border border-black px-2 py-0.5 font-medium text-center">
-                                {right ? right.uraian : (rIdx === 0 && rightEntries.length === 0 ? 'Pindahan' : '')}
+                                {isPindahanRow ? 'Pindahan' : (right?.uraian || '')}
                               </td>
                               <td className="border border-black px-1 py-0.5 text-center font-bold text-emerald-800">
                                 {right && right.masuk > 0 ? right.masuk : (right ? '-' : '')}
@@ -730,8 +713,8 @@ export default function KartuKendaliPage() {
                               <td className="border border-black px-1 py-0.5 text-center font-bold text-rose-800">
                                 {right && right.keluar > 0 ? right.keluar : (right ? '-' : '')}
                               </td>
-                              <td className="border border-black px-1.5 py-0.5 text-center font-extrabold bg-gray-50/50">
-                                {right ? right.sisa : ''}
+                              <td className="border border-black px-1.5 py-0.5 text-center font-bold">
+                                {isPindahanRow ? (leftEntries.length > 0 ? leftLastSisa : '') : (right ? right.sisa : '')}
                               </td>
                             </tr>
                           );
@@ -743,26 +726,26 @@ export default function KartuKendaliPage() {
                           JUMLAH (dipindahkan)
                         </td>
                         <td className="border border-black px-1 py-1 text-center font-bold">
-                          {leftTotalMasuk > 0 ? leftTotalMasuk : '-'}
+                          {leftTotalMasuk > 0 ? leftTotalMasuk : ''}
                         </td>
                         <td className="border border-black px-1 py-1 text-center font-bold">
-                          {leftTotalKeluar > 0 ? leftTotalKeluar : '-'}
+                          {leftTotalKeluar > 0 ? leftTotalKeluar : ''}
                         </td>
                         <td className="border border-black px-1.5 py-1 text-center font-extrabold bg-gray-200">
-                          {leftLastSisa}
+                          {leftEntries.length > 0 ? leftLastSisa : ''}
                         </td>
 
                         <td colSpan={4} className="border border-black px-2 py-1 text-center uppercase tracking-wider text-[10px]">
                           JUMLAH (dipindahkan)
                         </td>
                         <td className="border border-black px-1 py-1 text-center font-bold">
-                          {rightEntries.length > 0 && totalMasuk > 0 ? totalMasuk : '-'}
+                          {rightEntries.length > 0 && rightTotalMasuk > 0 ? rightTotalMasuk : ''}
                         </td>
                         <td className="border border-black px-1 py-1 text-center font-bold">
-                          {rightEntries.length > 0 && totalKeluar > 0 ? totalKeluar : '-'}
+                          {rightEntries.length > 0 && rightTotalKeluar > 0 ? rightTotalKeluar : ''}
                         </td>
                         <td className="border border-black px-1.5 py-1 text-center font-extrabold bg-gray-200">
-                          {rightEntries.length > 0 ? sisaAkhir : '-'}
+                          {rightEntries.length > 0 ? sisaAkhir : ''}
                         </td>
                       </tr>
                     </tfoot>
@@ -901,6 +884,17 @@ export default function KartuKendaliPage() {
                 </h2>
               </div>
               <div className="flex items-center gap-3">
+                {previewMode === 'kartu' && (
+                  <label className="flex items-center gap-1.5 text-xs text-dark-700 cursor-pointer select-none no-print bg-dark-50 border border-dark-200 rounded-lg px-2.5 py-1">
+                    <input
+                      type="checkbox"
+                      checked={tampilkanTandaTanganKartu}
+                      onChange={(e) => setTampilkanTandaTanganKartu(e.target.checked)}
+                      className="rounded border-dark-300 text-bps-blue focus:ring-bps-blue"
+                    />
+                    <span className="font-medium text-dark-700">Tanda Tangan (Opsional)</span>
+                  </label>
+                )}
                 <div className="flex items-center gap-1.5 bg-dark-50 border border-dark-200 rounded-lg px-2.5 py-1">
                   <span className="text-xs font-medium text-dark-600">Tanggal Dokumen:</span>
                   <input
@@ -920,32 +914,77 @@ export default function KartuKendaliPage() {
               </div>
             </div>
 
-            {/* Injeksi Style Cetak: Kartu Kendali Harus A4 LANDSCAPE */}
+            {/* Injeksi Style Cetak: Kartu Kendali Harus A4 LANDSCAPE Penuh 1 Halaman Bersih */}
             <style dangerouslySetInnerHTML={{ __html: `
               @media print {
                 @page {
                   size: A4 landscape !important;
-                  margin: 6mm 10mm 6mm 10mm !important;
+                  margin: 5mm 6mm 5mm 6mm !important;
                 }
-                body {
+                html, body {
+                  width: 100% !important;
+                  height: auto !important;
+                  margin: 0 !important;
+                  padding: 0 !important;
+                  background: #ffffff !important;
+                  color: #000000 !important;
+                  overflow: visible !important;
                   -webkit-print-color-adjust: exact !important;
                   print-color-adjust: exact !important;
+                }
+                header, aside, nav, .no-print {
+                  display: none !important;
+                }
+                .fixed.inset-0 {
+                  position: static !important;
+                  background: transparent !important;
+                  padding: 0 !important;
+                  margin: 0 !important;
+                  display: block !important;
+                  width: 100% !important;
+                  height: auto !important;
+                  overflow: visible !important;
+                }
+                .max-w-5xl, .max-h-\\[92vh\\] {
+                  max-width: 100% !important;
+                  max-height: none !important;
+                  width: 100% !important;
+                  height: auto !important;
+                  overflow: visible !important;
+                  box-shadow: none !important;
+                  border-radius: 0 !important;
+                  border: none !important;
+                  padding: 0 !important;
+                  margin: 0 !important;
                 }
                 #print-area {
                   padding: 0 !important;
                   margin: 0 !important;
                   width: 100% !important;
-                  page-break-inside: avoid !important;
-                  break-inside: avoid !important;
+                  max-width: 100% !important;
+                  background: #ffffff !important;
+                  box-shadow: none !important;
+                  border: none !important;
+                  overflow: visible !important;
+                  page-break-after: avoid !important;
+                  break-after: avoid !important;
                 }
-                table, tr, td, th {
+                table {
+                  width: 100% !important;
+                  table-layout: fixed !important;
+                  border-collapse: collapse !important;
+                }
+                th, td {
+                  border: 1px solid #000000 !important;
+                }
+                tr {
                   page-break-inside: avoid !important;
                   break-inside: avoid !important;
                 }
               }
             `}} />
 
-            <div className="p-8 text-black bg-white" id="print-area">
+            <div className="p-6 print:p-0 text-black bg-white" id="print-area">
               {/* Kop Surat hanya muncul untuk Daftar Rekapitulasi Persediaan, TIDAK untuk Kartu Kendali */}
               {previewMode === 'daftar' && <KopSurat />}
 
@@ -1015,7 +1054,7 @@ export default function KartuKendaliPage() {
                     <table className="w-full border-collapse border border-black text-center text-[10px]">
                       <thead>
                         <tr className="bg-gray-100 font-bold text-black">
-                          <th colSpan={12} className="border border-black py-1 uppercase text-[10px]">
+                          <th colSpan={13} className="border border-black py-1 uppercase text-[10px]">
                             Banyaknya Pengeluaran Tiap-Tiap Bulan
                           </th>
                           <th rowSpan={2} className="border border-black px-1.5 py-1 text-[9px] leading-tight w-16">
@@ -1037,34 +1076,33 @@ export default function KartuKendaliPage() {
                         </tr>
                       </thead>
                       <tbody>
-                        <tr className="text-black font-semibold text-[10px]">
+                        <tr className="text-black font-semibold text-[10px] h-6">
                           {BULAN_NAMES.map((_, idx) => {
-                            const out = getMonthlyOut(idx + 1);
-                            // Bulan Januari menampilkan saldo awal tahun sesuai instruksi mentor
-                            // Bulan Feb s.d. Des menampilkan pengeluaran jika ada, atau kosong jika belum ada transaksi (sesuai dokumen Excel mentor)
-                            const val = idx === 0 ? stockAwal : (out > 0 ? out : '');
+                            const m = idx <= 2 ? idx + 1 : idx;
+                            const out = getMonthlyOut(m);
+                            const val = idx === 0 ? (out > 0 ? out : '0') : (out > 0 ? out : '');
                             return (
                               <td key={idx} className="border border-black py-1">
-                                {val !== '' ? val : ''}
+                                {val}
                               </td>
                             );
                           })}
                           <td className="border border-black py-1 font-bold">
-                            {totalPengeluaranTahunan > 0 ? totalPengeluaranTahunan : '0'}
+                            {totalPengeluaranTahunan > 0 ? totalPengeluaranTahunan : ''}
                           </td>
                           <td className="border border-black py-1 font-bold">
                             {stockAwal}
                           </td>
                           <td className="border border-black py-1 font-bold">
-                            {sisaAkhir}
+                            {totalPengeluaranTahunan > 0 || totalMasuk > 0 ? sisaAkhir : ''}
                           </td>
                         </tr>
                       </tbody>
                     </table>
                   </div>
 
-                  {/* Tabel 2: Dual-Pane 14 Kolom (Hanya Baris Berisi, Tidak Ada Garis Kosong) */}
-                  <div className="mb-6">
+                  {/* Tabel 2: Dual-Pane 14 Kolom Persis Halaman 3 PDF */}
+                  <div className="mb-2">
                     <table className="w-full border-collapse border border-black text-[9px]">
                       <thead>
                         <tr className="bg-gray-100 font-bold text-black text-center">
@@ -1095,18 +1133,20 @@ export default function KartuKendaliPage() {
                           <th className="border border-black py-0.5">(8)</th>
                           <th className="border border-black py-0.5">(9)</th>
                           <th className="border border-black py-0.5">(10)</th>
-                          <th className="border border-black py-0.5">(11)</th>
+                          <th className="border border-black py-0.5">(13)</th>
                           <th className="border border-black py-0.5">(12)</th>
                           <th className="border border-black py-0.5">(13)</th>
                           <th className="border border-black py-0.5">(14)</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {Array.from({ length: 15 }).map((_, rIdx) => {
+                        {Array.from({ length: TOTAL_ROWS }).map((_, rIdx) => {
                             const left = leftEntries[rIdx];
-                            const right = rightEntries[rIdx];
+                            const isPindahanRow = rIdx === 0;
+                            const right = rIdx > 0 ? rightEntries[rIdx - 1] : null;
+
                             return (
-                              <tr key={rIdx} className="text-black h-5">
+                              <tr key={rIdx} className="text-black h-[19px] print:h-[18px]">
                                 <td className="border border-black px-1 py-0.5 text-center">
                                   {left ? rIdx + 1 : ''}
                                 </td>
@@ -1130,7 +1170,7 @@ export default function KartuKendaliPage() {
                                 </td>
 
                                 <td className="border border-black px-1 py-0.5 text-center">
-                                  {right ? LEFT_PANE_LIMIT + rIdx + 1 : ''}
+                                  {right ? leftEntries.length + rIdx : ''}
                                 </td>
                                 <td className="border border-black px-1 py-0.5 font-mono text-[8px]">
                                   {right?.no_referensi || ''}
@@ -1139,7 +1179,7 @@ export default function KartuKendaliPage() {
                                   {right ? formatDateShort(right.tanggal) : ''}
                                 </td>
                                 <td className="border border-black px-1.5 py-0.5 text-center">
-                                  {right ? right.uraian : (rIdx === 0 && rightEntries.length === 0 ? 'Pindahan' : '')}
+                                  {isPindahanRow ? 'Pindahan' : (right?.uraian || '')}
                                 </td>
                                 <td className="border border-black px-1 py-0.5 text-center font-bold">
                                   {right && right.masuk > 0 ? right.masuk : (right ? '-' : '')}
@@ -1148,7 +1188,7 @@ export default function KartuKendaliPage() {
                                   {right && right.keluar > 0 ? right.keluar : (right ? '-' : '')}
                                 </td>
                                 <td className="border border-black px-1 py-0.5 text-center font-bold">
-                                  {right ? right.sisa : ''}
+                                  {isPindahanRow ? (leftEntries.length > 0 ? leftLastSisa : '') : (right ? right.sisa : '')}
                                 </td>
                               </tr>
                             );
@@ -1160,61 +1200,63 @@ export default function KartuKendaliPage() {
                             JUMLAH (dipindahkan)
                           </td>
                           <td className="border border-black px-1 py-1 text-center font-bold">
-                            {leftTotalMasuk > 0 ? leftTotalMasuk : '-'}
+                            {leftTotalMasuk > 0 ? leftTotalMasuk : ''}
                           </td>
                           <td className="border border-black px-1 py-1 text-center font-bold">
-                            {leftTotalKeluar > 0 ? leftTotalKeluar : '-'}
+                            {leftTotalKeluar > 0 ? leftTotalKeluar : ''}
                           </td>
                           <td className="border border-black px-1 py-1 text-center font-bold">
-                            {leftLastSisa}
+                            {leftEntries.length > 0 ? leftLastSisa : ''}
                           </td>
 
                           <td colSpan={4} className="border border-black px-1.5 py-1 text-center uppercase text-[9px]">
                             JUMLAH (dipindahkan)
                           </td>
                           <td className="border border-black px-1 py-1 text-center font-bold">
-                            {rightEntries.length > 0 && totalMasuk > 0 ? totalMasuk : '-'}
+                            {rightEntries.length > 0 && rightTotalMasuk > 0 ? rightTotalMasuk : ''}
                           </td>
                           <td className="border border-black px-1 py-1 text-center font-bold">
-                            {rightEntries.length > 0 && totalKeluar > 0 ? totalKeluar : '-'}
+                            {rightEntries.length > 0 && rightTotalKeluar > 0 ? rightTotalKeluar : ''}
                           </td>
                           <td className="border border-black px-1 py-1 text-center font-bold">
-                            {rightEntries.length > 0 ? sisaAkhir : '-'}
+                            {rightEntries.length > 0 ? sisaAkhir : ''}
                           </td>
                         </tr>
                       </tfoot>
                     </table>
                   </div>
 
-                  {/* Tanda Tangan Resmi Sesuai Format BPS - Garis Mengikuti Panjang Nama */}
-                  <div className="w-full flex items-start justify-between text-xs text-black mt-3 pt-1 print:mt-2">
-                    <div className="w-72 text-center flex flex-col items-center">
-                      <p className="font-semibold text-black">Mengetahui,</p>
-                      <p className="font-medium text-black">Kuasa Pengguna Barang</p>
-                      <p className="font-medium text-black">Kepala BPS Kabupaten OKU Selatan</p>
-                      <div className="h-11 print:h-9" />
-                      <p className="text-center">
-                        <span className="font-bold border-b border-black text-black pb-0.5 inline-block">
-                          Rival Abdul Jabar, S.ST., M.Si.
-                        </span>
-                      </p>
-                      <p className="text-[11px] mt-0.5 font-medium text-black text-center">NIP. 19831122 200701 1003</p>
+                  {/* Tanda Tangan Resmi Sesuai Format BPS (Opsional untuk Kartu Kendali) */}
+                  {tampilkanTandaTanganKartu && (
+                    <div className="w-full flex items-start justify-between text-xs text-black mt-3 pt-1 print:mt-2">
+                      <div className="w-72 text-center flex flex-col items-center">
+                        <p className="font-semibold text-black">Mengetahui,</p>
+                        <p className="font-medium text-black">Kuasa Pengguna Barang</p>
+                        <p className="font-medium text-black">Kepala BPS Kabupaten OKU Selatan</p>
+                        <div className="h-11 print:h-9" />
+                        <p className="text-center">
+                          <span className="font-bold border-b border-black text-black pb-0.5 inline-block">
+                            Rival Abdul Jabar, S.ST., M.Si.
+                          </span>
+                        </p>
+                        <p className="text-[11px] mt-0.5 font-medium text-black text-center">NIP. 19831122 200701 1003</p>
+                      </div>
+                      <div className="w-72 text-center flex flex-col items-center">
+                        <p className="font-medium text-black">
+                          {formatTanggalTandaTangan(tglCetakDokumen)}
+                        </p>
+                        <p className="font-semibold text-black">Petugas Pengelola Persediaan</p>
+                        <p className="text-transparent select-none font-medium">-</p>
+                        <div className="h-11 print:h-9" />
+                        <p className="text-center">
+                          <span className="font-bold border-b border-black text-black pb-0.5 inline-block">
+                            Guspita Karleni, S.Si
+                          </span>
+                        </p>
+                        <p className="text-[11px] mt-0.5 font-medium text-black text-center">NIP. 19970806 202521 2039</p>
+                      </div>
                     </div>
-                    <div className="w-72 text-center flex flex-col items-center">
-                      <p className="font-medium text-black">
-                        {formatTanggalTandaTangan(tglCetakDokumen)}
-                      </p>
-                      <p className="font-semibold text-black">Petugas Pengelola Persediaan</p>
-                      <p className="text-transparent select-none font-medium">-</p>
-                      <div className="h-11 print:h-9" />
-                      <p className="text-center">
-                        <span className="font-bold border-b border-black text-black pb-0.5 inline-block">
-                          Guspita Karleni, S.Si
-                        </span>
-                      </p>
-                      <p className="text-[11px] mt-0.5 font-medium text-black text-center">NIP. 19970806 202521 2039</p>
-                    </div>
-                  </div>
+                  )}
                 </>
               )}
 
