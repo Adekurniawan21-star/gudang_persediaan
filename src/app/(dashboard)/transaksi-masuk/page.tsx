@@ -735,17 +735,8 @@ export default function TransaksiMasukPage() {
                       <td className="border border-black px-2 py-1.5 text-center">{idx + 1}</td>
                       <td className="border border-black px-3 py-1.5 font-medium">{item.barang?.nama_barang}</td>
                       <td className="border border-black px-3 py-1.5 text-center">{item.barang?.satuan?.nama_satuan || 'Buah'}</td>
-                      <td className="border border-black px-3 py-1.5 text-center font-bold">{item.jumlah}</td>
+                      <td className="border border-black px-3 py-1.5 text-center font-normal">{item.jumlah}</td>
                       <td className="border border-black px-3 py-1.5">{item.keterangan || '-'}</td>
-                    </tr>
-                  ))}
-                  {Array.from({ length: Math.max(0, 5 - showPrintPreview.items.length) }).map((_, i) => (
-                    <tr key={`empty-${i}`}>
-                      <td className="border border-black px-2 py-2 text-center text-transparent">-</td>
-                      <td className="border border-black px-3 py-2">&nbsp;</td>
-                      <td className="border border-black px-3 py-2">&nbsp;</td>
-                      <td className="border border-black px-3 py-2">&nbsp;</td>
-                      <td className="border border-black px-3 py-2">&nbsp;</td>
                     </tr>
                   ))}
                 </tbody>

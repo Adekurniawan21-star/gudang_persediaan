@@ -775,7 +775,10 @@ export default function LaporanPage() {
                 <h3 className="font-extrabold text-sm tracking-wide text-black uppercase">
                   BERITA ACARA HASIL OPNAME PHISIK (STOCK OPNAME) PERSEDIAAN
                 </h3>
-                <p className="text-xs text-black mt-3 leading-relaxed text-justify max-w-4xl mx-auto">
+                <p
+                  style={{ textIndent: '2.5rem' }}
+                  className="text-xs text-black mt-3 leading-relaxed text-justify max-w-4xl mx-auto"
+                >
                   {getTeksBeritaAcaraOpname(tglCetakDokumen)}
                 </p>
               </div>

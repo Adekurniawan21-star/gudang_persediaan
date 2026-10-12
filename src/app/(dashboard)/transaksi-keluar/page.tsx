@@ -800,10 +800,10 @@ export default function TransaksiKeluarPage() {
                 </h4>
               </div>
 
-              {/* Tim Pemohon */}
+              {/* Tim Pemohon (Font Normal tidak di-bold sesuai Gambar 3) */}
               <div className="text-xs mb-3 text-black">
-                <p>
-                  <span className="font-bold">Tim :</span> {showPrintPreview.nama_tim}
+                <p className="font-normal">
+                  <span>Tim :</span> {showPrintPreview.nama_tim}
                 </p>
               </div>
 
@@ -831,18 +831,8 @@ export default function TransaksiKeluarPage() {
                       <td className="border border-black px-2 py-1.5 text-center font-medium">{idx + 1}</td>
                       <td className="border border-black px-3 py-1.5 font-medium">{item.barang?.nama_barang}</td>
                       <td className="border border-black px-3 py-1.5 text-center">{item.barang?.satuan?.nama_satuan}</td>
-                      <td className="border border-black px-3 py-1.5 text-center font-bold">{item.jumlah}</td>
+                      <td className="border border-black px-3 py-1.5 text-center font-normal">{item.jumlah}</td>
                       <td className="border border-black px-3 py-1.5">{item.keterangan || '-'}</td>
-                    </tr>
-                  ))}
-                  {/* Baris kosong pelengkap agar menyerupai blangko kertas dinas di gambar */}
-                  {Array.from({ length: Math.max(0, 10 - showPrintPreview.items.length) }).map((_, i) => (
-                    <tr key={`empty-${i}`}>
-                      <td className="border border-black px-2 py-2 text-center text-transparent">-</td>
-                      <td className="border border-black px-3 py-2">&nbsp;</td>
-                      <td className="border border-black px-3 py-2">&nbsp;</td>
-                      <td className="border border-black px-3 py-2">&nbsp;</td>
-                      <td className="border border-black px-3 py-2">&nbsp;</td>
                     </tr>
                   ))}
                 </tbody>
