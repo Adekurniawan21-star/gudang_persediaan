@@ -43,7 +43,7 @@ export default function TransaksiMasukPage() {
     if (savedTrx) {
       try {
         const parsed = JSON.parse(savedTrx);
-        if (Array.isArray(parsed) && parsed.length > 0) {
+        if (Array.isArray(parsed)) {
           setTransaksiList(parsed);
         }
       } catch (e) {

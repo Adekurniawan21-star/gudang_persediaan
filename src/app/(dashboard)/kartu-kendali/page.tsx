@@ -21,7 +21,7 @@ const BULAN_NAMES = [
 
 export default function KartuKendaliPage() {
   const [activeTab, setActiveTab] = useState<'kartu' | 'daftar'>('kartu');
-  const [selectedBarangId, setSelectedBarangId] = useState<number>(17); // Default Stabillo (ID 17) sesuai PDF 1 Hal 3
+  const [selectedBarangId, setSelectedBarangId] = useState<number>(1); // Default Stabillo (ID 1)
   const [selectedYear, setSelectedYear] = useState<number>(2026);
   const [searchQuery, setSearchQuery] = useState('');
   const [showPrintPreview, setShowPrintPreview] = useState(false);
@@ -51,7 +51,10 @@ export default function KartuKendaliPage() {
     if (bSaved) {
       try {
         const parsed = JSON.parse(bSaved);
-        if (Array.isArray(parsed) && parsed.length > 0) setBarangList(parsed);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setBarangList(parsed);
+          setSelectedBarangId(prev => (parsed.some((b: Barang) => b.id === prev) ? prev : parsed[0].id));
+        }
       } catch (e) {}
     }
     const kSaved = localStorage.getItem('sipersedia_transaksi_keluar');
@@ -208,7 +211,19 @@ export default function KartuKendaliPage() {
     (b.kode_barang && b.kode_barang.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  const filteredDaftarPersediaan = DATA_DAFTAR_PERSEDIAAN_PDF1.filter(item =>
+  const filteredDaftarPersediaan = (
+    barangList.length < 80
+      ? barangList.map((b, idx) => ({
+          nomor: idx + 1,
+          kode: b.kode_barang,
+          uraian: b.nama_barang,
+          saldo_1_januari: b.stok,
+          masuk: 0,
+          keluar: 0,
+          satuan: b.satuan?.nama_satuan || 'Buah',
+        }))
+      : DATA_DAFTAR_PERSEDIAAN_PDF1
+  ).filter(item =>
     item.uraian.toLowerCase().includes(searchQuery.toLowerCase()) ||
     item.kode.toLowerCase().includes(searchQuery.toLowerCase())
   );

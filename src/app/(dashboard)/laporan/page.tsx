@@ -66,8 +66,8 @@ export default function LaporanPage() {
       }
     }
 
-    if (targetBulan === 8 && targetTahun === 2026) {
-      // Data riil resmi Agustus 2026 sebagai basis
+    if (targetBulan === 8 && targetTahun === 2026 && barangList.length >= 80) {
+      // Data riil resmi Agustus 2026 sebagai basis jika menggunakan data master penuh 81 barang
       const base = DATA_REKAPITULASI_AGUSTUS.map(item => ({ ...item }));
 
       // Gabungkan transaksi tambahan baru dari localStorage
@@ -103,7 +103,7 @@ export default function LaporanPage() {
 
       return base;
     } else {
-      // Perhitungan dinamis untuk bulan lain berdasarkan riwayat transaksi
+      // Perhitungan dinamis berdasarkan daftar barang dan transaksi aktif
       return barangList.map((b, i) => {
         let pembelian = 0;
         let transferMasuk = 0;
@@ -119,11 +119,31 @@ export default function LaporanPage() {
         });
 
         let pengeluaran = 0;
+        const timAlloc = {
+          umum: 0,
+          sosial: 0,
+          ipds: 0,
+          pertanian: 0,
+          distribusi: 0,
+          neraca: 0,
+          pek: 0,
+        };
+
         transaksiKeluarList.forEach(t => {
           const d = new Date(t.tanggal);
           if ((d.getMonth() + 1 === targetBulan || isNaN(d.getMonth())) && d.getFullYear() === targetTahun) {
             const itm = t.items.find(item => item.id_barang === b.id);
-            if (itm) pengeluaran += itm.jumlah;
+            if (itm) {
+              pengeluaran += itm.jumlah;
+              const timName = (t.tim_pemohon || t.nama_tim || '').toLowerCase();
+              if (timName.includes('umum')) timAlloc.umum += itm.jumlah;
+              else if (timName.includes('sosial')) timAlloc.sosial += itm.jumlah;
+              else if (timName.includes('ipds')) timAlloc.ipds += itm.jumlah;
+              else if (timName.includes('tani') || timName.includes('pertanian')) timAlloc.pertanian += itm.jumlah;
+              else if (timName.includes('dist')) timAlloc.distribusi += itm.jumlah;
+              else if (timName.includes('neraca') || timName.includes('nerwilis')) timAlloc.neraca += itm.jumlah;
+              else if (timName.includes('pek') || timName.includes('ktip')) timAlloc.pek += itm.jumlah;
+            }
           }
         });
 
@@ -141,13 +161,23 @@ export default function LaporanPage() {
           total_persediaan: total,
           barang_rusak: 0,
           barang_usang: 0,
+          tim: {
+            umum: timAlloc.umum,
+            sosial: timAlloc.sosial,
+            ipds: timAlloc.ipds,
+            pertanian: timAlloc.pertanian,
+            distribusi: timAlloc.distribusi,
+            neraca: timAlloc.neraca,
+            pek: timAlloc.pek,
+            sisa: total,
+          },
         };
       });
     }
   };
 
   // Data Rekapitulasi State
-  const [reportData, setReportData] = useState<RekapitulasiAgustusItem[]>(() => [...DATA_REKAPITULASI_AGUSTUS]);
+  const [reportData, setReportData] = useState<RekapitulasiAgustusItem[]>([]);
 
   useEffect(() => {
     setReportData(getComputedReportData(bulan, tahun));

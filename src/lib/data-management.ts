@@ -5,11 +5,11 @@
 
 import { ALL_81_BARANG_BPS, SAMPLE_TRANSAKSI_MASUK, SAMPLE_TRANSAKSI_KELUAR } from './mock-data';
 
-export const DATA_STORE_VERSION = 'v20261011_clean_v2';
+export const DATA_STORE_VERSION = 'v20261012_lean_6_clean';
 
 /**
  * Inisialisasi otomatis pada awal aplikasi dimuat.
- * Jika versi data belum sesuai, otomatis reset ke mode uji coba bersih (81 master barang siap, 0 transaksi).
+ * Jika versi data belum sesuai, otomatis reset ke mode uji coba bersih (6 master barang perwakilan, 0 transaksi).
  */
 export function initOrMigrateStore(): boolean {
   if (typeof window === 'undefined') return false;
@@ -22,7 +22,7 @@ export function initOrMigrateStore(): boolean {
       localStorage.setItem('sipersedia_transaksi_masuk', JSON.stringify([]));
       localStorage.setItem('sipersedia_transaksi_keluar', JSON.stringify([]));
       
-      // Setel 81 barang master resmi BPS dengan stok baseline
+      // Setel 6 barang master perwakilan bersih
       localStorage.setItem('sipersedia_barang_list', JSON.stringify(ALL_81_BARANG_BPS));
 
       // Hapus data rekapitulasi custom/cache
@@ -31,6 +31,31 @@ export function initOrMigrateStore(): boolean {
           localStorage.removeItem(key);
         }
       });
+
+      // Setel master kategori perwakilan
+      localStorage.setItem('sipersedia_kategori_list', JSON.stringify([
+        { id: 1, nama: 'Alat Tulis Kantor', deskripsi: 'Perlengkapan tulis perkantoran', jumlah_barang: 3 },
+        { id: 2, nama: 'Peralatan Komputer', deskripsi: 'Perangkat keras dan aksesoris komputer', jumlah_barang: 1 },
+        { id: 3, nama: 'Perlengkapan Cetakan', deskripsi: 'Formulir, buku, dan cetakan dinas', jumlah_barang: 1 },
+        { id: 4, nama: 'Perlengkapan Lapangan', deskripsi: 'Perlengkapan sensus & survei lapangan', jumlah_barang: 1 },
+      ]));
+
+      // Setel master satuan perwakilan
+      localStorage.setItem('sipersedia_satuan_list', JSON.stringify([
+        { id: 1, nama: 'Buah' },
+        { id: 2, nama: 'Rim' },
+        { id: 3, nama: 'Kotak' },
+        { id: 4, nama: 'Unit' },
+        { id: 5, nama: 'Lusin' },
+      ]));
+
+      // Setel master lokasi perwakilan
+      localStorage.setItem('sipersedia_lokasi_list', JSON.stringify([
+        { id: 1, nama: 'Gudang ATK', deskripsi: 'Ruang penyimpanan khusus alat tulis kantor', jumlah_barang: 3 },
+        { id: 2, nama: 'Rak Server', deskripsi: 'Tempat penyimpanan peralatan IT', jumlah_barang: 1 },
+        { id: 3, nama: 'Ruang Arsip', deskripsi: 'Ruang penyimpanan dokumen dan cetakan', jumlah_barang: 1 },
+        { id: 4, nama: 'Gudang Utama', deskripsi: 'Ruang penyimpanan utama lantai 1', jumlah_barang: 1 },
+      ]));
 
       localStorage.setItem('sipersedia_data_version', DATA_STORE_VERSION);
       return true;
