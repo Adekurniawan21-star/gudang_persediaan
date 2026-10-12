@@ -657,7 +657,7 @@ export default function KartuKendaliPage() {
                         <th className="border border-black py-0.5">(8)</th>
                         <th className="border border-black py-0.5">(9)</th>
                         <th className="border border-black py-0.5">(10)</th>
-                        <th className="border border-black py-0.5">(13)</th>
+                        <th className="border border-black py-0.5">(11)</th>
                         <th className="border border-black py-0.5">(12)</th>
                         <th className="border border-black py-0.5">(13)</th>
                         <th className="border border-black py-0.5">(14)</th>
@@ -695,27 +695,42 @@ export default function KartuKendaliPage() {
                               </td>
 
                               {/* Sisi Kanan */}
-                              <td className="border border-black px-1 py-0.5 text-center font-medium">
-                                {right ? leftEntries.length + rIdx : ''}
-                              </td>
-                              <td className="border border-black px-1.5 py-0.5 font-mono text-[9px]">
-                                {right?.no_referensi || ''}
-                              </td>
-                              <td className="border border-black px-1 py-0.5 text-center">
-                                {right ? formatDateShort(right.tanggal) : ''}
-                              </td>
-                              <td className="border border-black px-2 py-0.5 font-medium text-center">
-                                {isPindahanRow ? 'Pindahan' : (right?.uraian || '')}
-                              </td>
-                              <td className="border border-black px-1 py-0.5 text-center font-bold text-emerald-800">
-                                {right && right.masuk > 0 ? right.masuk : (right ? '-' : '')}
-                              </td>
-                              <td className="border border-black px-1 py-0.5 text-center font-bold text-rose-800">
-                                {right && right.keluar > 0 ? right.keluar : (right ? '-' : '')}
-                              </td>
-                              <td className="border border-black px-1.5 py-0.5 text-center font-bold">
-                                {isPindahanRow ? (leftEntries.length > 0 ? leftLastSisa : '') : (right ? right.sisa : '')}
-                              </td>
+                              {isPindahanRow ? (
+                                <>
+                                  <td colSpan={4} className="border border-black px-2 py-0.5 font-medium">
+                                    Pindahan
+                                  </td>
+                                  <td className="border border-black px-1 py-0.5 text-center font-bold text-emerald-800"></td>
+                                  <td className="border border-black px-1 py-0.5 text-center font-bold text-rose-800"></td>
+                                  <td className="border border-black px-1.5 py-0.5 text-center font-bold">
+                                    {leftEntries.length > 0 ? leftLastSisa : ''}
+                                  </td>
+                                </>
+                              ) : (
+                                <>
+                                  <td className="border border-black px-1 py-0.5 text-center font-medium">
+                                    {right ? leftEntries.length + rIdx : ''}
+                                  </td>
+                                  <td className="border border-black px-1.5 py-0.5 font-mono text-[9px]">
+                                    {right?.no_referensi || ''}
+                                  </td>
+                                  <td className="border border-black px-1 py-0.5 text-center">
+                                    {right ? formatDateShort(right.tanggal) : ''}
+                                  </td>
+                                  <td className="border border-black px-2 py-0.5 font-medium">
+                                    {right?.uraian || ''}
+                                  </td>
+                                  <td className="border border-black px-1 py-0.5 text-center font-bold text-emerald-800">
+                                    {right && right.masuk > 0 ? right.masuk : (right ? '-' : '')}
+                                  </td>
+                                  <td className="border border-black px-1 py-0.5 text-center font-bold text-rose-800">
+                                    {right && right.keluar > 0 ? right.keluar : (right ? '-' : '')}
+                                  </td>
+                                  <td className="border border-black px-1.5 py-0.5 text-center font-bold">
+                                    {right ? right.sisa : ''}
+                                  </td>
+                                </>
+                              )}
                             </tr>
                           );
                         })}
@@ -1133,7 +1148,7 @@ export default function KartuKendaliPage() {
                           <th className="border border-black py-0.5">(8)</th>
                           <th className="border border-black py-0.5">(9)</th>
                           <th className="border border-black py-0.5">(10)</th>
-                          <th className="border border-black py-0.5">(13)</th>
+                          <th className="border border-black py-0.5">(11)</th>
                           <th className="border border-black py-0.5">(12)</th>
                           <th className="border border-black py-0.5">(13)</th>
                           <th className="border border-black py-0.5">(14)</th>
@@ -1169,27 +1184,42 @@ export default function KartuKendaliPage() {
                                   {left ? left.sisa : ''}
                                 </td>
 
-                                <td className="border border-black px-1 py-0.5 text-center">
-                                  {right ? leftEntries.length + rIdx : ''}
-                                </td>
-                                <td className="border border-black px-1 py-0.5 font-mono text-[8px]">
-                                  {right?.no_referensi || ''}
-                                </td>
-                                <td className="border border-black px-1 py-0.5 text-center">
-                                  {right ? formatDateShort(right.tanggal) : ''}
-                                </td>
-                                <td className="border border-black px-1.5 py-0.5 text-center">
-                                  {isPindahanRow ? 'Pindahan' : (right?.uraian || '')}
-                                </td>
-                                <td className="border border-black px-1 py-0.5 text-center font-bold">
-                                  {right && right.masuk > 0 ? right.masuk : (right ? '-' : '')}
-                                </td>
-                                <td className="border border-black px-1 py-0.5 text-center font-bold">
-                                  {right && right.keluar > 0 ? right.keluar : (right ? '-' : '')}
-                                </td>
-                                <td className="border border-black px-1 py-0.5 text-center font-bold">
-                                  {isPindahanRow ? (leftEntries.length > 0 ? leftLastSisa : '') : (right ? right.sisa : '')}
-                                </td>
+                                {isPindahanRow ? (
+                                  <>
+                                    <td colSpan={4} className="border border-black px-2 py-0.5 font-medium">
+                                      Pindahan
+                                    </td>
+                                    <td className="border border-black px-1 py-0.5 text-center font-bold"></td>
+                                    <td className="border border-black px-1 py-0.5 text-center font-bold"></td>
+                                    <td className="border border-black px-1 py-0.5 text-center font-bold">
+                                      {leftEntries.length > 0 ? leftLastSisa : ''}
+                                    </td>
+                                  </>
+                                ) : (
+                                  <>
+                                    <td className="border border-black px-1 py-0.5 text-center font-medium">
+                                      {right ? leftEntries.length + rIdx : ''}
+                                    </td>
+                                    <td className="border border-black px-1 py-0.5 font-mono text-[8px]">
+                                      {right?.no_referensi || ''}
+                                    </td>
+                                    <td className="border border-black px-1 py-0.5 text-center">
+                                      {right ? formatDateShort(right.tanggal) : ''}
+                                    </td>
+                                    <td className="border border-black px-1.5 py-0.5">
+                                      {right?.uraian || ''}
+                                    </td>
+                                    <td className="border border-black px-1 py-0.5 text-center font-bold">
+                                      {right && right.masuk > 0 ? right.masuk : (right ? '-' : '')}
+                                    </td>
+                                    <td className="border border-black px-1 py-0.5 text-center font-bold">
+                                      {right && right.keluar > 0 ? right.keluar : (right ? '-' : '')}
+                                    </td>
+                                    <td className="border border-black px-1 py-0.5 text-center font-bold">
+                                      {right ? right.sisa : ''}
+                                    </td>
+                                  </>
+                                )}
                               </tr>
                             );
                           })}

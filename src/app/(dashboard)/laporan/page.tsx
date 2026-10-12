@@ -699,26 +699,83 @@ export default function LaporanPage() {
               </div>
             </div>
 
-            {/* Injeksi Style Cetak: Laporan Harus A4 PORTRAIT */}
+            {/* Injeksi Style Cetak: Laporan Harus A4 PORTRAIT Murni */}
             <style dangerouslySetInnerHTML={{ __html: `
               @media print {
                 @page {
                   size: A4 portrait !important;
-                  margin: 10mm 12mm 10mm 12mm !important;
+                  margin: 8mm 10mm 8mm 10mm !important;
+                }
+                html, body {
+                  width: 100% !important;
+                  height: auto !important;
+                  margin: 0 !important;
+                  padding: 0 !important;
+                  background: #ffffff !important;
+                  color: #000000 !important;
+                  overflow: visible !important;
+                  -webkit-print-color-adjust: exact !important;
+                  print-color-adjust: exact !important;
+                }
+                header, aside, nav, .no-print {
+                  display: none !important;
+                }
+                .fixed.inset-0 {
+                  position: static !important;
+                  background: transparent !important;
+                  padding: 0 !important;
+                  margin: 0 !important;
+                  display: block !important;
+                  width: 100% !important;
+                  height: auto !important;
+                  overflow: visible !important;
+                }
+                .max-w-5xl {
+                  max-width: 100% !important;
+                  max-height: none !important;
+                  width: 100% !important;
+                  height: auto !important;
+                  overflow: visible !important;
+                  box-shadow: none !important;
+                  border-radius: 0 !important;
+                  border: none !important;
+                  padding: 0 !important;
+                  margin: 0 !important;
+                }
+                #print-area {
+                  padding: 0 !important;
+                  margin: 0 !important;
+                  width: 100% !important;
+                  max-width: 100% !important;
+                  background: #ffffff !important;
+                  box-shadow: none !important;
+                  border: none !important;
+                  overflow: visible !important;
+                }
+                table {
+                  width: 100% !important;
+                  border-collapse: collapse !important;
+                }
+                th, td {
+                  border: 1px solid #000000 !important;
+                }
+                tr {
+                  page-break-inside: avoid !important;
+                  break-inside: avoid !important;
                 }
               }
             `}} />
 
-            <div className="p-8 text-black bg-white" id="print-area">
-              {/* KOP SURAT RESMI BPS */}
-              <KopSurat />
+            <div className="p-8 print:p-0 text-black bg-white" id="print-area">
+              {/* Kop Surat hanya muncul untuk Rekapitulasi Tim, TIDAK untuk Berita Acara Opname */}
+              {activeTab === 'tim' && <KopSurat />}
 
-              {/* Judul & Pengantar Resmi Berita Acara (Persis Gambar 1 Revisi) */}
+              {/* Judul & Pengantar Resmi Berita Acara */}
               <div className="text-center mb-5">
                 <h3 className="font-extrabold text-sm tracking-wide text-black uppercase">
                   BERITA ACARA HASIL OPNAME PHISIK (STOCK OPNAME) PERSEDIAAN
                 </h3>
-                <p className="text-[11px] text-gray-700 mt-2 max-w-3xl mx-auto leading-relaxed">
+                <p className="text-xs text-black mt-3 leading-relaxed text-justify max-w-4xl mx-auto">
                   {getTeksBeritaAcaraOpname(tglCetakDokumen)}
                 </p>
               </div>
