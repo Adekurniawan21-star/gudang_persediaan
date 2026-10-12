@@ -222,8 +222,10 @@ export default function LaporanPage() {
 
   return (
     <div className="page-enter space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      {/* Konten Dashboard (Disembunyikan saat mencetak dokumen) */}
+      <div className="print:hidden space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-dark-800">Laporan Persediaan &amp; Stock Opname</h1>
           <p className="text-sm text-dark-400 mt-1">
@@ -665,6 +667,7 @@ export default function LaporanPage() {
           </div>
         </div>
       )}
+      </div>
 
       {/* Modal Preview Cetak — Sesuai Format File 1 Gambar Dokumen Mbak Guspita */}
       {showPreview && (
@@ -699,69 +702,12 @@ export default function LaporanPage() {
               </div>
             </div>
 
-            {/* Injeksi Style Cetak: Laporan Harus A4 PORTRAIT Murni */}
+            {/* Injeksi Style Cetak: Kunci A4 Portrait untuk Laporan Persediaan */}
             <style dangerouslySetInnerHTML={{ __html: `
               @media print {
                 @page {
                   size: A4 portrait !important;
                   margin: 8mm 10mm 8mm 10mm !important;
-                }
-                html, body {
-                  width: 100% !important;
-                  height: auto !important;
-                  margin: 0 !important;
-                  padding: 0 !important;
-                  background: #ffffff !important;
-                  color: #000000 !important;
-                  overflow: visible !important;
-                  -webkit-print-color-adjust: exact !important;
-                  print-color-adjust: exact !important;
-                }
-                header, aside, nav, .no-print {
-                  display: none !important;
-                }
-                .fixed.inset-0 {
-                  position: static !important;
-                  background: transparent !important;
-                  padding: 0 !important;
-                  margin: 0 !important;
-                  display: block !important;
-                  width: 100% !important;
-                  height: auto !important;
-                  overflow: visible !important;
-                }
-                .max-w-5xl {
-                  max-width: 100% !important;
-                  max-height: none !important;
-                  width: 100% !important;
-                  height: auto !important;
-                  overflow: visible !important;
-                  box-shadow: none !important;
-                  border-radius: 0 !important;
-                  border: none !important;
-                  padding: 0 !important;
-                  margin: 0 !important;
-                }
-                #print-area {
-                  padding: 0 !important;
-                  margin: 0 !important;
-                  width: 100% !important;
-                  max-width: 100% !important;
-                  background: #ffffff !important;
-                  box-shadow: none !important;
-                  border: none !important;
-                  overflow: visible !important;
-                }
-                table {
-                  width: 100% !important;
-                  border-collapse: collapse !important;
-                }
-                th, td {
-                  border: 1px solid #000000 !important;
-                }
-                tr {
-                  page-break-inside: avoid !important;
-                  break-inside: avoid !important;
                 }
               }
             `}} />
@@ -875,13 +821,13 @@ export default function LaporanPage() {
               )}
 
               {/* Tanda Tangan Resmi Sesuai Format BPS - Garis Mengikuti Panjang Nama */}
-              <div className="w-full flex items-start justify-between text-xs text-black mt-8 pt-2">
+              <div className="w-full flex items-start justify-between text-xs text-black mt-8 pt-2 print:mt-4 avoid-break">
                 {/* Kolom Kiri: Mengetahui KPB */}
                 <div className="w-72 text-center flex flex-col items-center">
                   <p className="font-semibold text-black">Mengetahui,</p>
                   <p className="font-medium text-black">Penanggung Jawab KPB</p>
                   <p className="font-medium text-black">Kepala BPS Kabupaten OKU Selatan</p>
-                  <div className="h-20" />
+                  <div className="h-20 print:h-12" />
                   <p className="text-center">
                     <span className="font-bold border-b border-black text-black pb-0.5 inline-block">
                       Rival Abdul Jabar, S.ST., M.Si.
@@ -895,7 +841,7 @@ export default function LaporanPage() {
                   <p className="font-medium text-black">{formatTanggalTandaTangan(tglCetakDokumen)}</p>
                   <p className="font-semibold text-black">Petugas Pengelola Persediaan</p>
                   <p className="text-transparent select-none font-medium">-</p>
-                  <div className="h-20" />
+                  <div className="h-20 print:h-12" />
                   <p className="text-center">
                     <span className="font-bold border-b border-black text-black pb-0.5 inline-block">
                       Guspita Karleni, S.Si

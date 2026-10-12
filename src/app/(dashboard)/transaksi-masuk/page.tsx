@@ -277,8 +277,10 @@ export default function TransaksiMasukPage() {
 
   return (
     <div className="page-enter space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      {/* Konten Dashboard (Disembunyikan saat mencetak dokumen) */}
+      <div className="print:hidden space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-dark-800">Transaksi Masuk</h1>
           <p className="text-sm text-dark-400 mt-1">Catat barang masuk dari pembelian atau transfer dari provinsi</p>
@@ -648,6 +650,7 @@ export default function TransaksiMasukPage() {
           </div>
         </div>
       )}
+      </div>
 
       {/* Print Preview Modal — per No Surat (Master-Detail) */}
       {showPrintPreview && (
@@ -679,12 +682,16 @@ export default function TransaksiMasukPage() {
               </div>
             </div>
 
-            {/* Injeksi Style Cetak: Transaksi Masuk Harus A4 PORTRAIT */}
+            {/* Injeksi Style Cetak: Kunci A4 PORTRAIT untuk Bukti Penerimaan Barang */}
             <style dangerouslySetInnerHTML={{ __html: `
               @media print {
                 @page {
                   size: A4 portrait !important;
-                  margin: 10mm 12mm 10mm 12mm !important;
+                  margin: 8mm 10mm 8mm 10mm !important;
+                }
+                #print-area {
+                  page-break-inside: avoid !important;
+                  break-inside: avoid !important;
                 }
               }
             `}} />
@@ -747,13 +754,13 @@ export default function TransaksiMasukPage() {
               )}
 
               {/* Tanda tangan format resmi BPS */}
-              <div className="w-full flex items-start justify-between mt-10 text-xs text-black">
+              <div className="w-full flex items-start justify-between mt-10 print:mt-4 text-xs text-black avoid-break">
                 <div className="w-72 text-center flex flex-col items-center">
                   <p className="font-semibold text-black">Yang Menyerahkan,</p>
                   <p className="font-medium text-black">
                     {showPrintPreview.sumber === 'Pembelian' ? 'Rekanan / Vendor' : 'BPS Provinsi Sumatera Selatan'}
                   </p>
-                  <div className="h-16" />
+                  <div className="h-16 print:h-12" />
                   <p className="text-center">
                     <span className="font-bold text-black border-b border-black pb-0.5 inline-block">
                       (&nbsp;................................&nbsp;)
@@ -763,7 +770,7 @@ export default function TransaksiMasukPage() {
                 <div className="w-72 text-center flex flex-col items-center">
                   <p className="text-black font-medium">{formatTanggalTandaTangan(tglCetakDokumen)}</p>
                   <p className="font-semibold text-black">Petugas Pengelola Persediaan</p>
-                  <div className="h-16" />
+                  <div className="h-16 print:h-12" />
                   <p className="text-center">
                     <span className="font-bold text-black border-b border-black pb-0.5 inline-block">
                       Guspita Karleni, S.Si

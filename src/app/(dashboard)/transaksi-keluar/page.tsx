@@ -273,8 +273,10 @@ export default function TransaksiKeluarPage() {
 
   return (
     <div className="page-enter space-y-6">
-      {/* Header — Dinamis sesuai Role Admin vs User */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      {/* Konten Dashboard (Disembunyikan saat mencetak dokumen) */}
+      <div className="print:hidden space-y-6">
+        {/* Header — Dinamis sesuai Role Admin vs User */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-dark-800">
             {isUser ? 'Permintaan Barang (SPB)' : 'Pengeluaran / Pemakaian Barang'}
@@ -730,6 +732,7 @@ export default function TransaksiKeluarPage() {
           </div>
         </div>
       )}
+      </div>
 
       {/* Print Preview — SURAT PERMINTAAN BARANG ATK/CETAKAN/DLL (Persis Format Gambar) */}
       {showPrintPreview && (
@@ -762,12 +765,16 @@ export default function TransaksiKeluarPage() {
               </div>
             </div>
 
-            {/* Injeksi Style Cetak: Transaksi Keluar / SPB Harus A4 PORTRAIT */}
+            {/* Injeksi Style Cetak: Kunci A4 PORTRAIT untuk Surat Permintaan Barang */}
             <style dangerouslySetInnerHTML={{ __html: `
               @media print {
                 @page {
                   size: A4 portrait !important;
-                  margin: 10mm 12mm 10mm 12mm !important;
+                  margin: 8mm 10mm 8mm 10mm !important;
+                }
+                #print-area {
+                  page-break-inside: avoid !important;
+                  break-inside: avoid !important;
                 }
               }
             `}} />
@@ -839,12 +846,12 @@ export default function TransaksiKeluarPage() {
               </table>
 
               {/* Tanda Tangan Format Resmi BPS - Garis Mengikuti Panjang Nama */}
-              <div className="w-full flex items-start justify-between text-xs text-black mt-8 pt-2">
+              <div className="w-full flex items-start justify-between text-xs text-black mt-8 pt-2 print:mt-4 avoid-break">
                 {/* Kolom Kiri: Administrator Gudang */}
                 <div className="w-72 text-center flex flex-col items-center">
                   <p className="font-semibold text-black">Administrator Gudang</p>
                   <p className="font-semibold text-black">Kuasa Pengguna Barang</p>
-                  <div className="h-16" />
+                  <div className="h-16 print:h-12" />
                   <p className="text-center">
                     <span className="border-b border-black pb-0.5 font-bold text-black inline-block">
                       Guspita Karleni, S.Si
@@ -857,7 +864,7 @@ export default function TransaksiKeluarPage() {
                 <div className="w-72 text-center flex flex-col items-center">
                   <p className="text-black font-medium">{formatTanggalTandaTangan(tglCetakDokumen)}</p>
                   <p className="font-semibold text-black">Penanggung Jawab</p>
-                  <div className="h-16" />
+                  <div className="h-16 print:h-12" />
                   <p className="text-center">
                     <span className="border-b border-black pb-0.5 font-bold text-black inline-block">
                       {showPrintPreview.penanggung_jawab || '............................................................'}

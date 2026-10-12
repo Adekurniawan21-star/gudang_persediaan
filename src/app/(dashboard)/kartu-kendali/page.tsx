@@ -183,7 +183,7 @@ export default function KartuKendaliPage() {
   const leftEntries = entries.slice(0, LEFT_CAPACITY);
   const rightEntries = entries.slice(LEFT_CAPACITY);
   // Baris dinamis: Baris 0 adalah baris Pindahan, Nomor 1 dst dimulai di baris ke-1 di bawah Pindahan
-  const transactionRows = Math.max(leftEntries.length, rightEntries.length);
+  const transactionRows = Math.max(1, Math.max(leftEntries.length, rightEntries.length));
   const activeRowCount = 1 + transactionRows;
 
   const leftTotalMasuk = leftEntries.reduce((s, e) => s + e.masuk, 0);
@@ -346,8 +346,10 @@ export default function KartuKendaliPage() {
         </div>
       )}
 
-      {/* Header Utama */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      {/* Konten Dashboard (Disembunyikan saat mencetak dokumen) */}
+      <div className="print:hidden space-y-6">
+        {/* Header Utama */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold text-dark-800">Kartu Kendali Persediaan</h1>
@@ -898,6 +900,7 @@ export default function KartuKendaliPage() {
           </div>
         </div>
       )}
+      </div>
 
       {/* ======================================================== */}
       {/* MODAL PRINT PREVIEW RESMI (KOP SURAT TAHOMA 14 & ARIAL 8) */}
@@ -945,73 +948,19 @@ export default function KartuKendaliPage() {
               </div>
             </div>
 
-            {/* Injeksi Style Cetak: Kartu Kendali Harus A4 LANDSCAPE Penuh 1 Halaman Bersih */}
+            {/* Injeksi Style Cetak: Kunci A4 Landscape untuk Kartu Kendali & Cegah Terpotong */}
             <style dangerouslySetInnerHTML={{ __html: `
               @media print {
                 @page {
-                  size: A4 landscape !important;
-                  margin: 5mm 6mm 5mm 6mm !important;
+                  size: ${previewMode === 'kartu' ? 'A4 landscape' : 'A4 portrait'} !important;
+                  margin: ${previewMode === 'kartu' ? '6mm 8mm 6mm 8mm' : '8mm 10mm 8mm 10mm'} !important;
                 }
-                html, body {
-                  width: 100% !important;
-                  height: auto !important;
-                  margin: 0 !important;
-                  padding: 0 !important;
-                  background: #ffffff !important;
-                  color: #000000 !important;
-                  overflow: visible !important;
-                  -webkit-print-color-adjust: exact !important;
-                  print-color-adjust: exact !important;
-                }
-                header, aside, nav, .no-print {
-                  display: none !important;
-                }
-                .fixed.inset-0 {
-                  position: static !important;
-                  background: transparent !important;
-                  padding: 0 !important;
-                  margin: 0 !important;
-                  display: block !important;
-                  width: 100% !important;
-                  height: auto !important;
-                  overflow: visible !important;
-                }
-                .max-w-5xl, .max-h-\\[92vh\\] {
-                  max-width: 100% !important;
-                  max-height: none !important;
-                  width: 100% !important;
-                  height: auto !important;
-                  overflow: visible !important;
-                  box-shadow: none !important;
-                  border-radius: 0 !important;
-                  border: none !important;
-                  padding: 0 !important;
-                  margin: 0 !important;
-                }
+                ${previewMode === 'kartu' ? `
                 #print-area {
-                  padding: 0 !important;
-                  margin: 0 !important;
-                  width: 100% !important;
-                  max-width: 100% !important;
-                  background: #ffffff !important;
-                  box-shadow: none !important;
-                  border: none !important;
-                  overflow: visible !important;
-                  page-break-after: avoid !important;
-                  break-after: avoid !important;
-                }
-                table {
-                  width: 100% !important;
-                  table-layout: fixed !important;
-                  border-collapse: collapse !important;
-                }
-                th, td {
-                  border: 1px solid #000000 !important;
-                }
-                tr {
                   page-break-inside: avoid !important;
                   break-inside: avoid !important;
                 }
+                ` : ''}
               }
             `}} />
 
@@ -1022,22 +971,22 @@ export default function KartuKendaliPage() {
               {/* JIKA PREVIEW KARTU PERSEDIAAN (PERSIS HALAMAN 3 PDF & EXCEL) */}
               {previewMode === 'kartu' && currentCard && (
                 <>
-                  <h3 className="text-center font-extrabold text-black mb-3 text-sm uppercase tracking-wider">
+                  <h3 className="text-center font-extrabold text-black mb-2 print:mb-1 text-sm print:text-xs uppercase tracking-wider">
                     KARTU PERSEDIAAN BARANG PAKAI HABIS (ATK/ARK)
                   </h3>
 
                   {/* Identitas Barang & Logo Sesuai Format Gambar Excel */}
-                  <div className="grid grid-cols-12 gap-3 mb-3 text-xs text-black items-start">
+                  <div className="grid grid-cols-12 gap-3 mb-2 print:mb-1.5 text-xs print:text-[10px] text-black items-start">
                     <div className="col-span-4 flex flex-col items-start justify-start pt-0">
                       <div className="flex flex-col items-center text-center">
-                        <img src="/images/logo-bps.svg" alt="Logo BPS" className="h-14 w-auto object-contain mb-1" />
+                        <img src="/images/logo-bps.svg" alt="Logo BPS" className="h-14 print:h-11 w-auto object-contain mb-1" />
                         <div
                           style={{
                             fontFamily: 'Arial, sans-serif',
                             fontSize: '9pt',
                             lineHeight: 1.25,
                           }}
-                          className="font-bold italic text-black text-center"
+                          className="font-bold italic text-black text-center print:text-[8pt]"
                         >
                           <p>Badan Pusat Statistik</p>
                           <p>Kabupaten Ogan Komering Ulu Selatan</p>
@@ -1081,24 +1030,24 @@ export default function KartuKendaliPage() {
                   </div>
 
                   {/* Tabel 1: Horizontal 15 Kolom Pengeluaran Tiap Bulan */}
-                  <div className="mb-4">
-                    <table className="w-full border-collapse border border-black text-center text-[10px]">
+                  <div className="mb-2 print:mb-1.5">
+                    <table className="w-full border-collapse border border-black text-center text-[10px] print:text-[8px]">
                       <thead>
                         <tr className="bg-gray-100 font-bold text-black">
-                          <th colSpan={13} className="border border-black py-1 uppercase text-[10px]">
+                          <th colSpan={13} className="border border-black py-0.5 uppercase text-[10px] print:text-[8px]">
                             Banyaknya Pengeluaran Tiap-Tiap Bulan
                           </th>
-                          <th rowSpan={2} className="border border-black px-1.5 py-1 text-[9px] leading-tight w-16">
+                          <th rowSpan={2} className="border border-black px-1.5 py-0.5 text-[9px] print:text-[7.5px] leading-tight w-16">
                             Jumlah Pengeluaran
                           </th>
-                          <th rowSpan={2} className="border border-black px-1.5 py-1 text-[9px] leading-tight w-16">
+                          <th rowSpan={2} className="border border-black px-1.5 py-0.5 text-[9px] print:text-[7.5px] leading-tight w-16">
                             Stock Awal tahun
                           </th>
-                          <th rowSpan={2} className="border border-black px-1.5 py-1 text-[9px] leading-tight w-16">
+                          <th rowSpan={2} className="border border-black px-1.5 py-0.5 text-[9px] print:text-[7.5px] leading-tight w-16">
                             Stock Akhir tahun
                           </th>
                         </tr>
-                        <tr className="bg-gray-50 font-semibold text-black text-[9px]">
+                        <tr className="bg-gray-50 font-semibold text-black text-[9px] print:text-[7.5px]">
                           {BULAN_NAMES.map((bln, idx) => (
                             <th key={idx} className="border border-black px-0.5 py-0.5">
                               {bln}
@@ -1107,24 +1056,24 @@ export default function KartuKendaliPage() {
                         </tr>
                       </thead>
                       <tbody>
-                        <tr className="text-black font-semibold text-[10px] h-6">
+                        <tr className="text-black font-semibold text-[10px] print:text-[8px] h-6 print:h-[18px]">
                           {BULAN_NAMES.map((_, idx) => {
                             const m = idx <= 2 ? idx + 1 : idx;
                             const out = getMonthlyOut(m);
                             const val = idx === 0 ? (out > 0 ? out : '0') : (out > 0 ? out : '');
                             return (
-                              <td key={idx} className="border border-black py-1">
+                              <td key={idx} className="border border-black py-0.5">
                                 {val}
                               </td>
                             );
                           })}
-                          <td className="border border-black py-1 font-bold">
+                          <td className="border border-black py-0.5 font-bold">
                             {totalPengeluaranTahunan > 0 ? totalPengeluaranTahunan : ''}
                           </td>
-                          <td className="border border-black py-1 font-bold">
+                          <td className="border border-black py-0.5 font-bold">
                             {stockAwal}
                           </td>
-                          <td className="border border-black py-1 font-bold">
+                          <td className="border border-black py-0.5 font-bold">
                             {totalPengeluaranTahunan > 0 || totalMasuk > 0 ? sisaAkhir : ''}
                           </td>
                         </tr>
@@ -1133,8 +1082,8 @@ export default function KartuKendaliPage() {
                   </div>
 
                   {/* Tabel 2: Dual-Pane 14 Kolom Persis Halaman 3 PDF */}
-                  <div className="mb-2">
-                    <table className="w-full border-collapse border border-black text-[9px]">
+                  <div className="mb-2 print:mb-1">
+                    <table className="w-full border-collapse border border-black text-[9px] print:text-[8px]">
                       <thead>
                         <tr className="bg-gray-100 font-bold text-black text-center">
                           <th className="border border-black px-1 py-1 w-6">No.</th>
@@ -1153,7 +1102,7 @@ export default function KartuKendaliPage() {
                           <th className="border border-black px-1 py-1 w-10">Keluar (K)</th>
                           <th className="border border-black px-1 py-1 w-12">Sisa Barang</th>
                         </tr>
-                        <tr className="bg-gray-50 text-[8px] text-gray-600 font-bold text-center">
+                        <tr className="bg-gray-50 text-[8px] print:text-[7.5px] text-gray-600 font-bold text-center">
                           <th className="border border-black py-0.5">(1)</th>
                           <th className="border border-black py-0.5">(2)</th>
                           <th className="border border-black py-0.5">(3)</th>
@@ -1177,7 +1126,7 @@ export default function KartuKendaliPage() {
                             const right = rIdx > 0 ? rightEntries[rIdx - 1] : null;
 
                             return (
-                              <tr key={rIdx} className="text-black h-[19px] print:h-[18px]">
+                              <tr key={rIdx} className="text-black h-[19px] print:h-[16.5px]">
                                 {/* Sisi Kiri */}
                                 {isPindahanRow ? (
                                   <>
@@ -1290,18 +1239,18 @@ export default function KartuKendaliPage() {
 
                   {/* Tanda Tangan Resmi Sesuai Format BPS (Opsional untuk Kartu Kendali) */}
                   {tampilkanTandaTanganKartu && (
-                    <div className="w-full flex items-start justify-between text-xs text-black mt-3 pt-1 print:mt-2">
+                    <div className="w-full flex items-start justify-between text-xs print:text-[9.5px] text-black mt-3 pt-1 print:mt-1.5 print:pt-0 avoid-break">
                       <div className="w-72 text-center flex flex-col items-center">
                         <p className="font-semibold text-black">Mengetahui,</p>
                         <p className="font-medium text-black">Kuasa Pengguna Barang</p>
                         <p className="font-medium text-black">Kepala BPS Kabupaten OKU Selatan</p>
-                        <div className="h-11 print:h-9" />
+                        <div className="h-11 print:h-6" />
                         <p className="text-center">
                           <span className="font-bold border-b border-black text-black pb-0.5 inline-block">
                             Rival Abdul Jabar, S.ST., M.Si.
                           </span>
                         </p>
-                        <p className="text-[11px] mt-0.5 font-medium text-black text-center">NIP. 19831122 200701 1003</p>
+                        <p className="text-[11px] print:text-[9px] mt-0.5 font-medium text-black text-center">NIP. 19831122 200701 1003</p>
                       </div>
                       <div className="w-72 text-center flex flex-col items-center">
                         <p className="font-medium text-black">
@@ -1309,13 +1258,13 @@ export default function KartuKendaliPage() {
                         </p>
                         <p className="font-semibold text-black">Petugas Pengelola Persediaan</p>
                         <p className="text-transparent select-none font-medium">-</p>
-                        <div className="h-11 print:h-9" />
+                        <div className="h-11 print:h-6" />
                         <p className="text-center">
                           <span className="font-bold border-b border-black text-black pb-0.5 inline-block">
                             Guspita Karleni, S.Si
                           </span>
                         </p>
-                        <p className="text-[11px] mt-0.5 font-medium text-black text-center">NIP. 19970806 202521 2039</p>
+                        <p className="text-[11px] print:text-[9px] mt-0.5 font-medium text-black text-center">NIP. 19970806 202521 2039</p>
                       </div>
                     </div>
                   )}
