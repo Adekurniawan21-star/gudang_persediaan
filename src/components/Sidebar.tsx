@@ -139,8 +139,8 @@ export default function Sidebar({
                 />
               </div>
               <div className="min-w-0">
-                <h1 className="text-sm font-extrabold text-white tracking-wider leading-none">SIPERSEDIA</h1>
-                <p className="text-[10px] text-bps-orange-200 font-semibold mt-1 truncate">GUDANG PERSEDIAAN BPS</p>
+                <h1 className="text-sm font-extrabold text-white tracking-wider leading-none">SIMPAN OKUS</h1>
+                <p className="text-[10px] text-bps-orange-200 font-semibold mt-1 truncate" title="Sistem Informasi Manajemen Persediaan Ogan Komering Ulu Selatan">SI MANAJEMEN PERSEDIAAN</p>
               </div>
             </div>
           )}

@@ -1,4 +1,4 @@
-# 📦 SIPERSEDIA — Sistem Informasi Gudang Persediaan
+# 📦 SIMPAN OKUS — Sistem Informasi Manajemen Persediaan Ogan Komering Ulu Selatan
 ### BPS (Badan Pusat Statistik) Kabupaten Ogan Komering Ulu Selatan
 
 Aplikasi web modern untuk pencatatan, pemantauan, dan pelaporan barang persediaan kantor BPS Kabupaten OKU Selatan.

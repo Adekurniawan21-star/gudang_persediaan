@@ -112,10 +112,10 @@ export default function LoginPage() {
           </div>
 
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-            SIPERSEDIA
+            SIMPAN OKUS
           </h1>
           <p className="text-white/80 text-sm font-medium mt-0.5">
-            Sistem Informasi Gudang Persediaan
+            Sistem Informasi Manajemen Persediaan
           </p>
           <p className="text-bps-orange-300 text-xs font-semibold tracking-wider mt-1 uppercase">
             BPS KABUPATEN OGAN KOMERING ULU SELATAN

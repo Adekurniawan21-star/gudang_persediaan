@@ -746,14 +746,14 @@ export default function LaporanPage() {
               {/* Kop Surat hanya muncul untuk Rekapitulasi Tim, TIDAK untuk Berita Acara Opname */}
               {activeTab === 'tim' && <KopSurat />}
 
-              {/* Judul & Pengantar Resmi Berita Acara */}
-              <div className="text-center mb-5">
-                <h3 className="font-extrabold text-sm tracking-wide text-black uppercase">
+              {/* Judul & Pengantar Resmi Berita Acara - Diberikan jarak / spasi jelas sesuai format Excel */}
+              <div className="text-center mb-6">
+                <h3 className="font-extrabold text-sm tracking-wide text-black uppercase mb-4 print:mb-5">
                   BERITA ACARA HASIL OPNAME PHISIK (STOCK OPNAME) PERSEDIAAN
                 </h3>
                 <p
                   style={{ textIndent: '2.5rem' }}
-                  className="text-xs text-black mt-3 leading-relaxed text-justify max-w-4xl mx-auto"
+                  className="text-xs text-black mt-2 mb-5 leading-relaxed text-justify max-w-4xl mx-auto"
                 >
                   {getTeksBeritaAcaraOpname(tglCetakDokumen)}
                 </p>
@@ -764,43 +764,44 @@ export default function LaporanPage() {
                 <table className="w-full border-collapse border border-black text-[10px] mb-8">
                   <thead>
                     <tr className="bg-gray-100 text-black font-bold text-center">
-                      <th className="border border-black px-1.5 py-1 w-8">No.</th>
-                      <th className="border border-black px-2 py-1 text-center">Uraian Barang</th>
-                      <th className="border border-black px-2 py-1 text-center w-14">Satuan</th>
-                      <th className="border border-black px-2 py-1 text-center w-16">Saldo 31 Juli 2026</th>
-                      <th className="border border-black px-2 py-1 text-center w-16">Pembelian</th>
-                      <th className="border border-black px-2 py-1 text-center w-16">Transfer Masuk Agustus</th>
-                      <th className="border border-black px-2 py-1 text-center w-16">Pengeluaran Agustus</th>
-                      <th className="border border-black px-2 py-1 text-center w-16">Total Persediaan</th>
-                      <th className="border border-black px-1.5 py-1 text-center w-12">Barang Rusak</th>
-                      <th className="border border-black px-1.5 py-1 text-center w-12">Barang Usang</th>
+                      <th className="border border-black px-1.5 py-1.5 w-8">No.</th>
+                      <th className="border border-black px-2 py-1.5 text-center">Uraian Barang</th>
+                      <th className="border border-black px-2 py-1.5 text-center w-14">Satuan</th>
+                      <th className="border border-black px-2 py-1.5 text-center w-16">Saldo 31 Juli 2026</th>
+                      <th className="border border-black px-2 py-1.5 text-center w-16">Pembelian</th>
+                      <th className="border border-black px-2 py-1.5 text-center w-16">Transfer Masuk Agustus</th>
+                      <th className="border border-black px-2 py-1.5 text-center w-16">Pengeluaran Agustus</th>
+                      <th className="border border-black px-2 py-1.5 text-center w-16">Total Persediaan</th>
+                      <th className="border border-black px-1.5 py-1.5 text-center w-12">Barang Rusak</th>
+                      <th className="border border-black px-1.5 py-1.5 text-center w-12">Barang Usang</th>
                     </tr>
-                    <tr className="bg-gray-50 text-[9px] text-gray-600 font-bold text-center">
-                      <th className="border border-black py-0.5">(1)</th>
-                      <th className="border border-black py-0.5">(2)</th>
-                      <th className="border border-black py-0.5">(3)</th>
-                      <th className="border border-black py-0.5">(4)</th>
-                      <th className="border border-black py-0.5">(5)</th>
-                      <th className="border border-black py-0.5">(6)</th>
-                      <th className="border border-black py-0.5">(7)</th>
-                      <th className="border border-black py-0.5">(8)=(4)+(5)+(6)-(7)</th>
-                      <th className="border border-black py-0.5">(9)</th>
-                      <th className="border border-black py-0.5">(10)</th>
+                    {/* Baris penomoran (1)-(10): Ramping, py-0, dan formula muat satu baris */}
+                    <tr className="bg-gray-50 text-[8.5px] print:text-[8px] text-gray-700 font-bold text-center h-4">
+                      <th className="border border-black py-0 px-0.5 leading-tight">(1)</th>
+                      <th className="border border-black py-0 px-1 leading-tight">(2)</th>
+                      <th className="border border-black py-0 px-1 leading-tight">(3)</th>
+                      <th className="border border-black py-0 px-1 leading-tight">(4)</th>
+                      <th className="border border-black py-0 px-1 leading-tight">(5)</th>
+                      <th className="border border-black py-0 px-1 leading-tight">(6)</th>
+                      <th className="border border-black py-0 px-1 leading-tight">(7)</th>
+                      <th className="border border-black py-0 px-0.5 whitespace-nowrap text-[7.5px] tracking-tight leading-tight">(8)=(4)+(5)+(6)-(7)</th>
+                      <th className="border border-black py-0 px-0.5 leading-tight">(9)</th>
+                      <th className="border border-black py-0 px-0.5 leading-tight">(10)</th>
                     </tr>
                   </thead>
                   <tbody>
                     {reportData.map((item) => (
                       <tr key={item.no} className="text-black">
-                        <td className="border border-black px-1.5 py-0.5 text-center">{item.no}</td>
-                        <td className="border border-black px-2 py-0.5 font-medium">{item.uraian_barang}</td>
-                        <td className="border border-black px-2 py-0.5 text-center">{item.satuan}</td>
-                        <td className="border border-black px-2 py-0.5 text-center">{item.saldo_juli || '-'}</td>
-                        <td className="border border-black px-2 py-0.5 text-center">{item.pembelian || '-'}</td>
-                        <td className="border border-black px-2 py-0.5 text-center">{item.transfer_masuk || '-'}</td>
-                        <td className="border border-black px-2 py-0.5 text-center font-semibold">{item.pengeluaran || '-'}</td>
-                        <td className="border border-black px-2 py-0.5 text-center font-bold">{item.total_persediaan}</td>
-                        <td className="border border-black px-1.5 py-0.5 text-center">{item.barang_rusak || ''}</td>
-                        <td className="border border-black px-1.5 py-0.5 text-center">{item.barang_usang || ''}</td>
+                        <td className="border border-black px-1.5 py-2 print:py-2 text-center">{item.no}</td>
+                        <td className="border border-black px-2 py-2 print:py-2 font-medium">{item.uraian_barang}</td>
+                        <td className="border border-black px-2 py-2 print:py-2 text-center">{item.satuan}</td>
+                        <td className="border border-black px-2 py-2 print:py-2 text-center">{item.saldo_juli || '-'}</td>
+                        <td className="border border-black px-2 py-2 print:py-2 text-center">{item.pembelian || '-'}</td>
+                        <td className="border border-black px-2 py-2 print:py-2 text-center">{item.transfer_masuk || '-'}</td>
+                        <td className="border border-black px-2 py-2 print:py-2 text-center font-semibold">{item.pengeluaran || '-'}</td>
+                        <td className="border border-black px-2 py-2 print:py-2 text-center font-bold">{item.total_persediaan}</td>
+                        <td className="border border-black px-1.5 py-2 print:py-2 text-center">{item.barang_rusak || ''}</td>
+                        <td className="border border-black px-1.5 py-2 print:py-2 text-center">{item.barang_usang || ''}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -812,14 +813,14 @@ export default function LaporanPage() {
                 <table className="w-full border-collapse border border-black text-[10px] mb-8">
                   <thead>
                     <tr className="bg-gray-100 text-black font-bold text-center">
-                      <th rowSpan={2} className="border border-black px-1 py-1 w-8">No.</th>
-                      <th rowSpan={2} className="border border-black px-2 py-1 text-center">Uraian Barang</th>
-                      <th rowSpan={2} className="border border-black px-2 py-1 text-center w-14">Pengeluaran</th>
-                      <th colSpan={7} className="border border-black px-2 py-0.5 text-center">Rincian Tim Kerja</th>
-                      <th rowSpan={2} className="border border-black px-2 py-1 text-center w-14">Satuan</th>
-                      <th rowSpan={2} className="border border-black px-2 py-1 text-center w-10">Sisa</th>
+                      <th rowSpan={2} className="border border-black px-1 py-1.5 w-8">No.</th>
+                      <th rowSpan={2} className="border border-black px-2 py-1.5 text-center">Uraian Barang</th>
+                      <th rowSpan={2} className="border border-black px-2 py-1.5 text-center w-14">Pengeluaran</th>
+                      <th colSpan={7} className="border border-black px-2 py-1 text-center">Rincian Tim Kerja</th>
+                      <th rowSpan={2} className="border border-black px-2 py-1.5 text-center w-14">Satuan</th>
+                      <th rowSpan={2} className="border border-black px-2 py-1.5 text-center w-10">Sisa</th>
                     </tr>
-                    <tr className="bg-gray-50 text-[9px] text-gray-700 font-bold text-center">
+                    <tr className="bg-gray-50 text-[8.5px] text-gray-700 font-bold text-center h-4">
                       <th className="border border-black px-1 py-0.5">Subbag Umum</th>
                       <th className="border border-black px-1 py-0.5">Tim Sosial</th>
                       <th className="border border-black px-1 py-0.5">IPDS</th>
@@ -832,18 +833,18 @@ export default function LaporanPage() {
                   <tbody>
                     {reportData.map((item) => (
                       <tr key={item.no} className="text-black">
-                        <td className="border border-black px-1 py-0.5 text-center">{item.no}</td>
-                        <td className="border border-black px-2 py-0.5 font-medium">{item.uraian_barang}</td>
-                        <td className="border border-black px-2 py-0.5 text-center font-bold">{item.pengeluaran || '-'}</td>
-                        <td className="border border-black px-1 py-0.5 text-center">{item.tim?.umum || '-'}</td>
-                        <td className="border border-black px-1 py-0.5 text-center">{item.tim?.sosial || '-'}</td>
-                        <td className="border border-black px-1 py-0.5 text-center">{item.tim?.ipds || '-'}</td>
-                        <td className="border border-black px-1 py-0.5 text-center">{item.tim?.pertanian || '-'}</td>
-                        <td className="border border-black px-1 py-0.5 text-center">{item.tim?.distribusi || '-'}</td>
-                        <td className="border border-black px-1 py-0.5 text-center">{item.tim?.neraca || '-'}</td>
-                        <td className="border border-black px-1 py-0.5 text-center">{item.tim?.pek || '-'}</td>
-                        <td className="border border-black px-2 py-0.5 text-center">{item.satuan}</td>
-                        <td className="border border-black px-1 py-0.5 text-center font-medium">{item.tim?.sisa || '-'}</td>
+                        <td className="border border-black px-1 py-2 print:py-2 text-center">{item.no}</td>
+                        <td className="border border-black px-2 py-2 print:py-2 font-medium">{item.uraian_barang}</td>
+                        <td className="border border-black px-2 py-2 print:py-2 text-center font-bold">{item.pengeluaran || '-'}</td>
+                        <td className="border border-black px-1 py-2 print:py-2 text-center">{item.tim?.umum || '-'}</td>
+                        <td className="border border-black px-1 py-2 print:py-2 text-center">{item.tim?.sosial || '-'}</td>
+                        <td className="border border-black px-1 py-2 print:py-2 text-center">{item.tim?.ipds || '-'}</td>
+                        <td className="border border-black px-1 py-2 print:py-2 text-center">{item.tim?.pertanian || '-'}</td>
+                        <td className="border border-black px-1 py-2 print:py-2 text-center">{item.tim?.distribusi || '-'}</td>
+                        <td className="border border-black px-1 py-2 print:py-2 text-center">{item.tim?.neraca || '-'}</td>
+                        <td className="border border-black px-1 py-2 print:py-2 text-center">{item.tim?.pek || '-'}</td>
+                        <td className="border border-black px-2 py-2 print:py-2 text-center">{item.satuan}</td>
+                        <td className="border border-black px-1 py-2 print:py-2 text-center font-medium">{item.tim?.sisa || '-'}</td>
                       </tr>
                     ))}
                   </tbody>

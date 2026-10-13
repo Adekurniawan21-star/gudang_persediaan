@@ -665,21 +665,21 @@ export default function KartuKendaliPage() {
                         <th className="border border-black px-1 py-1 w-12">Keluar (K)</th>
                         <th className="border border-black px-1.5 py-1 w-14">Sisa Barang</th>
                       </tr>
-                      <tr className="bg-gray-50 text-[9px] text-gray-600 font-bold text-center">
-                        <th className="border border-black py-0.5">(1)</th>
-                        <th className="border border-black py-0.5">(2)</th>
-                        <th className="border border-black py-0.5">(3)</th>
-                        <th className="border border-black py-0.5">(4)</th>
-                        <th className="border border-black py-0.5">(5)</th>
-                        <th className="border border-black py-0.5">(6)</th>
-                        <th className="border border-black py-0.5">(7)</th>
-                        <th className="border border-black py-0.5">(8)</th>
-                        <th className="border border-black py-0.5">(9)</th>
-                        <th className="border border-black py-0.5">(10)</th>
-                        <th className="border border-black py-0.5">(11)</th>
-                        <th className="border border-black py-0.5">(12)</th>
-                        <th className="border border-black py-0.5">(13)</th>
-                        <th className="border border-black py-0.5">(14)</th>
+                      <tr className="bg-gray-50 text-[8.5px] text-gray-600 font-bold text-center h-4">
+                        <th className="border border-black py-0 px-0.5 leading-tight">(1)</th>
+                        <th className="border border-black py-0 px-0.5 leading-tight">(2)</th>
+                        <th className="border border-black py-0 px-0.5 leading-tight">(3)</th>
+                        <th className="border border-black py-0 px-0.5 leading-tight">(4)</th>
+                        <th className="border border-black py-0 px-0.5 leading-tight">(5)</th>
+                        <th className="border border-black py-0 px-0.5 leading-tight">(6)</th>
+                        <th className="border border-black py-0 px-0.5 leading-tight">(7)</th>
+                        <th className="border border-black py-0 px-0.5 leading-tight">(8)</th>
+                        <th className="border border-black py-0 px-0.5 leading-tight">(9)</th>
+                        <th className="border border-black py-0 px-0.5 leading-tight">(10)</th>
+                        <th className="border border-black py-0 px-0.5 leading-tight">(11)</th>
+                        <th className="border border-black py-0 px-0.5 leading-tight">(12)</th>
+                        <th className="border border-black py-0 px-0.5 leading-tight">(13)</th>
+                        <th className="border border-black py-0 px-0.5 leading-tight">(14)</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1117,21 +1117,21 @@ export default function KartuKendaliPage() {
                           <th className="border border-black px-1 py-1 w-10">Keluar (K)</th>
                           <th className="border border-black px-1 py-1 w-12">Sisa Barang</th>
                         </tr>
-                        <tr className="bg-gray-50 text-[8px] print:text-[7.5px] text-gray-600 font-bold text-center">
-                          <th className="border border-black py-0.5">(1)</th>
-                          <th className="border border-black py-0.5">(2)</th>
-                          <th className="border border-black py-0.5">(3)</th>
-                          <th className="border border-black py-0.5">(4)</th>
-                          <th className="border border-black py-0.5">(5)</th>
-                          <th className="border border-black py-0.5">(6)</th>
-                          <th className="border border-black py-0.5">(7)</th>
-                          <th className="border border-black py-0.5">(8)</th>
-                          <th className="border border-black py-0.5">(9)</th>
-                          <th className="border border-black py-0.5">(10)</th>
-                          <th className="border border-black py-0.5">(11)</th>
-                          <th className="border border-black py-0.5">(12)</th>
-                          <th className="border border-black py-0.5">(13)</th>
-                          <th className="border border-black py-0.5">(14)</th>
+                        <tr className="bg-gray-50 text-[8px] print:text-[7.5px] text-gray-600 font-bold text-center h-3.5">
+                          <th className="border border-black py-0 px-0.5 leading-tight">(1)</th>
+                          <th className="border border-black py-0 px-0.5 leading-tight">(2)</th>
+                          <th className="border border-black py-0 px-0.5 leading-tight">(3)</th>
+                          <th className="border border-black py-0 px-0.5 leading-tight">(4)</th>
+                          <th className="border border-black py-0 px-0.5 leading-tight">(5)</th>
+                          <th className="border border-black py-0 px-0.5 leading-tight">(6)</th>
+                          <th className="border border-black py-0 px-0.5 leading-tight">(7)</th>
+                          <th className="border border-black py-0 px-0.5 leading-tight">(8)</th>
+                          <th className="border border-black py-0 px-0.5 leading-tight">(9)</th>
+                          <th className="border border-black py-0 px-0.5 leading-tight">(10)</th>
+                          <th className="border border-black py-0 px-0.5 leading-tight">(11)</th>
+                          <th className="border border-black py-0 px-0.5 leading-tight">(12)</th>
+                          <th className="border border-black py-0 px-0.5 leading-tight">(13)</th>
+                          <th className="border border-black py-0 px-0.5 leading-tight">(14)</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -1141,7 +1141,7 @@ export default function KartuKendaliPage() {
                             const right = rIdx > 0 ? rightEntries[rIdx - 1] : null;
 
                             return (
-                              <tr key={rIdx} className="text-black h-[19px] print:h-[16.5px]">
+                              <tr key={rIdx} className="text-black h-[21px] print:h-[18px]">
                                 {/* Sisi Kiri */}
                                 {isPindahanRow ? (
                                   <>

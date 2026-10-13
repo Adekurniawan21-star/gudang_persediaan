@@ -122,7 +122,7 @@ export default function DashboardPage() {
               </div>
 
               <h1 className="text-xl sm:text-2xl font-black tracking-tight">
-                SIPERSEDIA · GUDANG PERSEDIAAN BPS
+                SIMPAN OKUS · GUDANG PERSEDIAAN BPS
               </h1>
 
               <p className="text-xs sm:text-sm text-white/80 max-w-2xl leading-relaxed">

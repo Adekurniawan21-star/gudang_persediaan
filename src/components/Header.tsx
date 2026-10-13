@@ -152,7 +152,7 @@ export default function Header({
           {/* Mobile BPS Logo Display */}
           <div className="lg:hidden flex items-center gap-2">
             <img src="/images/logo-bps.svg" alt="Logo BPS" className="w-7 h-7 object-contain" />
-            <span className="font-extrabold text-sm text-bps-blue">SIPERSEDIA</span>
+            <span className="font-extrabold text-sm text-bps-blue">SIMPAN OKUS</span>
           </div>
 
           {/* Desktop Institution Badge */}

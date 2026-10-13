@@ -735,15 +735,23 @@ export default function TransaksiMasukPage() {
                     <th className="border border-black px-3 py-1.5 text-center w-20">Jumlah</th>
                     <th className="border border-black px-3 py-1.5 text-left">Keterangan</th>
                   </tr>
+                  {/* Baris penomoran (1)-(5): Ramping */}
+                  <tr className="bg-gray-50 text-[9px] text-gray-700 font-bold text-center h-4">
+                    <th className="border border-black py-0 px-1 leading-tight">(1)</th>
+                    <th className="border border-black py-0 px-1 leading-tight">(2)</th>
+                    <th className="border border-black py-0 px-1 leading-tight">(3)</th>
+                    <th className="border border-black py-0 px-1 leading-tight">(4)</th>
+                    <th className="border border-black py-0 px-1 leading-tight">(5)</th>
+                  </tr>
                 </thead>
                 <tbody>
                   {showPrintPreview.items.map((item, idx) => (
                     <tr key={idx} className="text-black">
-                      <td className="border border-black px-2 py-1.5 text-center">{idx + 1}</td>
-                      <td className="border border-black px-3 py-1.5 font-medium">{item.barang?.nama_barang}</td>
-                      <td className="border border-black px-3 py-1.5 text-center">{item.barang?.satuan?.nama_satuan || 'Buah'}</td>
-                      <td className="border border-black px-3 py-1.5 text-center font-normal">{item.jumlah}</td>
-                      <td className="border border-black px-3 py-1.5">{item.keterangan || '-'}</td>
+                      <td className="border border-black px-2 py-2.5 print:py-2.5 text-center">{idx + 1}</td>
+                      <td className="border border-black px-3 py-2.5 print:py-2.5 font-medium">{item.barang?.nama_barang}</td>
+                      <td className="border border-black px-3 py-2.5 print:py-2.5 text-center">{item.barang?.satuan?.nama_satuan || 'Buah'}</td>
+                      <td className="border border-black px-3 py-2.5 print:py-2.5 text-center font-normal">{item.jumlah}</td>
+                      <td className="border border-black px-3 py-2.5 print:py-2.5">{item.keterangan || '-'}</td>
                     </tr>
                   ))}
                 </tbody>

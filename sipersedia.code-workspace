@@ -1,12 +1,12 @@
 {
   "folders": [
     {
-      "name": "Gudang Persediaan (SIPERSEDIA)",
+      "name": "SIMPAN OKUS — Persediaan BPS",
       "path": "."
     }
   ],
   "settings": {
-    "window.title": "Gudang Persediaan — SIPERSEDIA BPS OKU Selatan",
+    "window.title": "SIMPAN OKUS — BPS OKU Selatan",
     "files.exclude": {
       "**/.git": true,
       "**/.next": true,

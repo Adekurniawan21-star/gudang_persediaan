@@ -716,7 +716,7 @@ export default function UsersPage() {
                   <p className="text-xs font-bold text-dark-800">Status Akun Pengguna</p>
                   <p className="text-[11px] text-dark-400">
                     {formData.is_active
-                      ? 'Akun aktif dan diizinkan login ke sistem SIPERSEDIA.'
+                      ? 'Akun aktif dan diizinkan login ke sistem SIMPAN OKUS.'
                       : 'Akun dinonaktifkan sementara dan tidak dapat login.'}
                   </p>
                 </div>

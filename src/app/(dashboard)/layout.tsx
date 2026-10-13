@@ -100,7 +100,7 @@ export default function DashboardLayout({
             <img src="/images/logo-bps.svg" alt="Logo BPS" className="w-full h-full object-contain animate-pulse" />
           </div>
           <div className="text-center">
-            <h3 className="text-sm font-extrabold text-bps-blue tracking-wide">SIPERSEDIA</h3>
+            <h3 className="text-sm font-extrabold text-bps-blue tracking-wide">SIMPAN OKUS</h3>
             <p className="text-xs text-dark-400 mt-0.5 font-medium">BPS OKU Selatan · Memuat sistem...</p>
           </div>
           <div className="w-32 h-1 bg-dark-200 rounded-full overflow-hidden">

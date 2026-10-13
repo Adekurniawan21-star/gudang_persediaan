@@ -344,7 +344,7 @@ function PengaturanContent() {
                 Informasi Pengguna
               </h3>
               <p className="text-xs text-dark-400 mt-0.5">
-                Data identitas yang terdaftar pada sistem SIPERSEDIA
+                Data identitas yang terdaftar pada sistem SIMPAN OKUS
               </p>
             </div>
             <span className="badge text-xs font-semibold px-3 py-1 bg-dark-50 text-dark-600">
@@ -623,13 +623,13 @@ function PengaturanContent() {
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h2 className="text-xl font-bold text-dark-800">SIPERSEDIA</h2>
+                  <h2 className="text-xl font-bold text-dark-800">SIMPAN OKUS</h2>
                   <span className="badge text-[11px] font-bold bg-bps-blue-50 text-bps-blue border border-bps-blue/20">
                     BPS OKU SELATAN
                   </span>
                 </div>
                 <p className="text-sm text-dark-500 font-medium mt-0.5">
-                  Sistem Informasi Persediaan Barang & Logistik Kantor
+                  Sistem Informasi Manajemen Persediaan Ogan Komering Ulu Selatan
                 </p>
                 <p className="text-xs text-dark-400 mt-0.5">
                   Dirancang untuk akuntabilitas, transparansi stock opname, dan kemudahan permintaan ATK
