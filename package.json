@@ -1,7 +1,7 @@
 {
-  "name": "sipersedia-gudang-persediaan",
+  "name": "simpan-okus",
   "version": "1.0.0",
-  "description": "Sistem Informasi Gudang Persediaan - BPS Kab. OKU Selatan",
+  "description": "SIMPAN OKUS - Sistem Informasi Manajemen Persediaan BPS Kab. OKU Selatan",
   "private": true,
   "scripts": {
     "dev": "next dev",
