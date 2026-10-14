@@ -91,11 +91,11 @@ export default function DashboardPage() {
 
   return (
     <div className="page-enter space-y-6">
-      {/* Institutional BPS Welcome Banner dengan Nuansa Biru, Orange, dan Hijau */}
-      <div className="relative rounded-2xl overflow-hidden shadow-lg border border-bps-blue-700/30 bg-gradient-to-r from-bps-blue via-bps-blue-800 to-bps-blue-900 text-white">
+      {/* Institutional BPS Welcome Banner dengan Harmonisasi Biru, Orange, dan Hijau */}
+      <div className="relative rounded-2xl overflow-hidden shadow-xl border border-bps-blue-700/30 bg-gradient-to-r from-[#005AA9] via-[#004887] to-[#E65100] text-white">
         {/* Glowing Orbs Aksen BPS (Orange & Hijau) */}
-        <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full bg-bps-orange/20 blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-16 right-1/4 w-64 h-64 rounded-full bg-bps-green/20 blur-3xl pointer-events-none" />
+        <div className="absolute -top-16 -right-16 w-80 h-80 rounded-full bg-bps-orange/30 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-16 right-1/4 w-72 h-72 rounded-full bg-bps-green/25 blur-3xl pointer-events-none" />
 
         {/* Pita Aksen Tricolor Resmi BPS di Bagian Paling Atas */}
         <div className="h-1.5 w-full bg-gradient-to-r from-bps-blue via-bps-orange to-bps-green" />
@@ -103,7 +103,7 @@ export default function DashboardPage() {
         <div className="p-6 sm:p-7 relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
           <div className="flex items-start sm:items-center gap-4 sm:gap-5">
             {/* Logo BPS dengan Bingkai Putih Bersih */}
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white p-2.5 flex items-center justify-center shadow-xl ring-4 ring-white/15 flex-shrink-0">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white p-2.5 flex items-center justify-center shadow-xl ring-4 ring-bps-orange/30 flex-shrink-0">
               <img
                 src="/images/logo-bps.svg"
                 alt="Logo Badan Pusat Statistik"
@@ -113,10 +113,10 @@ export default function DashboardPage() {
 
             <div className="space-y-1">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-[10px] font-extrabold tracking-widest uppercase px-2.5 py-0.5 rounded-full bg-white/15 text-white border border-white/20 backdrop-blur-md">
+                <span className="text-[10px] font-extrabold tracking-widest uppercase px-2.5 py-0.5 rounded-full bg-white/20 text-white border border-white/25 backdrop-blur-md">
                   BADAN PUSAT STATISTIK
                 </span>
-                <span className="text-[10px] font-semibold text-bps-orange-300">
+                <span className="text-[10px] font-extrabold text-amber-300 px-2.5 py-0.5 rounded-full bg-black/25 border border-amber-300/30">
                   KABUPATEN OKU SELATAN
                 </span>
               </div>
@@ -124,15 +124,18 @@ export default function DashboardPage() {
               <h1 className="text-xl sm:text-2xl font-black tracking-tight">
                 SIMPAN OKUS · GUDANG PERSEDIAAN BPS
               </h1>
+              <p className="text-[11px] font-bold text-amber-200 tracking-wide uppercase">
+                SISTEM INFORMASI MANAJEMEN PERSEDIAAN
+              </p>
 
-              <p className="text-xs sm:text-sm text-white/80 max-w-2xl leading-relaxed">
+              <p className="text-xs sm:text-sm text-white/90 max-w-2xl leading-relaxed pt-0.5">
                 {isAdmin ? (
                   <>
-                    Selamat datang, <span className="font-bold text-white">{currentUser?.name || 'Administrator'}</span>! Anda berada di mode <span className="font-bold text-bps-orange-300">Admin Persediaan</span> untuk mengelola stok persediaan, input barang masuk, dan persetujuan.
+                    Selamat datang, <span className="font-bold text-white">{currentUser?.name || 'Administrator'}</span>! Anda berada di mode <span className="font-bold text-amber-300">Admin Persediaan</span> untuk mengelola stok persediaan, input barang masuk, dan persetujuan.
                   </>
                 ) : (
                   <>
-                    Selamat datang, <span className="font-bold text-white">{currentUser?.name || 'Pegawai BPS'}</span>! Anda berada di mode <span className="font-bold text-bps-blue-200">Pegawai</span> untuk melihat katalog stok persediaan dan mengajukan permintaan pemakaian.
+                    Selamat datang, <span className="font-bold text-white">{currentUser?.name || 'Pegawai BPS'}</span>! Anda berada di mode <span className="font-bold text-bps-green-200">Pegawai</span> untuk melihat katalog stok persediaan dan mengajukan permintaan pemakaian.
                   </>
                 )}
               </p>

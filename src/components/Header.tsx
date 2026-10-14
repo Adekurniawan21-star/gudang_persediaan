@@ -139,12 +139,14 @@ export default function Header({
 
   return (
     <>
-      <header className="h-16 bg-white border-b border-dark-100 flex items-center justify-between px-4 lg:px-6 sticky top-0 z-30 shadow-sm">
+      {/* Top BPS Tricolor Ribbon */}
+      <div className="h-[3px] w-full bg-gradient-to-r from-bps-blue via-bps-orange to-bps-green sticky top-0 z-30 flex-shrink-0 shadow-xs" />
+      <header className="h-16 bg-white/95 backdrop-blur-md border-b border-amber-100/70 flex items-center justify-between px-4 lg:px-6 sticky top-[3px] z-30 shadow-xs">
         {/* Left side */}
         <div className="flex items-center gap-3">
           <button
             onClick={onToggleMobileSidebar}
-            className="lg:hidden p-2 rounded-lg text-dark-500 hover:bg-dark-50 hover:text-dark-700 transition-colors"
+            className="lg:hidden p-2 rounded-lg text-dark-500 hover:bg-amber-50 hover:text-dark-700 transition-colors"
           >
             <Menu className="w-5 h-5" />
           </button>
@@ -156,17 +158,17 @@ export default function Header({
           </div>
 
           {/* Desktop Institution Badge */}
-          <div className="hidden lg:flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-dark-50/80 border border-dark-100">
+          <div className="hidden lg:flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-50/70 to-blue-50/50 border border-amber-200/60 shadow-2xs">
             <img src="/images/logo-bps.svg" alt="Logo BPS" className="w-5 h-5 object-contain" />
             <div className="text-xs">
-              <span className="font-bold text-dark-800 tracking-wide">BPS OKU SELATAN</span>
+              <span className="font-extrabold text-dark-800 tracking-wide">BPS OKU SELATAN</span>
               <span className="text-dark-400 mx-1.5">·</span>
-              <span className="text-dark-500 font-medium">Sistem Persediaan</span>
+              <span className="text-bps-blue-700 font-semibold">Sistem Persediaan</span>
             </div>
           </div>
 
           {/* Search */}
-          <div className="hidden xl:flex items-center gap-2 bg-dark-50 rounded-xl px-3 py-2 w-72 border border-dark-100/60 focus-within:border-bps-blue focus-within:ring-2 focus-within:ring-bps-blue/10 transition-all">
+          <div className="hidden xl:flex items-center gap-2 bg-white/80 rounded-xl px-3 py-2 w-72 border border-amber-200/50 focus-within:border-bps-orange focus-within:ring-2 focus-within:ring-bps-orange/15 shadow-2xs transition-all">
             <Search className="w-4 h-4 text-dark-400" />
             <input
               type="text"
@@ -181,17 +183,14 @@ export default function Header({
           {/* Role Pill Badge (Indikator Status Akun) */}
           <div
             className={cn(
-              "hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border shadow-2xs select-none",
+              "hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-extrabold shadow-xs select-none text-white",
               userRole === 'admin'
-                ? "bg-bps-orange-50 text-bps-orange border-bps-orange/30"
-                : "bg-bps-blue-50 text-bps-blue-700 border-bps-blue-200"
+                ? "bg-gradient-to-r from-bps-orange to-amber-500 border border-amber-400/50 shadow-orange-500/20"
+                : "bg-gradient-to-r from-bps-green to-emerald-600 border border-emerald-400/50 shadow-emerald-500/20"
             )}
           >
-            <span className={cn(
-              "w-2 h-2 rounded-full animate-pulse",
-              userRole === 'admin' ? "bg-bps-orange" : "bg-bps-blue"
-            )} />
-            <span>{userRole === 'admin' ? 'ADMINISTRATOR' : 'PEGAWAI'}</span>
+            <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+            <span>{userRole === 'admin' ? 'ADMINISTRATOR' : 'PEGAWAI BPS'}</span>
           </div>
 
           {/* Notifications */}

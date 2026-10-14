@@ -119,7 +119,7 @@ export default function Sidebar({
 
       <aside
         className={cn(
-          'fixed top-0 left-0 h-full z-50 bg-gradient-to-b from-bps-blue to-bps-blue-800 shadow-sidebar transition-all duration-300 flex flex-col',
+          'fixed top-0 left-0 h-full z-50 bg-gradient-to-b from-[#003665] via-[#002647] to-[#00172e] shadow-sidebar transition-all duration-300 flex flex-col',
           isCollapsed ? 'w-[72px]' : 'w-[260px]',
           isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
         )}
@@ -131,7 +131,7 @@ export default function Sidebar({
         )}>
           {!isCollapsed && (
             <div className="flex items-center gap-3 animate-fade-in">
-              <div className="w-10 h-10 rounded-xl bg-white p-1.5 flex items-center justify-center shadow-md flex-shrink-0 ring-2 ring-white/20">
+              <div className="w-10 h-10 rounded-xl bg-white p-1.5 flex items-center justify-center shadow-md flex-shrink-0 ring-2 ring-bps-orange/30">
                 <img
                   src="/images/logo-bps.svg"
                   alt="Logo BPS"
@@ -140,13 +140,15 @@ export default function Sidebar({
               </div>
               <div className="min-w-0">
                 <h1 className="text-sm font-extrabold text-white tracking-wider leading-none">SIMPAN OKUS</h1>
-                <p className="text-[10px] text-bps-orange-200 font-semibold mt-1 truncate" title="Sistem Informasi Manajemen Persediaan Ogan Komering Ulu Selatan">SI MANAJEMEN PERSEDIAAN</p>
+                <p className="text-[8.5px] text-amber-300 font-bold mt-1 tracking-tight truncate uppercase" title="Sistem Informasi Manajemen Persediaan">
+                  SISTEM INFORMASI MANAJEMEN PERSEDIAAN
+                </p>
               </div>
             </div>
           )}
 
           {isCollapsed && (
-            <div className="w-10 h-10 rounded-xl bg-white p-1.5 flex items-center justify-center shadow-md ring-2 ring-white/20">
+            <div className="w-10 h-10 rounded-xl bg-white p-1.5 flex items-center justify-center shadow-md ring-2 ring-bps-orange/30">
               <img
                 src="/images/logo-bps.svg"
                 alt="Logo BPS"
@@ -165,7 +167,7 @@ export default function Sidebar({
         </div>
 
         {/* BPS Tricolor Ribbon (Biru, Orange, Hijau) */}
-        <div className="h-[3px] w-full bg-gradient-to-r from-bps-blue via-bps-orange to-bps-green flex-shrink-0 shadow-sm" />
+        <div className="h-[4px] w-full bg-gradient-to-r from-bps-blue via-bps-orange to-bps-green flex-shrink-0 shadow-sm" />
 
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto py-4 space-y-1">
@@ -183,7 +185,7 @@ export default function Sidebar({
             return (
               <div key={sIdx} className="mb-2">
                 {!isCollapsed && (
-                  <p className="px-6 py-2 text-[10px] font-semibold text-white/30 tracking-widest uppercase">
+                  <p className="px-6 py-2 text-[10px] font-bold text-amber-200/60 tracking-widest uppercase">
                     {section.title}
                   </p>
                 )}
@@ -205,12 +207,12 @@ export default function Sidebar({
                         'flex items-center gap-3 mx-2 rounded-lg transition-all duration-200 text-sm relative',
                         isCollapsed ? 'px-0 py-2.5 justify-center' : 'px-4 py-2.5',
                         isActive
-                          ? 'bg-white/15 text-white font-semibold shadow-sm'
-                          : 'text-white/65 hover:bg-white/10 hover:text-white',
+                          ? 'bg-gradient-to-r from-white/20 to-white/10 text-white font-bold shadow-sm border-l-4 border-bps-orange'
+                          : 'text-white/75 hover:bg-white/10 hover:text-white',
                       )}
                     >
                       {isActive && (
-                        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-white rounded-r-full" />
+                        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-bps-orange rounded-r-full shadow-[0_0_8px_#F5821F]" />
                       )}
                       <Icon className={cn('flex-shrink-0', isCollapsed ? 'w-5 h-5' : 'w-[18px] h-[18px]')} />
                       {!isCollapsed && <span>{item.label}</span>}

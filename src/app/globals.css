@@ -42,30 +42,34 @@
 }
 
 @layer components {
-  /* Card styles */
+  /* Card styles dengan aksen hangat BPS */
   .card {
-    @apply bg-white rounded-xl shadow-card border border-dark-100/50 transition-all duration-300;
+    @apply bg-white rounded-xl shadow-card border border-amber-100/70 hover:border-amber-200/90 transition-all duration-300;
   }
 
   .card:hover {
     @apply shadow-card-hover;
   }
 
-  /* Stats card gradient backgrounds */
+  /* Stats card gradient backgrounds - BPS Tri-Color Identity */
   .stats-blue {
     background: linear-gradient(135deg, #005AA9 0%, #0077D4 100%);
+    box-shadow: 0 4px 14px 0 rgba(0, 90, 169, 0.22);
   }
 
   .stats-teal {
     background: linear-gradient(135deg, #00A6B4 0%, #00C4D4 100%);
+    box-shadow: 0 4px 14px 0 rgba(0, 166, 180, 0.22);
   }
 
   .stats-green {
-    background: linear-gradient(135deg, #6DBE45 0%, #8CD460 100%);
+    background: linear-gradient(135deg, #2E7D32 0%, #43A047 50%, #66BB6A 100%);
+    box-shadow: 0 4px 14px 0 rgba(46, 125, 50, 0.22);
   }
 
   .stats-orange {
-    background: linear-gradient(135deg, #F5821F 0%, #FFA040 100%);
+    background: linear-gradient(135deg, #E65100 0%, #F57C00 50%, #FFA726 100%);
+    box-shadow: 0 4px 14px 0 rgba(230, 81, 0, 0.22);
   }
 
   /* Button base */
@@ -163,12 +167,15 @@
   }
 
   .table-container tbody tr {
-    @apply transition-colors duration-150 hover:bg-bps-blue-50/30;
+    @apply transition-colors duration-150 hover:bg-amber-50/50;
   }
 
-  /* Login background pattern */
+  /* Login background pattern - BPS Tri-Color Harmony (Biru, Orange, Hijau) */
   .login-bg {
-    background: linear-gradient(135deg, #005AA9 0%, #003d73 30%, #002244 60%, #00A6B4 100%);
+    background: radial-gradient(circle at 15% 20%, rgba(245, 130, 31, 0.28) 0%, transparent 45%),
+                radial-gradient(circle at 85% 80%, rgba(67, 160, 71, 0.25) 0%, transparent 45%),
+                radial-gradient(circle at 50% 50%, rgba(0, 90, 169, 0.4) 0%, transparent 70%),
+                linear-gradient(135deg, #001f3f 0%, #003665 40%, #004d80 70%, #001c36 100%);
     position: relative;
     overflow: hidden;
   }
@@ -180,9 +187,9 @@
     left: -50%;
     width: 200%;
     height: 200%;
-    background: radial-gradient(circle at 30% 50%, rgba(0, 166, 180, 0.15) 0%, transparent 50%),
-                radial-gradient(circle at 70% 80%, rgba(109, 190, 69, 0.1) 0%, transparent 50%),
-                radial-gradient(circle at 50% 20%, rgba(245, 130, 31, 0.08) 0%, transparent 50%);
+    background: radial-gradient(circle at 25% 40%, rgba(245, 130, 31, 0.16) 0%, transparent 50%),
+                radial-gradient(circle at 75% 70%, rgba(67, 160, 71, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 50% 20%, rgba(0, 166, 180, 0.18) 0%, transparent 50%);
     animation: loginBgMove 20s ease-in-out infinite;
   }
 

@@ -78,12 +78,20 @@ export default function KartuKendaliPage() {
 
   // Helper fungsi untuk menghitung kartu kendali lengkap bagi barang tertentu
   const computeSingleCard = (targetBarang: Barang) => {
-    const itemPdf = DATA_DAFTAR_PERSEDIAAN_PDF1.find(
-      p => p.kode === targetBarang?.kode_barang || p.uraian.toLowerCase() === targetBarang?.nama_barang.toLowerCase()
+    // Cari data resmi BPS berdasarkan nama uraian persis terlebih dahulu, lalu kode
+    const itemPdfByUraian = DATA_DAFTAR_PERSEDIAAN_PDF1.find(
+      p => p.uraian.trim().toLowerCase() === targetBarang?.nama_barang.trim().toLowerCase()
     );
+    const itemPdfByKode = DATA_DAFTAR_PERSEDIAAN_PDF1.find(
+      p => p.kode === targetBarang?.kode_barang
+    );
+    const itemPdf = itemPdfByUraian || itemPdfByKode;
 
-    // Saldo awal 1 Januari: utamakan data resmi BPS 1 Januari, lalu saldo master
-    const stockAwal = itemPdf?.saldo_1_januari ?? (targetBarang?.stok || 0);
+    // Saldo awal tahun strictly ngelink dengan Saldo 1 Januari resmi BPS (bukan bulan lain)
+    const stockAwal = (targetBarang as any)?.saldo_1_januari 
+      ?? (targetBarang as any)?.stok_awal 
+      ?? itemPdf?.saldo_1_januari 
+      ?? (targetBarang?.stok || 0);
 
     const mMasuk = transaksiMasukList
       .filter(t => {
@@ -324,10 +332,10 @@ export default function KartuKendaliPage() {
                 <th rowSpan={2} className="border border-black px-1.5 py-1 text-[9px] print:text-[7.5px] leading-tight w-20">
                   Jumlah Pengeluaran
                 </th>
-                <th rowSpan={2} className="border border-black px-1.5 py-1 text-[9px] print:text-[7.5px] leading-tight w-20">
+                <th rowSpan={2} className="border border-black px-1.5 py-1 text-[9px] print:text-[7.5px] leading-tight w-20 bg-amber-50/40" title="Saldo Awal Tahun (Per 1 Januari)">
                   Stock Awal tahun
                 </th>
-                <th rowSpan={2} className="border border-black px-1.5 py-1 text-[9px] print:text-[7.5px] leading-tight w-20 bg-gray-50">
+                <th rowSpan={2} className="border border-black px-1.5 py-1 text-[9px] print:text-[7.5px] leading-tight w-20 bg-blue-50/40" title="Saldo Akhir Tahun (Per 31 Desember)">
                   Stock Akhir tahun
                 </th>
               </tr>
@@ -353,10 +361,10 @@ export default function KartuKendaliPage() {
                 <td className="border border-black py-1 font-bold text-black bg-gray-50">
                   {c.totalPengeluaranTahunan > 0 ? c.totalPengeluaranTahunan : ''}
                 </td>
-                <td className="border border-black py-1 font-bold text-black">
+                <td className="border border-black py-1 font-bold text-black bg-amber-50/20" title={`Saldo Awal 1 Januari: ${c.stock_awal_tahun}`}>
                   {c.stock_awal_tahun}
                 </td>
-                <td className="border border-black py-1 font-extrabold text-blue-900 bg-blue-50/50">
+                <td className="border border-black py-1 font-extrabold text-blue-900 bg-blue-50/30" title={`Sisa Akhir 31 Desember: ${c.stock_akhir_tahun}`}>
                   {c.stock_akhir_tahun}
                 </td>
               </tr>

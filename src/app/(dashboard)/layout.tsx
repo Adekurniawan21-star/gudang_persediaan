@@ -94,16 +94,17 @@ export default function DashboardLayout({
 
   if (isLoading || !user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-dark-50">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50/60 via-[#fcfbf9] to-blue-50/50">
         <div className="flex flex-col items-center gap-4 animate-fade-in">
-          <div className="w-16 h-16 rounded-2xl bg-white p-2.5 shadow-xl flex items-center justify-center ring-4 ring-bps-blue/10">
+          <div className="w-16 h-16 rounded-2xl bg-white p-2.5 shadow-xl flex items-center justify-center ring-4 ring-bps-orange/20">
             <img src="/images/logo-bps.svg" alt="Logo BPS" className="w-full h-full object-contain animate-pulse" />
           </div>
           <div className="text-center">
             <h3 className="text-sm font-extrabold text-bps-blue tracking-wide">SIMPAN OKUS</h3>
-            <p className="text-xs text-dark-400 mt-0.5 font-medium">BPS OKU Selatan · Memuat sistem...</p>
+            <p className="text-[11px] text-bps-orange font-bold mt-0.5">SISTEM INFORMASI MANAJEMEN PERSEDIAAN</p>
+            <p className="text-xs text-dark-400 font-medium">BPS OKU Selatan · Memuat sistem...</p>
           </div>
-          <div className="w-32 h-1 bg-dark-200 rounded-full overflow-hidden">
+          <div className="w-36 h-1.5 bg-dark-200 rounded-full overflow-hidden shadow-inner">
             <div className="h-full w-full bg-gradient-to-r from-bps-blue via-bps-orange to-bps-green animate-pulse" />
           </div>
         </div>
@@ -112,7 +113,7 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-dark-50">
+    <div className="min-h-screen bg-gradient-to-br from-amber-50/40 via-[#fcfbf9] to-emerald-50/30">
       <Sidebar
         isCollapsed={isSidebarCollapsed}
         isMobileOpen={isMobileSidebarOpen}
