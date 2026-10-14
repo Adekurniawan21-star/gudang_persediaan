@@ -341,7 +341,7 @@ export default function KartuKendaliPage() {
               </tr>
               <tr className="bg-gray-50 font-semibold text-black text-[9px] print:text-[7.5px]">
                 {BULAN_NAMES.map((bln, idx) => (
-                  <th key={idx} className="border border-black px-0.5 py-0.5">
+                  <th key={idx} className={cn("border border-black px-0.5 py-0.5", idx === 0 && "bg-amber-50/40 text-amber-950 font-bold")}>
                     {bln}
                   </th>
                 ))}
@@ -352,6 +352,45 @@ export default function KartuKendaliPage() {
                 {BULAN_NAMES.map((_, idx) => {
                   const m = idx + 1; // 1 = Januari, ..., 12 = Desember
                   const out = c.pengeluaran_bulanan[idx];
+
+                  if (idx === 0) {
+                    // Khusus bulan Januari: Tampilkan informasi stok awal tahun secara jelas
+                    return (
+                      <td
+                        key={idx}
+                        className={cn(
+                          "border border-black py-1 px-0.5 text-center",
+                          c.stock_awal_tahun > 0 ? "bg-amber-50/20" : ""
+                        )}
+                        title={`Bulan Januari | Stok Awal: ${c.stock_awal_tahun}${out > 0 ? ` | Pengeluaran: ${out}` : ''}`}
+                      >
+                        {out > 0 ? (
+                          <div className="flex flex-col items-center justify-center leading-tight">
+                            <span className="font-bold text-black">{out}</span>
+                            {c.stock_awal_tahun > 0 && (
+                              <span className="text-[8px] print:text-[6.5px] text-amber-900 font-semibold mt-0.5">
+                                (Awal: {c.stock_awal_tahun})
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          c.stock_awal_tahun > 0 ? (
+                            <div className="flex flex-col items-center justify-center leading-tight">
+                              <span className="font-bold text-amber-950 text-[11px] print:text-[8.5px]">
+                                {c.stock_awal_tahun}
+                              </span>
+                              <span className="text-[7.5px] print:text-[6.5px] text-amber-800 font-medium -mt-0.5">
+                                (Stok Awal)
+                              </span>
+                            </div>
+                          ) : (
+                            ''
+                          )
+                        )}
+                      </td>
+                    );
+                  }
+
                   return (
                     <td key={idx} className="border border-black py-1">
                       {out > 0 ? out : ''}
@@ -426,13 +465,19 @@ export default function KartuKendaliPage() {
                     {/* Sisi Kiri */}
                     {isPindahanRow ? (
                       <>
-                        <td className="border border-black px-1 py-0.5 text-center"></td>
-                        <td className="border border-black px-1.5 py-0.5 font-mono text-[9px]"></td>
-                        <td className="border border-black px-1 py-0.5 text-center"></td>
-                        <td className="border border-black px-2 py-0.5 font-medium"></td>
-                        <td className="border border-black px-1 py-0.5 text-center"></td>
-                        <td className="border border-black px-1 py-0.5 text-center"></td>
-                        <td className="border border-black px-1.5 py-0.5 text-center"></td>
+                        <td className="border border-black px-1 py-0.5 text-center text-gray-400 font-medium">-</td>
+                        <td className="border border-black px-1.5 py-0.5 font-mono text-[9px] text-center text-gray-400">-</td>
+                        <td className="border border-black px-1 py-0.5 text-center text-[9px] font-medium">
+                          01/01/{c.tahun}
+                        </td>
+                        <td className="border border-black px-2 py-0.5 font-bold italic text-black bg-amber-50/15">
+                          Saldo Awal 1 Januari
+                        </td>
+                        <td className="border border-black px-1 py-0.5 text-center text-gray-400 font-medium">-</td>
+                        <td className="border border-black px-1 py-0.5 text-center text-gray-400 font-medium">-</td>
+                        <td className="border border-black px-1.5 py-0.5 text-center font-extrabold text-blue-900 bg-amber-50/20">
+                          {c.stock_awal_tahun}
+                        </td>
                       </>
                     ) : (
                       <>
