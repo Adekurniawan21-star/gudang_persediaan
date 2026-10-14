@@ -32,8 +32,8 @@ export default function BarangPage() {
   const [formKategori, setFormKategori] = useState('Alat Tulis Kantor');
   const [formSatuan, setFormSatuan] = useState('Buah');
   const [formLokasi, setFormLokasi] = useState('Gudang ATK');
-  const [formStok, setFormStok] = useState(10);
-  const [formStokMinimum, setFormStokMinimum] = useState(5);
+  const [formStok, setFormStok] = useState(0);
+  const [formStokMinimum, setFormStokMinimum] = useState(0);
   const [formDeskripsi, setFormDeskripsi] = useState('');
 
   // Dropdown options
@@ -163,8 +163,8 @@ export default function BarangPage() {
     setFormKategori(kategoriOptions[0] || 'Alat Tulis Kantor');
     setFormSatuan(satuanOptions[0] || 'Buah');
     setFormLokasi(lokasiOptions[0] || 'Gudang ATK');
-    setFormStok(10);
-    setFormStokMinimum(5);
+    setFormStok(0);
+    setFormStokMinimum(0);
     setFormDeskripsi('');
     setShowModal(true);
   };
@@ -1252,7 +1252,7 @@ export default function BarangPage() {
                   </div>
                   <div>
                     <label className="input-label text-xs font-semibold text-dark-700">
-                      Stok Fisik Saat Ini
+                      Stok Fisik Saat Ini (Bisa 0)
                     </label>
                     <input
                       type="number"
@@ -1260,12 +1260,12 @@ export default function BarangPage() {
                       value={formStok}
                       onChange={(e) => setFormStok(Number(e.target.value))}
                       className="input text-sm font-semibold"
-                      placeholder="10"
+                      placeholder="0"
                     />
                   </div>
                   <div>
                     <label className="input-label text-xs font-semibold text-dark-700">
-                      Batas Stok Min
+                      Batas Stok Min (Bisa 0)
                     </label>
                     <input
                       type="number"
@@ -1273,7 +1273,7 @@ export default function BarangPage() {
                       value={formStokMinimum}
                       onChange={(e) => setFormStokMinimum(Number(e.target.value))}
                       className="input text-sm font-semibold"
-                      placeholder="5"
+                      placeholder="0"
                     />
                   </div>
                 </div>

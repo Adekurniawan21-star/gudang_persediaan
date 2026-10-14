@@ -15,19 +15,20 @@ import { cn, formatDateShort, formatNumber, formatTanggalTandaTangan } from '@/l
 import KopSurat from '@/components/KopSurat';
 
 const BULAN_NAMES = [
-  'Januari', 'Feb', 'Maret', 'Maret', 'April', 'Mei', 'Juni',
-  'Juli', 'Agustus', 'Sept', 'Okt', 'Nov', 'Des'
+  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
 ];
 
 export default function KartuKendaliPage() {
-  const [activeTab, setActiveTab] = useState<'kartu' | 'daftar'>('kartu');
+  const [activeTab, setActiveTab] = useState<'katalog' | 'kartu' | 'daftar'>('katalog');
   const [selectedBarangId, setSelectedBarangId] = useState<number>(1); // Default Stabillo (ID 1)
   const [selectedYear, setSelectedYear] = useState<number>(2026);
   const [searchQuery, setSearchQuery] = useState('');
   const [showPrintPreview, setShowPrintPreview] = useState(false);
-  const [previewMode, setPreviewMode] = useState<'kartu' | 'daftar'>('kartu');
+  const [previewMode, setPreviewMode] = useState<'kartu' | 'katalog' | 'daftar' | 'batch'>('kartu');
   const [tglCetakDokumen, setTglCetakDokumen] = useState(() => new Date().toISOString().split('T')[0]);
-  const [tampilkanTandaTanganKartu, setTampilkanTandaTanganKartu] = useState(false);
+  const [filterKategori, setFilterKategori] = useState<string>('all');
+  const [filterMutasiOnly, setFilterMutasiOnly] = useState<boolean>(false);
 
   // === State Form Input Mutasi Langsung ===
   const [showInputModal, setShowInputModal] = useState(false);
@@ -75,126 +76,152 @@ export default function KartuKendaliPage() {
 
   const activeBarang = barangList.find(b => b.id === selectedBarangId) || barangList[0];
 
-  // Cari di daftar persediaan PDF1 untuk saldo 1 januari resmi BPS
-  const itemPdf = DATA_DAFTAR_PERSEDIAAN_PDF1.find(
-    p => p.kode === activeBarang?.kode_barang || p.uraian.toLowerCase() === activeBarang?.nama_barang.toLowerCase()
-  );
+  // Helper fungsi untuk menghitung kartu kendali lengkap bagi barang tertentu
+  const computeSingleCard = (targetBarang: Barang) => {
+    const itemPdf = DATA_DAFTAR_PERSEDIAAN_PDF1.find(
+      p => p.kode === targetBarang?.kode_barang || p.uraian.toLowerCase() === targetBarang?.nama_barang.toLowerCase()
+    );
 
-  // Cari template kartu bawaan jika ada
-  const templateCard = mockKartuKendali.find(
-    k => k.id_barang === selectedBarangId && k.tahun === selectedYear
-  ) || mockKartuKendali.find(k => k.id_barang === selectedBarangId);
+    // Saldo awal 1 Januari: utamakan data resmi BPS 1 Januari, lalu saldo master
+    const stockAwal = itemPdf?.saldo_1_januari ?? (targetBarang?.stok || 0);
 
-  // Penentuan Stock Awal Tahun: utamakan dokumen resmi PDF1, lalu template, lalu master barang
-  const stockAwal = itemPdf?.saldo_1_januari ?? templateCard?.stock_awal_tahun ?? (activeBarang?.stok || 0);
-
-  // Kumpulkan mutasi dari template (filter keluar baris saldo awal jika ada agar tidak muncul di tabel 2)
-  const baseEntries = (templateCard?.entries || []).filter(e => !e.uraian.toLowerCase().includes('saldo'));
-  const existingRefs = new Set(baseEntries.map(e => e.no_referensi));
-
-  // Kumpulkan mutasi tambahan dari Transaksi Masuk
-  const additionalMasuk = transaksiMasukList
-    .filter(t => {
-      const year = new Date(t.tanggal).getFullYear();
-      return (year === selectedYear || isNaN(year)) &&
-        t.items.some(i => i.id_barang === selectedBarangId) &&
-        !existingRefs.has(t.no_referensi || t.no_dokumen);
-    })
-    .map(t => {
-      const itm = t.items.find(i => i.id_barang === selectedBarangId);
-      return {
-        id: t.id,
-        tanggal: t.tanggal,
-        no_referensi: t.no_referensi || t.no_dokumen,
-        uraian: t.keterangan || `Penerimaan ${t.sumber}`,
-        masuk: itm?.jumlah || 0,
-        keluar: 0,
-        sisa: 0,
-      };
-    });
-
-  // Kumpulkan mutasi tambahan dari Transaksi Keluar (SPB)
-  const additionalKeluar = transaksiKeluarList
-    .filter(t => {
-      const year = new Date(t.tanggal).getFullYear();
-      return (year === selectedYear || isNaN(year)) &&
-        t.items.some(i => i.id_barang === selectedBarangId) &&
-        !existingRefs.has(t.no_dokumen);
-    })
-    .map(t => {
-      const itm = t.items.find(i => i.id_barang === selectedBarangId);
-      return {
-        id: t.id,
-        tanggal: t.tanggal,
-        no_referensi: t.no_dokumen,
-        uraian: itm?.keterangan || t.keterangan || `Permintaan ${t.nama_tim}`,
-        masuk: 0,
-        keluar: itm?.jumlah || 0,
-        sisa: 0,
-      };
-    });
-
-  // Gabungkan seluruh baris mutasi riil (kronologis)
-  const rawEntries = [...baseEntries, ...additionalMasuk, ...additionalKeluar];
-  const sortedEntries = [...rawEntries].sort((a, b) => new Date(a.tanggal).getTime() - new Date(b.tanggal).getTime());
-
-  // Hitung ulang saldo berjalan secara matematis (Running Balance dari stockAwal)
-  let running = stockAwal;
-  const entries = sortedEntries.map((e) => {
-    running = running + (e.masuk || 0) - (e.keluar || 0);
-    return { ...e, sisa: Math.max(0, running) };
-  });
-
-  // Perhitungan Akuntansi Kartu Kendali
-  const totalMasuk = entries.reduce((s, e) => s + (e.masuk || 0), 0);
-  const totalKeluar = entries.reduce((s, e) => s + (e.keluar || 0), 0);
-  const sisaAkhir = entries.length > 0 ? entries[entries.length - 1].sisa : stockAwal;
-
-  const getMonthlyOut = (m: number) => {
-    return entries
-      .filter((e) => {
-        const entryMonth = new Date(e.tanggal).getMonth() + 1;
-        return entryMonth === m;
+    const mMasuk = transaksiMasukList
+      .filter(t => {
+        const year = new Date(t.tanggal).getFullYear();
+        return (year === selectedYear || isNaN(year)) &&
+          t.items.some(i => i.id_barang === targetBarang.id);
       })
-      .reduce((s, e) => s + (e.keluar || 0), 0);
+      .map(t => {
+        const itm = t.items.find(i => i.id_barang === targetBarang.id);
+        return {
+          id: t.id,
+          tanggal: t.tanggal,
+          no_referensi: t.no_referensi || t.no_dokumen,
+          uraian: itm?.keterangan || t.keterangan || `Penerimaan ${t.sumber}`,
+          masuk: Number(itm?.jumlah) || 0,
+          keluar: 0,
+          sisa: 0,
+        };
+      });
+
+    const mKeluar = transaksiKeluarList
+      .filter(t => {
+        const year = new Date(t.tanggal).getFullYear();
+        return (year === selectedYear || isNaN(year)) &&
+          t.items.some(i => i.id_barang === targetBarang.id);
+      })
+      .map(t => {
+        const itm = t.items.find(i => i.id_barang === targetBarang.id);
+        return {
+          id: t.id,
+          tanggal: t.tanggal,
+          no_referensi: t.no_dokumen,
+          uraian: itm?.keterangan || t.keterangan || `Permintaan ${t.nama_tim}`,
+          masuk: 0,
+          keluar: Number(itm?.jumlah) || 0,
+          sisa: 0,
+        };
+      });
+
+    const rawEntries = [...mMasuk, ...mKeluar].sort(
+      (a, b) => new Date(a.tanggal).getTime() - new Date(b.tanggal).getTime()
+    );
+
+    // Hitung ulang saldo berjalan secara runtut & matematis: Sisa = prev + Masuk - Keluar
+    let running = stockAwal;
+    const entries = rawEntries.map(e => {
+      running = running + e.masuk - e.keluar;
+      return {
+        ...e,
+        sisa: Math.max(0, running),
+      };
+    });
+
+    const totalMasuk = entries.reduce((s, e) => s + e.masuk, 0);
+    const totalKeluar = entries.reduce((s, e) => s + e.keluar, 0);
+    const sisaAkhir = entries.length > 0 ? entries[entries.length - 1].sisa : stockAwal;
+
+    const getMonthlyOut = (m: number) => {
+      return entries
+        .filter(e => {
+          const entryMonth = new Date(e.tanggal).getMonth() + 1;
+          return entryMonth === m;
+        })
+        .reduce((s, e) => s + e.keluar, 0);
+    };
+
+    const pengeluaran_bulanan = Array.from({ length: 12 }, (_, i) => getMonthlyOut(i + 1));
+    const totalPengeluaranTahunan = pengeluaran_bulanan.reduce((a, b) => a + b, 0);
+
+    const LEFT_CAPACITY = 12;
+    const leftEntries = entries.slice(0, LEFT_CAPACITY);
+    const rightEntries = entries.slice(LEFT_CAPACITY);
+    const transactionRows = Math.max(12, Math.max(leftEntries.length, rightEntries.length));
+    const activeRowCount = 1 + transactionRows;
+
+    const leftTotalMasuk = leftEntries.reduce((s, e) => s + e.masuk, 0);
+    const leftTotalKeluar = leftEntries.reduce((s, e) => s + e.keluar, 0);
+    const leftLastSisa = leftEntries.length > 0 ? leftEntries[leftEntries.length - 1].sisa : stockAwal;
+
+    const rightTotalMasuk = rightEntries.reduce((s, e) => s + e.masuk, 0);
+    const rightTotalKeluar = rightEntries.reduce((s, e) => s + e.keluar, 0);
+
+    return {
+      barang: targetBarang,
+      id: targetBarang.id,
+      nama_barang: targetBarang.nama_barang,
+      kode_barang: targetBarang.kode_barang,
+      satuan: targetBarang.satuan?.nama_satuan || 'Buah',
+      tahun: selectedYear,
+      halaman: 1,
+      proyek_rutin: 'Rutin',
+      stock_awal_tahun: stockAwal,
+      entries,
+      totalMasuk,
+      totalKeluar,
+      sisaAkhir,
+      stock_akhir_tahun: sisaAkhir,
+      pengeluaran_bulanan,
+      totalPengeluaranTahunan,
+      getMonthlyOut,
+      LEFT_CAPACITY,
+      leftEntries,
+      rightEntries,
+      activeRowCount,
+      leftTotalMasuk,
+      leftTotalKeluar,
+      leftLastSisa,
+      rightTotalMasuk,
+      rightTotalKeluar,
+    };
   };
 
-  const totalPengeluaranTahunan = Array.from({ length: 12 }, (_, i) => getMonthlyOut(i + 1)).reduce((a, b) => a + b, 0);
+  const currentCard = computeSingleCard(activeBarang);
+  const leftEntries = currentCard.leftEntries;
+  const rightEntries = currentCard.rightEntries;
+  const stockAwal = currentCard.stock_awal_tahun;
+  const sisaAkhir = currentCard.stock_akhir_tahun;
+  const totalMasuk = currentCard.totalMasuk;
+  const totalKeluar = currentCard.totalKeluar;
+  const totalPengeluaranTahunan = currentCard.totalPengeluaranTahunan;
+  const leftTotalMasuk = currentCard.leftTotalMasuk;
+  const leftTotalKeluar = currentCard.leftTotalKeluar;
+  const leftLastSisa = currentCard.leftLastSisa;
+  const rightTotalMasuk = currentCard.rightTotalMasuk;
+  const rightTotalKeluar = currentCard.rightTotalKeluar;
+  const activeRowCount = currentCard.activeRowCount;
+  const LEFT_CAPACITY = currentCard.LEFT_CAPACITY;
+  const getMonthlyOut = currentCard.getMonthlyOut;
 
-  // Objek Kartu Kendali Aktif Lengkap
-  const currentCard = {
-    id: activeBarang?.id || selectedBarangId,
-    id_barang: activeBarang?.id || selectedBarangId,
-    nama_barang: activeBarang?.nama_barang || 'Barang',
-    kode_barang: activeBarang?.kode_barang || '000000',
-    satuan: activeBarang?.satuan?.nama_satuan || 'Buah',
-    proyek_rutin: templateCard?.proyek_rutin || 'Rutin',
-    tahun: selectedYear,
-    halaman: templateCard?.halaman || 1,
-    stock_awal_tahun: stockAwal,
-    entries: entries,
-    pengeluaran_bulanan: Array.from({ length: 12 }, (_, i) => getMonthlyOut(i + 1)),
-    total_pengeluaran: totalPengeluaranTahunan,
-    stock_akhir_tahun: sisaAkhir,
-  };
-
-  // Pembagian baris mutasi untuk format ganda (Dual-Pane) persis Halaman 3 PDF & Formulir Fisik BPS:
-  // - Sisi kiri memuat transaksi mutasi 1 s.d. 12 (atau batas kapasitas)
-  // - Sisi kanan baris pertama adalah "Pindahan", dan transaksi mutasi berikutnya berlanjut di baris ke-2 dengan nomor 13, 14, dst.
-  // - Total baris cetak: 25 baris penuh untuk memenuhi satu halaman A4 Landscape rapi
-  const LEFT_CAPACITY = 12;
-  const leftEntries = entries.slice(0, LEFT_CAPACITY);
-  const rightEntries = entries.slice(LEFT_CAPACITY);
-  // Baris dinamis: Baris 0 adalah baris Pindahan, Nomor 1 dst dimulai di baris ke-1 di bawah Pindahan
-  const transactionRows = Math.max(1, Math.max(leftEntries.length, rightEntries.length));
-  const activeRowCount = 1 + transactionRows;
-
-  const leftTotalMasuk = leftEntries.reduce((s, e) => s + e.masuk, 0);
-  const leftTotalKeluar = leftEntries.reduce((s, e) => s + e.keluar, 0);
-  const leftLastSisa = leftEntries.length > 0 ? leftEntries[leftEntries.length - 1].sisa : stockAwal;
-
-  const rightTotalMasuk = rightEntries.reduce((s, e) => s + e.masuk, 0);
-  const rightTotalKeluar = rightEntries.reduce((s, e) => s + e.keluar, 0);
+  // Daftar kartu kendali untuk seluruh master barang (Katalog & Overview)
+  const allCardsList = barangList.map(b => computeSingleCard(b));
+  const filteredAllCards = allCardsList.filter(c => {
+    const matchSearch = c.nama_barang.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (c.kode_barang && c.kode_barang.toLowerCase().includes(searchQuery.toLowerCase()));
+    const matchMutasi = !filterMutasiOnly || c.entries.length > 0;
+    const matchKategori = filterKategori === 'all' || c.barang.kategori?.nama_kategori === filterKategori;
+    return matchSearch && matchMutasi && matchKategori;
+  });
 
   // Handler cetak dokumen bersih (tanpa tulisan SIPERSEDIA di header browser)
   const handlePrint = () => {
@@ -204,6 +231,301 @@ export default function KartuKendaliPage() {
     setTimeout(() => {
       document.title = originalTitle;
     }, 1000);
+  };
+
+  // Komponen Helper untuk merender Tampilan Kartu Persediaan Barang Pakai Habis (ATK/ARK)
+  // Digunakan seragam untuk tampilan layar, cetak tunggal, maupun cetak massal (batch)
+  const renderCardContent = (c: ReturnType<typeof computeSingleCard>, isPrint: boolean = false) => {
+    return (
+      <div className={cn('bg-white text-black', isPrint ? 'card-print-page' : '')}>
+        {/* Header Kartu Sesuai Format Resmi PDF Halaman 3 */}
+        <div className={cn('text-center border-b border-dark-200', isPrint ? 'mb-2 print:mb-1 pb-1.5' : 'mb-5 pb-3')}>
+          <h2 className={cn('font-extrabold text-black uppercase tracking-wider', isPrint ? 'text-sm print:text-xs' : 'text-base')}>
+            KARTU PERSEDIAAN BARANG PAKAI HABIS (ATK/ARK)
+          </h2>
+        </div>
+
+        {/* Identitas Barang & Satuan Kerja Sesuai Format Gambar Excel BPS */}
+        <div className={cn(
+          'grid grid-cols-1 md:grid-cols-12 gap-3 text-black items-start',
+          isPrint ? 'grid-cols-12 mb-2 print:mb-1.5 text-xs print:text-[10px]' : 'mb-4 text-xs'
+        )}>
+          <div className="col-span-4 md:col-span-4 flex flex-col items-start justify-start pt-0">
+            <div className="flex flex-col items-center text-center">
+              <img
+                src="/images/logo-bps.svg"
+                alt="Logo BPS"
+                className={cn('w-auto object-contain mb-1', isPrint ? 'h-12 print:h-10' : 'h-14')}
+              />
+              <div
+                style={{ fontFamily: 'Arial, sans-serif', fontSize: isPrint ? '8pt' : '9pt', lineHeight: 1.25 }}
+                className="font-bold italic text-black text-center"
+              >
+                <p>Badan Pusat Statistik</p>
+                <p>Kabupaten Ogan Komering Ulu Selatan</p>
+              </div>
+            </div>
+          </div>
+
+          <div
+            className="col-span-5 md:col-span-5 space-y-1 font-medium items-start pt-0"
+            style={{ fontFamily: 'Arial, sans-serif', fontSize: isPrint ? '10px' : '11px' }}
+          >
+            <div className="flex items-center">
+              <span className="w-24 text-black">Nama Barang</span>
+              <span className="w-3 text-center">:</span>
+              <span className="font-bold text-black uppercase">{c.nama_barang}</span>
+            </div>
+            <div className="flex items-center">
+              <span className="w-24 text-black">Kode Barang</span>
+              <span className="w-3 text-center">:</span>
+              <span className="font-mono font-bold text-black">{c.kode_barang || '-'}</span>
+            </div>
+            <div className="flex items-center">
+              <span className="w-24 text-black">Satuan Barang</span>
+              <span className="w-3 text-center">:</span>
+              <span className="text-black">{c.satuan}</span>
+            </div>
+          </div>
+
+          <div
+            className="col-span-3 md:col-span-3 space-y-1 font-medium items-start pt-0"
+            style={{ fontFamily: 'Arial, sans-serif', fontSize: isPrint ? '10px' : '11px' }}
+          >
+            <div className="flex items-center">
+              <span className="w-20 text-black">Halaman</span>
+              <span className="w-3 text-center">:</span>
+              <span className="text-black font-semibold">{c.halaman || 1}</span>
+            </div>
+            <div className="flex items-center">
+              <span className="w-20 text-black">Proyek/Rutin</span>
+              <span className="w-3 text-center">:</span>
+              <span className="text-black">{c.proyek_rutin || 'Rutin'}</span>
+            </div>
+            <div className="flex items-center">
+              <span className="w-20 text-black">Tahun</span>
+              <span className="w-3 text-center">:</span>
+              <span className="font-bold text-black">{c.tahun}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* TABEL 1: Banyaknya Pengeluaran Tiap-Tiap Bulan (15 Kolom Horizontal: 12 Bulan + 3 Ringkasan) */}
+        <div className={cn('overflow-x-auto', isPrint ? 'mb-2 print:mb-1.5' : 'mb-6')}>
+          <table className={cn(
+            'w-full border-collapse border border-black text-center',
+            isPrint ? 'text-[9.5px] print:text-[8px]' : 'text-xs'
+          )}>
+            <thead>
+              <tr className="bg-gray-100 font-bold text-black">
+                <th colSpan={12} className="border border-black py-1 uppercase tracking-wider text-[10px] print:text-[8px]">
+                  Banyaknya Pengeluaran Tiap-Tiap Bulan
+                </th>
+                <th rowSpan={2} className="border border-black px-1.5 py-1 text-[9px] print:text-[7.5px] leading-tight w-20">
+                  Jumlah Pengeluaran
+                </th>
+                <th rowSpan={2} className="border border-black px-1.5 py-1 text-[9px] print:text-[7.5px] leading-tight w-20">
+                  Stock Awal tahun
+                </th>
+                <th rowSpan={2} className="border border-black px-1.5 py-1 text-[9px] print:text-[7.5px] leading-tight w-20 bg-gray-50">
+                  Stock Akhir tahun
+                </th>
+              </tr>
+              <tr className="bg-gray-50 font-semibold text-black text-[9px] print:text-[7.5px]">
+                {BULAN_NAMES.map((bln, idx) => (
+                  <th key={idx} className="border border-black px-0.5 py-0.5">
+                    {bln}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              <tr className={cn('text-black font-semibold', isPrint ? 'h-6 print:h-[18px]' : 'h-7')}>
+                {BULAN_NAMES.map((_, idx) => {
+                  const m = idx + 1; // 1 = Januari, ..., 12 = Desember
+                  const out = c.pengeluaran_bulanan[idx];
+                  return (
+                    <td key={idx} className="border border-black py-1">
+                      {out > 0 ? out : ''}
+                    </td>
+                  );
+                })}
+                <td className="border border-black py-1 font-bold text-black bg-gray-50">
+                  {c.totalPengeluaranTahunan > 0 ? c.totalPengeluaranTahunan : ''}
+                </td>
+                <td className="border border-black py-1 font-bold text-black">
+                  {c.stock_awal_tahun}
+                </td>
+                <td className="border border-black py-1 font-extrabold text-blue-900 bg-blue-50/50">
+                  {c.stock_akhir_tahun}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        {/* TABEL 2: Rincian Mutasi Barang Dual-Pane (14 Kolom) Sesuai Halaman 3 PDF */}
+        <div className={cn('overflow-x-auto', isPrint ? 'mb-2 print:mb-1' : 'mb-6')}>
+          <table className={cn(
+            'w-full border-collapse border border-black',
+            isPrint ? 'text-[9px] print:text-[8px]' : 'text-[10px]'
+          )}>
+            <thead>
+              <tr className="bg-gray-100 font-bold text-black text-center">
+                {/* Kolom Sisi Kiri */}
+                <th className="border border-black px-1 py-1 w-7">No.</th>
+                <th className="border border-black px-1.5 py-1 w-20">No. Bon/Faktur</th>
+                <th className="border border-black px-1 py-1 w-16">Tgl M/K</th>
+                <th className="border border-black px-2 py-1 text-left">Uraian Pemasukan/Pengeluaran</th>
+                <th className="border border-black px-1 py-1 w-12">Masuk (M)</th>
+                <th className="border border-black px-1 py-1 w-12">Keluar (K)</th>
+                <th className="border border-black px-1.5 py-1 w-14">Sisa Barang</th>
+
+                {/* Kolom Sisi Kanan */}
+                <th className="border border-black px-1 py-1 w-7">No.</th>
+                <th className="border border-black px-1.5 py-1 w-20">No. Bon/Faktur</th>
+                <th className="border border-black px-1 py-1 w-16">Tgl M/K</th>
+                <th className="border border-black px-2 py-1 text-left">Uraian Pemasukan/Pengeluaran</th>
+                <th className="border border-black px-1 py-1 w-12">Masuk (M)</th>
+                <th className="border border-black px-1 py-1 w-12">Keluar (K)</th>
+                <th className="border border-black px-1.5 py-1 w-14">Sisa Barang</th>
+              </tr>
+              <tr className="bg-gray-50 text-[8px] print:text-[7.5px] text-gray-600 font-bold text-center h-4">
+                <th className="border border-black py-0 px-0.5 leading-tight">(1)</th>
+                <th className="border border-black py-0 px-0.5 leading-tight">(2)</th>
+                <th className="border border-black py-0 px-0.5 leading-tight">(3)</th>
+                <th className="border border-black py-0 px-0.5 leading-tight">(4)</th>
+                <th className="border border-black py-0 px-0.5 leading-tight">(5)</th>
+                <th className="border border-black py-0 px-0.5 leading-tight">(6)</th>
+                <th className="border border-black py-0 px-0.5 leading-tight">(7)</th>
+                <th className="border border-black py-0 px-0.5 leading-tight">(8)</th>
+                <th className="border border-black py-0 px-0.5 leading-tight">(9)</th>
+                <th className="border border-black py-0 px-0.5 leading-tight">(10)</th>
+                <th className="border border-black py-0 px-0.5 leading-tight">(11)</th>
+                <th className="border border-black py-0 px-0.5 leading-tight">(12)</th>
+                <th className="border border-black py-0 px-0.5 leading-tight">(13)</th>
+                <th className="border border-black py-0 px-0.5 leading-tight">(14)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Array.from({ length: c.activeRowCount }).map((_, rIdx) => {
+                const isPindahanRow = rIdx === 0;
+                const left = rIdx > 0 ? c.leftEntries[rIdx - 1] : null;
+                const right = rIdx > 0 ? c.rightEntries[rIdx - 1] : null;
+
+                return (
+                  <tr key={rIdx} className={cn('text-black hover:bg-gray-50/50', isPrint ? 'h-[20px] print:h-[18px]' : 'h-[21px]')}>
+                    {/* Sisi Kiri */}
+                    {isPindahanRow ? (
+                      <>
+                        <td className="border border-black px-1 py-0.5 text-center"></td>
+                        <td className="border border-black px-1.5 py-0.5 font-mono text-[9px]"></td>
+                        <td className="border border-black px-1 py-0.5 text-center"></td>
+                        <td className="border border-black px-2 py-0.5 font-medium"></td>
+                        <td className="border border-black px-1 py-0.5 text-center"></td>
+                        <td className="border border-black px-1 py-0.5 text-center"></td>
+                        <td className="border border-black px-1.5 py-0.5 text-center"></td>
+                      </>
+                    ) : (
+                      <>
+                        <td className="border border-black px-1 py-0.5 text-center font-medium">
+                          {left ? rIdx : ''}
+                        </td>
+                        <td className="border border-black px-1.5 py-0.5 font-mono text-[9px]">
+                          {left?.no_referensi || ''}
+                        </td>
+                        <td className="border border-black px-1 py-0.5 text-center">
+                          {left ? formatDateShort(left.tanggal) : ''}
+                        </td>
+                        <td className="border border-black px-2 py-0.5 font-medium">
+                          {left?.uraian || ''}
+                        </td>
+                        <td className="border border-black px-1 py-0.5 text-center font-bold text-emerald-800">
+                          {left && left.masuk > 0 ? left.masuk : (left ? '-' : '')}
+                        </td>
+                        <td className="border border-black px-1 py-0.5 text-center font-bold text-rose-800">
+                          {left && left.keluar > 0 ? left.keluar : (left ? '-' : '')}
+                        </td>
+                        <td className="border border-black px-1.5 py-0.5 text-center font-bold">
+                          {left ? left.sisa : ''}
+                        </td>
+                      </>
+                    )}
+
+                    {/* Sisi Kanan */}
+                    {isPindahanRow ? (
+                      <>
+                        <td colSpan={4} className="border border-black px-2 py-0.5 font-bold italic text-black">
+                          Pindahan
+                        </td>
+                        <td className="border border-black px-1 py-0.5 text-center font-bold text-emerald-800"></td>
+                        <td className="border border-black px-1 py-0.5 text-center font-bold text-rose-800"></td>
+                        <td className="border border-black px-1.5 py-0.5 text-center font-extrabold text-blue-900 bg-blue-50/30">
+                          {c.leftEntries.length > 0 ? c.leftLastSisa : (c.entries.length === 0 ? '' : c.stock_awal_tahun)}
+                        </td>
+                      </>
+                    ) : (
+                      <>
+                        <td className="border border-black px-1 py-0.5 text-center font-medium">
+                          {right ? c.LEFT_CAPACITY + rIdx : ''}
+                        </td>
+                        <td className="border border-black px-1.5 py-0.5 font-mono text-[9px]">
+                          {right?.no_referensi || ''}
+                        </td>
+                        <td className="border border-black px-1 py-0.5 text-center">
+                          {right ? formatDateShort(right.tanggal) : ''}
+                        </td>
+                        <td className="border border-black px-2 py-0.5 font-medium">
+                          {right?.uraian || ''}
+                        </td>
+                        <td className="border border-black px-1 py-0.5 text-center font-bold text-emerald-800">
+                          {right && right.masuk > 0 ? right.masuk : (right ? '-' : '')}
+                        </td>
+                        <td className="border border-black px-1 py-0.5 text-center font-bold text-rose-800">
+                          {right && right.keluar > 0 ? right.keluar : (right ? '-' : '')}
+                        </td>
+                        <td className="border border-black px-1.5 py-0.5 text-center font-bold">
+                          {right ? right.sisa : ''}
+                        </td>
+                      </>
+                    )}
+                  </tr>
+                );
+              })}
+            </tbody>
+            <tfoot>
+              <tr className="bg-gray-100 font-bold text-black">
+                <td colSpan={4} className="border border-black px-2 py-1 text-center uppercase tracking-wider text-[10px]">
+                  JUMLAH (dipindahkan)
+                </td>
+                <td className="border border-black px-1 py-1 text-center font-bold">
+                  {c.leftTotalMasuk > 0 ? c.leftTotalMasuk : ''}
+                </td>
+                <td className="border border-black px-1 py-1 text-center font-bold">
+                  {c.leftTotalKeluar > 0 ? c.leftTotalKeluar : ''}
+                </td>
+                <td className="border border-black px-1.5 py-1 text-center font-extrabold bg-gray-200">
+                  {c.leftEntries.length > 0 ? c.leftLastSisa : ''}
+                </td>
+
+                <td colSpan={4} className="border border-black px-2 py-1 text-center uppercase tracking-wider text-[10px]">
+                  JUMLAH (dipindahkan)
+                </td>
+                <td className="border border-black px-1 py-1 text-center font-bold">
+                  {c.rightEntries.length > 0 && c.rightTotalMasuk > 0 ? c.rightTotalMasuk : ''}
+                </td>
+                <td className="border border-black px-1 py-1 text-center font-bold">
+                  {c.rightEntries.length > 0 && c.rightTotalKeluar > 0 ? c.rightTotalKeluar : ''}
+                </td>
+                <td className="border border-black px-1.5 py-1 text-center font-extrabold bg-gray-200">
+                  {c.rightEntries.length > 0 ? c.stock_akhir_tahun : ''}
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    );
   };
 
   const filteredBarang = barangList.filter(b =>
@@ -381,6 +703,16 @@ export default function KartuKendaliPage() {
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center bg-dark-100 p-1 rounded-xl">
             <button
+              onClick={() => setActiveTab('katalog')}
+              className={cn(
+                'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all',
+                activeTab === 'katalog' ? 'bg-white text-bps-blue shadow-xs' : 'text-dark-500 hover:text-dark-800'
+              )}
+            >
+              <Package className="w-3.5 h-3.5" />
+              Ikhtisar Semua Barang ({allCardsList.length})
+            </button>
+            <button
               onClick={() => setActiveTab('kartu')}
               className={cn(
                 'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all',
@@ -388,7 +720,7 @@ export default function KartuKendaliPage() {
               )}
             >
               <FileText className="w-3.5 h-3.5" />
-              Kartu Persediaan (ATK/ARK)
+              Detail Kartu Barang
             </button>
             <button
               onClick={() => setActiveTab('daftar')}
@@ -398,26 +730,47 @@ export default function KartuKendaliPage() {
               )}
             >
               <Layers className="w-3.5 h-3.5" />
-              Daftar Rekapitulasi Persediaan
+              Daftar 1 Jan (BPS)
             </button>
           </div>
 
-          <button
-            onClick={() => {
-              setPreviewMode(activeTab);
-              setShowPrintPreview(true);
-            }}
-            className="btn-primary text-xs"
-          >
-            <Printer className="w-4 h-4" />
-            {activeTab === 'kartu' ? 'Cetak Kartu Persediaan' : 'Cetak Daftar Persediaan'}
-          </button>
+          <div className="flex items-center gap-2">
+            {activeTab === 'kartu' && (
+              <button
+                onClick={() => setShowInputModal(true)}
+                className="btn-secondary text-xs py-2 px-3 inline-flex items-center gap-1.5 font-bold"
+                title="Catat mutasi masuk atau keluar baru untuk barang ini"
+              >
+                <Plus className="w-3.5 h-3.5 text-bps-blue" />
+                <span>+ Catat Mutasi</span>
+              </button>
+            )}
+
+            <button
+              onClick={() => {
+                if (activeTab === 'katalog') {
+                  setPreviewMode('batch');
+                } else {
+                  setPreviewMode(activeTab);
+                }
+                setShowPrintPreview(true);
+              }}
+              className="btn-primary text-xs"
+            >
+              <Printer className="w-4 h-4" />
+              {activeTab === 'katalog'
+                ? 'Cetak Semua Kartu (Batch)'
+                : activeTab === 'kartu'
+                ? 'Cetak Kartu Ini'
+                : 'Cetak Daftar Persediaan'}
+            </button>
+          </div>
         </div>
       </div>
 
       {/* FILTER & PERIODE */}
       <div className="card p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <div className="flex items-center gap-1.5 bg-dark-50 border border-dark-200 rounded-lg p-1">
             <Calendar className="w-4 h-4 text-dark-400 ml-2" />
             <select
@@ -430,9 +783,23 @@ export default function KartuKendaliPage() {
             </select>
           </div>
 
-          <div className="text-xs text-dark-500 hidden sm:block">
+          {activeTab === 'katalog' && (
+            <label className="flex items-center gap-1.5 text-xs text-dark-700 cursor-pointer select-none bg-dark-50 border border-dark-200 rounded-lg px-2.5 py-1.5">
+              <input
+                type="checkbox"
+                checked={filterMutasiOnly}
+                onChange={(e) => setFilterMutasiOnly(e.target.checked)}
+                className="rounded border-dark-300 text-bps-blue focus:ring-bps-blue"
+              />
+              <span className="font-medium">Hanya yang Ada Mutasi ({allCardsList.filter(c => c.entries.length > 0).length})</span>
+            </label>
+          )}
+
+          <div className="text-xs text-dark-500 hidden md:block">
             {activeTab === 'kartu' ? (
               <span>Barang aktif: <strong>{currentCard?.nama_barang}</strong> ({currentCard?.kode_barang})</span>
+            ) : activeTab === 'katalog' ? (
+              <span>Menampilkan <strong>{filteredAllCards.length} dari {allCardsList.length} kartu kendali</strong></span>
             ) : (
               <span>Menampilkan <strong>{DATA_DAFTAR_PERSEDIAAN_PDF1.length} item</strong> persediaan barang</span>
             )}
@@ -451,6 +818,173 @@ export default function KartuKendaliPage() {
           />
         </div>
       </div>
+
+      {/* ======================================================== */}
+      {/* TAMPILAN 0: IKHTISAR & KATALOG SEMUA KARTU KENDALI       */}
+      {/* Memudahkan Pengelola Memantau Seluruh Barang             */}
+      {/* ======================================================== */}
+      {activeTab === 'katalog' && (
+        <div className="space-y-4">
+          {/* Summary Stat Cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="card p-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-bps-blue-50 flex items-center justify-center">
+                <Package className="w-5 h-5 text-bps-blue" />
+              </div>
+              <div>
+                <p className="text-xl font-bold text-dark-800">{barangList.length}</p>
+                <p className="text-xs text-dark-400">Total Jenis Barang</p>
+              </div>
+            </div>
+            <div className="card p-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center">
+                <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+              </div>
+              <div>
+                <p className="text-xl font-bold text-emerald-600">
+                  {allCardsList.filter(c => c.entries.length > 0).length}
+                </p>
+                <p className="text-xs text-dark-400">Barang Ada Mutasi</p>
+              </div>
+            </div>
+            <div className="card p-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-bps-green-50 flex items-center justify-center">
+                <ArrowDownToLine className="w-5 h-5 text-bps-green" />
+              </div>
+              <div>
+                <p className="text-xl font-bold text-bps-green">
+                  {allCardsList.reduce((s, c) => s + c.totalMasuk, 0)}
+                </p>
+                <p className="text-xs text-dark-400">Total Masuk ({selectedYear})</p>
+              </div>
+            </div>
+            <div className="card p-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-bps-orange-50 flex items-center justify-center">
+                <ArrowUpFromLine className="w-5 h-5 text-bps-orange" />
+              </div>
+              <div>
+                <p className="text-xl font-bold text-bps-orange">
+                  {allCardsList.reduce((s, c) => s + c.totalKeluar, 0)}
+                </p>
+                <p className="text-xs text-dark-400">Total Keluar ({selectedYear})</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Table Container */}
+          <div className="card overflow-hidden">
+            <div className="px-5 py-4 border-b border-dark-100 flex items-center justify-between flex-wrap gap-2">
+              <div>
+                <h2 className="text-base font-bold text-dark-800">
+                  Ikhtisar Seluruh Kartu Kendali Persediaan ({filteredAllCards.length} Barang)
+                </h2>
+                <p className="text-xs text-dark-400 mt-0.5">
+                  Pantau stok awal 1 Januari, penerimaan, pengeluaran, dan sisa per 31 Desember tanpa perlu klik satu per satu
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    setPreviewMode('batch');
+                    setShowPrintPreview(true);
+                  }}
+                  className="btn-primary text-xs py-1.5 px-3 inline-flex items-center gap-1.5"
+                  title="Cetak kartu kendali seluruh barang sekaligus"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>Cetak Semua Kartu Kendali (Batch)</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="table-container border-0 max-h-[640px] overflow-y-auto">
+              <table>
+                <thead className="sticky top-0 bg-dark-50 z-10 shadow-xs text-xs">
+                  <tr>
+                    <th className="w-12 text-center">No</th>
+                    <th className="w-24 text-center font-mono">Kode</th>
+                    <th>Uraian Nama Barang</th>
+                    <th className="text-center w-24">Satuan</th>
+                    <th className="text-center w-28">Stok Awal (1 Jan)</th>
+                    <th className="text-center w-24 text-emerald-800 bg-emerald-50/50">Masuk ({selectedYear})</th>
+                    <th className="text-center w-24 text-rose-800 bg-rose-50/50">Keluar ({selectedYear})</th>
+                    <th className="text-center w-28 font-bold bg-blue-50/50">Sisa Akhir (31 Des)</th>
+                    <th className="text-center w-28">Status Mutasi</th>
+                    <th className="text-center w-36">Aksi Kartu</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredAllCards.map((c, idx) => {
+                    const hasMutasi = c.entries.length > 0;
+                    return (
+                      <tr key={c.barang.id} className="hover:bg-dark-50/50 text-xs">
+                        <td className="text-center text-dark-400 font-medium">{idx + 1}</td>
+                        <td className="text-center font-mono font-bold text-bps-blue text-[11px]">{c.kode_barang}</td>
+                        <td className="font-semibold text-dark-800">{c.nama_barang}</td>
+                        <td className="text-center text-dark-500 font-medium">{c.satuan}</td>
+                        <td className="text-center font-bold text-dark-700">{formatNumber(c.stock_awal_tahun)}</td>
+                        <td className="text-center font-bold text-emerald-700 bg-emerald-50/30">
+                          {c.totalMasuk > 0 ? formatNumber(c.totalMasuk) : '-'}
+                        </td>
+                        <td className="text-center font-bold text-rose-700 bg-rose-50/30">
+                          {c.totalKeluar > 0 ? formatNumber(c.totalKeluar) : '-'}
+                        </td>
+                        <td className="text-center font-extrabold text-blue-900 bg-blue-50/20">
+                          {formatNumber(c.sisaAkhir)}
+                        </td>
+                        <td className="text-center">
+                          {hasMutasi ? (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                              {c.entries.length} Mutasi
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-600">
+                              Stok Tetap
+                            </span>
+                          )}
+                        </td>
+                        <td className="text-center">
+                          <div className="flex items-center justify-center gap-1.5">
+                            <button
+                              onClick={() => {
+                                setSelectedBarangId(c.barang.id);
+                                setActiveTab('kartu');
+                              }}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold text-white bg-bps-blue hover:bg-bps-blue-700 transition-colors shadow-2xs"
+                              title="Buka Kartu Kendali Lengkap"
+                            >
+                              <FileText className="w-3 h-3" />
+                              <span>Lihat Kartu</span>
+                            </button>
+                            <button
+                              onClick={() => {
+                                setSelectedBarangId(c.barang.id);
+                                setPreviewMode('kartu');
+                                setShowPrintPreview(true);
+                              }}
+                              className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium text-dark-700 bg-dark-100 hover:bg-dark-200 transition-colors"
+                              title="Cetak Kartu Barang Ini"
+                            >
+                              <Printer className="w-3 h-3" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {filteredAllCards.length === 0 && (
+                    <tr>
+                      <td colSpan={10} className="text-center py-10 text-dark-400">
+                        Tidak ada barang yang cocok dengan filter / pencarian.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ======================================================== */}
       {/* TAMPILAN 1: KARTU PERSEDIAAN BARANG PAKAI HABIS (ATK/ARK) */}
@@ -527,308 +1061,7 @@ export default function KartuKendaliPage() {
           <div className="lg:col-span-3">
             {currentCard ? (
               <div className="card p-6 bg-white overflow-x-auto shadow-sm border border-dark-200">
-                {/* Header Kartu Sesuai Format Resmi PDF Halaman 3 */}
-                <div className="text-center mb-5 pb-3 border-b border-dark-200">
-                  <h2 className="text-base font-extrabold text-black uppercase tracking-wider">
-                    KARTU PERSEDIAAN BARANG PAKAI HABIS (ATK/ARK)
-                  </h2>
-                </div>
-
-                {/* Identitas Barang & Satuan Kerja Sesuai Format Gambar Excel */}
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-3 mb-4 text-xs text-black items-start">
-                  <div className="md:col-span-4 flex flex-col items-start justify-start pt-0">
-                    <div className="flex flex-col items-center text-center">
-                      <img src="/images/logo-bps.svg" alt="Logo BPS" className="h-14 w-auto object-contain mb-1" />
-                      <div
-                        style={{
-                          fontFamily: 'Arial, sans-serif',
-                          fontSize: '9pt',
-                          lineHeight: 1.25,
-                        }}
-                        className="font-bold italic text-black text-center"
-                      >
-                        <p>Badan Pusat Statistik</p>
-                        <p>Kabupaten Ogan Komering Ulu Selatan</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="md:col-span-5 space-y-1 font-medium items-start pt-0" style={{ fontFamily: 'Arial, sans-serif' }}>
-                    <div className="flex items-center">
-                      <span className="w-28 text-black">Nama Barang</span>
-                      <span className="w-3 text-center">:</span>
-                      <span className="font-bold text-black uppercase">{currentCard.nama_barang}</span>
-                    </div>
-                    <div className="flex items-center">
-                      <span className="w-28 text-black">Kode Barang</span>
-                      <span className="w-3 text-center">:</span>
-                      <span className="font-mono font-bold text-black">{currentCard.kode_barang || '-'}</span>
-                    </div>
-                    <div className="flex items-center">
-                      <span className="w-28 text-black">Satuan Barang</span>
-                      <span className="w-3 text-center">:</span>
-                      <span className="text-black">{currentCard.satuan}</span>
-                    </div>
-                  </div>
-
-                  <div className="md:col-span-3 space-y-1 font-medium items-start pt-0" style={{ fontFamily: 'Arial, sans-serif' }}>
-                    <div className="flex items-center">
-                      <span className="w-24 text-black">Halaman</span>
-                      <span className="w-3 text-center">:</span>
-                      <span className="text-black font-semibold">{currentCard.halaman || 1}</span>
-                    </div>
-                    <div className="flex items-center">
-                      <span className="w-24 text-black">Proyek/Rutin</span>
-                      <span className="w-3 text-center">:</span>
-                      <span className="text-black">{currentCard.proyek_rutin || ''}</span>
-                    </div>
-                    <div className="flex items-center">
-                      <span className="w-24 text-black">Tahun</span>
-                      <span className="w-3 text-center">:</span>
-                      <span className="font-bold text-black">{currentCard.tahun}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* TABEL 1: Banyaknya Pengeluaran Tiap-Tiap Bulan (15 Kolom Horizontal) */}
-                <div className="mb-6 overflow-x-auto">
-                  <table className="w-full border-collapse border border-black text-center text-xs">
-                    <thead>
-                      <tr className="bg-gray-100 font-bold text-black">
-                        <th colSpan={12} className="border border-black py-1.5 uppercase text-[11px] tracking-wider">
-                          Banyaknya Pengeluaran Tiap-Tiap Bulan
-                        </th>
-                        <th rowSpan={2} className="border border-black px-2 py-1.5 text-[10px] leading-tight w-20">
-                          Jumlah Pengeluaran
-                        </th>
-                        <th rowSpan={2} className="border border-black px-2 py-1.5 text-[10px] leading-tight w-20">
-                          Stock Awal tahun
-                        </th>
-                        <th rowSpan={2} className="border border-black px-2 py-1.5 text-[10px] leading-tight w-20 bg-gray-50">
-                          Stock Akhir tahun
-                        </th>
-                      </tr>
-                      <tr className="bg-gray-50 font-semibold text-black text-[10px]">
-                        {BULAN_NAMES.map((bln, idx) => (
-                          <th key={idx} className="border border-black px-1 py-1 w-11">
-                            {bln}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr className="text-black font-semibold text-xs h-7">
-                        {BULAN_NAMES.map((_, idx) => {
-                          const m = idx <= 2 ? idx + 1 : idx;
-                          const out = getMonthlyOut(m);
-                          const val = idx === 0 ? (out > 0 ? out : '0') : (out > 0 ? out : '');
-                          return (
-                            <td key={idx} className="border border-black py-1.5">
-                              {val}
-                            </td>
-                          );
-                        })}
-                        <td className="border border-black py-1.5 font-bold text-black bg-gray-50">
-                          {totalPengeluaranTahunan > 0 ? totalPengeluaranTahunan : ''}
-                        </td>
-                        <td className="border border-black py-1.5 font-bold text-black">
-                          {stockAwal}
-                        </td>
-                        <td className="border border-black py-1.5 font-extrabold text-blue-900 bg-blue-50/50">
-                          {totalPengeluaranTahunan > 0 || totalMasuk > 0 ? sisaAkhir : ''}
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* TABEL 2: Rincian Mutasi Barang Dual-Pane (14 Kolom) Sesuai Halaman 3 PDF */}
-                <div className="overflow-x-auto mb-6">
-                  <table className="w-full border-collapse border border-black text-[10px]">
-                    <thead>
-                      <tr className="bg-gray-100 font-bold text-black text-center">
-                        {/* Kolom Sisi Kiri */}
-                        <th className="border border-black px-1 py-1 w-8">No.</th>
-                        <th className="border border-black px-1.5 py-1 w-20">No. Bon/Faktur</th>
-                        <th className="border border-black px-1.5 py-1 w-16">Tgl M/K</th>
-                        <th className="border border-black px-2 py-1 text-left">Uraian Pemasukan/Pengeluaran</th>
-                        <th className="border border-black px-1 py-1 w-12">Masuk (M)</th>
-                        <th className="border border-black px-1 py-1 w-12">Keluar (K)</th>
-                        <th className="border border-black px-1.5 py-1 w-14">Sisa Barang</th>
-
-                        {/* Kolom Sisi Kanan */}
-                        <th className="border border-black px-1 py-1 w-8">No.</th>
-                        <th className="border border-black px-1.5 py-1 w-20">No. Bon/Faktur</th>
-                        <th className="border border-black px-1.5 py-1 w-16">Tgl M/K</th>
-                        <th className="border border-black px-2 py-1 text-left">Uraian Pemasukan/Pengeluaran</th>
-                        <th className="border border-black px-1 py-1 w-12">Masuk (M)</th>
-                        <th className="border border-black px-1 py-1 w-12">Keluar (K)</th>
-                        <th className="border border-black px-1.5 py-1 w-14">Sisa Barang</th>
-                      </tr>
-                      <tr className="bg-gray-50 text-[8.5px] text-gray-600 font-bold text-center h-4">
-                        <th className="border border-black py-0 px-0.5 leading-tight">(1)</th>
-                        <th className="border border-black py-0 px-0.5 leading-tight">(2)</th>
-                        <th className="border border-black py-0 px-0.5 leading-tight">(3)</th>
-                        <th className="border border-black py-0 px-0.5 leading-tight">(4)</th>
-                        <th className="border border-black py-0 px-0.5 leading-tight">(5)</th>
-                        <th className="border border-black py-0 px-0.5 leading-tight">(6)</th>
-                        <th className="border border-black py-0 px-0.5 leading-tight">(7)</th>
-                        <th className="border border-black py-0 px-0.5 leading-tight">(8)</th>
-                        <th className="border border-black py-0 px-0.5 leading-tight">(9)</th>
-                        <th className="border border-black py-0 px-0.5 leading-tight">(10)</th>
-                        <th className="border border-black py-0 px-0.5 leading-tight">(11)</th>
-                        <th className="border border-black py-0 px-0.5 leading-tight">(12)</th>
-                        <th className="border border-black py-0 px-0.5 leading-tight">(13)</th>
-                        <th className="border border-black py-0 px-0.5 leading-tight">(14)</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {Array.from({ length: activeRowCount }).map((_, rIdx) => {
-                          const isPindahanRow = rIdx === 0;
-                          const left = rIdx > 0 ? leftEntries[rIdx - 1] : null;
-                          const right = rIdx > 0 ? rightEntries[rIdx - 1] : null;
-
-                          return (
-                            <tr key={rIdx} className="text-black hover:bg-gray-50/50 h-[20px]">
-                              {/* Sisi Kiri */}
-                              {isPindahanRow ? (
-                                <>
-                                  <td className="border border-black px-1 py-0.5 text-center"></td>
-                                  <td className="border border-black px-1.5 py-0.5 font-mono text-[9px]"></td>
-                                  <td className="border border-black px-1 py-0.5 text-center"></td>
-                                  <td className="border border-black px-2 py-0.5 font-medium"></td>
-                                  <td className="border border-black px-1 py-0.5 text-center"></td>
-                                  <td className="border border-black px-1 py-0.5 text-center"></td>
-                                  <td className="border border-black px-1.5 py-0.5 text-center"></td>
-                                </>
-                              ) : (
-                                <>
-                                  <td className="border border-black px-1 py-0.5 text-center font-medium">
-                                    {left ? rIdx : ''}
-                                  </td>
-                                  <td className="border border-black px-1.5 py-0.5 font-mono text-[9px]">
-                                    {left?.no_referensi || ''}
-                                  </td>
-                                  <td className="border border-black px-1 py-0.5 text-center">
-                                    {left ? formatDateShort(left.tanggal) : ''}
-                                  </td>
-                                  <td className="border border-black px-2 py-0.5 font-medium">
-                                    {left?.uraian || ''}
-                                  </td>
-                                  <td className="border border-black px-1 py-0.5 text-center font-bold text-emerald-800">
-                                    {left && left.masuk > 0 ? left.masuk : (left ? '-' : '')}
-                                  </td>
-                                  <td className="border border-black px-1 py-0.5 text-center font-bold text-rose-800">
-                                    {left && left.keluar > 0 ? left.keluar : (left ? '-' : '')}
-                                  </td>
-                                  <td className="border border-black px-1.5 py-0.5 text-center font-bold">
-                                    {left ? left.sisa : ''}
-                                  </td>
-                                </>
-                              )}
-
-                              {/* Sisi Kanan */}
-                              {isPindahanRow ? (
-                                <>
-                                  <td colSpan={4} className="border border-black px-2 py-0.5 font-medium">
-                                    Pindahan
-                                  </td>
-                                  <td className="border border-black px-1 py-0.5 text-center font-bold text-emerald-800"></td>
-                                  <td className="border border-black px-1 py-0.5 text-center font-bold text-rose-800"></td>
-                                  <td className="border border-black px-1.5 py-0.5 text-center font-bold">
-                                    {leftEntries.length > 0 ? leftLastSisa : ''}
-                                  </td>
-                                </>
-                              ) : (
-                                <>
-                                  <td className="border border-black px-1 py-0.5 text-center font-medium">
-                                    {right ? leftEntries.length + rIdx : ''}
-                                  </td>
-                                  <td className="border border-black px-1.5 py-0.5 font-mono text-[9px]">
-                                    {right?.no_referensi || ''}
-                                  </td>
-                                  <td className="border border-black px-1 py-0.5 text-center">
-                                    {right ? formatDateShort(right.tanggal) : ''}
-                                  </td>
-                                  <td className="border border-black px-2 py-0.5 font-medium">
-                                    {right?.uraian || ''}
-                                  </td>
-                                  <td className="border border-black px-1 py-0.5 text-center font-bold text-emerald-800">
-                                    {right && right.masuk > 0 ? right.masuk : (right ? '-' : '')}
-                                  </td>
-                                  <td className="border border-black px-1 py-0.5 text-center font-bold text-rose-800">
-                                    {right && right.keluar > 0 ? right.keluar : (right ? '-' : '')}
-                                  </td>
-                                  <td className="border border-black px-1.5 py-0.5 text-center font-bold">
-                                    {right ? right.sisa : ''}
-                                  </td>
-                                </>
-                              )}
-                            </tr>
-                          );
-                        })}
-                    </tbody>
-                    <tfoot>
-                      <tr className="bg-gray-100 font-bold text-black">
-                        <td colSpan={4} className="border border-black px-2 py-1 text-center uppercase tracking-wider text-[10px]">
-                          JUMLAH (dipindahkan)
-                        </td>
-                        <td className="border border-black px-1 py-1 text-center font-bold">
-                          {leftTotalMasuk > 0 ? leftTotalMasuk : ''}
-                        </td>
-                        <td className="border border-black px-1 py-1 text-center font-bold">
-                          {leftTotalKeluar > 0 ? leftTotalKeluar : ''}
-                        </td>
-                        <td className="border border-black px-1.5 py-1 text-center font-extrabold bg-gray-200">
-                          {leftEntries.length > 0 ? leftLastSisa : ''}
-                        </td>
-
-                        <td colSpan={4} className="border border-black px-2 py-1 text-center uppercase tracking-wider text-[10px]">
-                          JUMLAH (dipindahkan)
-                        </td>
-                        <td className="border border-black px-1 py-1 text-center font-bold">
-                          {rightEntries.length > 0 && rightTotalMasuk > 0 ? rightTotalMasuk : ''}
-                        </td>
-                        <td className="border border-black px-1 py-1 text-center font-bold">
-                          {rightEntries.length > 0 && rightTotalKeluar > 0 ? rightTotalKeluar : ''}
-                        </td>
-                        <td className="border border-black px-1.5 py-1 text-center font-extrabold bg-gray-200">
-                          {rightEntries.length > 0 ? sisaAkhir : ''}
-                        </td>
-                      </tr>
-                    </tfoot>
-                  </table>
-                </div>
-
-                {/* Tanda Tangan Resmi Sesuai Format BPS - Garis Mengikuti Panjang Nama */}
-                <div className="w-full flex items-start justify-between text-xs text-black mt-8 pt-4 border-t border-dashed border-dark-200">
-                  <div className="w-72 text-center flex flex-col items-center">
-                    <p className="font-semibold text-black">Mengetahui,</p>
-                    <p className="font-medium text-black">Kuasa Pengguna Barang</p>
-                    <p className="font-medium text-black">Kepala BPS Kabupaten OKU Selatan</p>
-                    <div className="h-16" />
-                    <p className="text-center">
-                      <span className="font-bold border-b border-black text-black pb-0.5 inline-block">
-                        Rival Abdul Jabar, S.ST., M.Si.
-                      </span>
-                    </p>
-                    <p className="text-[11px] mt-1 font-medium text-black text-center">NIP. 19831122 200701 1003</p>
-                  </div>
-                  <div className="w-72 text-center flex flex-col items-center">
-                    <p className="font-medium text-black">
-                      Muaradua, {currentCard.tahun === 2025 ? '31 Desember 2025' : '31 Agustus 2026'}
-                    </p>
-                    <p className="font-semibold text-black">Petugas Pengelola Persediaan</p>
-                    <p className="text-transparent select-none font-medium">-</p>
-                    <div className="h-16" />
-                    <p className="text-center">
-                      <span className="font-bold border-b border-black text-black pb-0.5 inline-block">
-                        Guspita Karleni, S.Si
-                      </span>
-                    </p>
-                    <p className="text-[11px] mt-1 font-medium text-black text-center">NIP. 19970806 202521 2039</p>
-                  </div>
-                </div>
+                {renderCardContent(currentCard, false)}
               </div>
             ) : (
               <div className="card p-12 text-center">
@@ -927,23 +1160,14 @@ export default function KartuKendaliPage() {
               <div className="flex items-center gap-2">
                 <FileText className="w-5 h-5 text-bps-blue" />
                 <h2 className="text-base font-bold text-dark-800">
-                  {previewMode === 'kartu'
+                  {previewMode === 'batch'
+                    ? `Preview Cetak: Semua Kartu Persediaan Barang (${filteredAllCards.length} Barang)`
+                    : previewMode === 'kartu'
                     ? `Preview Cetak: Kartu Persediaan Barang — ${currentCard?.nama_barang} (${currentCard?.tahun})`
                     : `Preview Cetak: Daftar Rekapitulasi Persediaan Barang (Tahun ${selectedYear})`}
                 </h2>
               </div>
               <div className="flex items-center gap-3">
-                {previewMode === 'kartu' && (
-                  <label className="flex items-center gap-1.5 text-xs text-dark-700 cursor-pointer select-none no-print bg-dark-50 border border-dark-200 rounded-lg px-2.5 py-1">
-                    <input
-                      type="checkbox"
-                      checked={tampilkanTandaTanganKartu}
-                      onChange={(e) => setTampilkanTandaTanganKartu(e.target.checked)}
-                      className="rounded border-dark-300 text-bps-blue focus:ring-bps-blue"
-                    />
-                    <span className="font-medium text-dark-700">Tanda Tangan (Opsional)</span>
-                  </label>
-                )}
                 <div className="flex items-center gap-1.5 bg-dark-50 border border-dark-200 rounded-lg px-2.5 py-1">
                   <span className="text-xs font-medium text-dark-600">Tanggal Dokumen:</span>
                   <input
@@ -951,10 +1175,10 @@ export default function KartuKendaliPage() {
                     value={tglCetakDokumen}
                     onChange={(e) => setTglCetakDokumen(e.target.value)}
                     className="text-xs bg-white border border-dark-300 rounded px-1.5 py-0.5 text-dark-800 focus:outline-none focus:ring-1 focus:ring-bps-blue"
-                    title="Pilih tanggal cetak dokumen (tanggal tanda tangan otomatis menyesuaikan)"
+                    title="Pilih tanggal cetak dokumen"
                   />
                 </div>
-                <button onClick={handlePrint} className="btn-primary text-xs py-2 px-3">
+                <button onClick={handlePrint} className="btn-primary text-xs py-2 px-3 inline-flex items-center gap-1.5">
                   <Printer className="w-4 h-4" /> Cetak Dokumen
                 </button>
                 <button onClick={() => setShowPrintPreview(false)} className="btn-secondary text-xs py-2 px-3">
@@ -967,15 +1191,17 @@ export default function KartuKendaliPage() {
             <style dangerouslySetInnerHTML={{ __html: `
               @media print {
                 @page {
-                  size: ${previewMode === 'kartu' ? 'A4 landscape' : 'A4 portrait'} !important;
-                  margin: ${previewMode === 'kartu' ? '6mm 8mm 6mm 8mm' : '8mm 10mm 8mm 10mm'} !important;
+                  size: ${(previewMode === 'kartu' || previewMode === 'batch') ? 'A4 landscape' : 'A4 portrait'} !important;
+                  margin: ${(previewMode === 'kartu' || previewMode === 'batch') ? '6mm 8mm 6mm 8mm' : '8mm 10mm 8mm 10mm'} !important;
                 }
-                ${previewMode === 'kartu' ? `
-                #print-area {
-                  page-break-inside: avoid !important;
-                  break-inside: avoid !important;
+                .card-print-page {
+                  page-break-after: always !important;
+                  break-after: page !important;
                 }
-                ` : ''}
+                .card-print-page:last-child {
+                  page-break-after: avoid !important;
+                  break-after: avoid !important;
+                }
               }
             `}} />
 
@@ -983,307 +1209,18 @@ export default function KartuKendaliPage() {
               {/* Kop Surat hanya muncul untuk Daftar Rekapitulasi Persediaan, TIDAK untuk Kartu Kendali */}
               {previewMode === 'daftar' && <KopSurat />}
 
-              {/* JIKA PREVIEW KARTU PERSEDIAAN (PERSIS HALAMAN 3 PDF & EXCEL) */}
-              {previewMode === 'kartu' && currentCard && (
-                <>
-                  <h3 className="text-center font-extrabold text-black mb-2 print:mb-1 text-sm print:text-xs uppercase tracking-wider">
-                    KARTU PERSEDIAAN BARANG PAKAI HABIS (ATK/ARK)
-                  </h3>
+              {/* JIKA PREVIEW KARTU PERSEDIAAN TUNGGAL */}
+              {previewMode === 'kartu' && currentCard && renderCardContent(currentCard, true)}
 
-                  {/* Identitas Barang & Logo Sesuai Format Gambar Excel */}
-                  <div className="grid grid-cols-12 gap-3 mb-2 print:mb-1.5 text-xs print:text-[10px] text-black items-start">
-                    <div className="col-span-4 flex flex-col items-start justify-start pt-0">
-                      <div className="flex flex-col items-center text-center">
-                        <img src="/images/logo-bps.svg" alt="Logo BPS" className="h-14 print:h-11 w-auto object-contain mb-1" />
-                        <div
-                          style={{
-                            fontFamily: 'Arial, sans-serif',
-                            fontSize: '9pt',
-                            lineHeight: 1.25,
-                          }}
-                          className="font-bold italic text-black text-center print:text-[8pt]"
-                        >
-                          <p>Badan Pusat Statistik</p>
-                          <p>Kabupaten Ogan Komering Ulu Selatan</p>
-                        </div>
-                      </div>
+              {/* JIKA PREVIEW CETAK SEMUA KARTU KENDALI (BATCH) */}
+              {previewMode === 'batch' && (
+                <div className="space-y-8 print:space-y-0">
+                  {filteredAllCards.map((c) => (
+                    <div key={c.barang.id} className="card-print-page print:mb-0">
+                      {renderCardContent(c, true)}
                     </div>
-                    <div className="col-span-5 space-y-0.5 text-[11px] items-start pt-0" style={{ fontFamily: 'Arial, sans-serif' }}>
-                      <div className="flex items-center">
-                        <span className="w-24 text-black">Nama Barang</span>
-                        <span className="w-3 text-center">:</span>
-                        <span className="font-bold text-black uppercase">{currentCard.nama_barang}</span>
-                      </div>
-                      <div className="flex items-center">
-                        <span className="w-24 text-black">Kode Barang</span>
-                        <span className="w-3 text-center">:</span>
-                        <span className="font-mono text-black">{currentCard.kode_barang || '-'}</span>
-                      </div>
-                      <div className="flex items-center">
-                        <span className="w-24 text-black">Satuan Barang</span>
-                        <span className="w-3 text-center">:</span>
-                        <span className="text-black">{currentCard.satuan}</span>
-                      </div>
-                    </div>
-                    <div className="col-span-3 space-y-0.5 text-[11px] text-left items-start pt-0" style={{ fontFamily: 'Arial, sans-serif' }}>
-                      <div className="flex items-center text-left">
-                        <span className="w-20 text-black text-left">Halaman</span>
-                        <span className="w-3 text-center">:</span>
-                        <span className="text-black text-left">{currentCard.halaman || 1}</span>
-                      </div>
-                      <div className="flex items-center text-left">
-                        <span className="w-20 text-black text-left">Proyek/Rutin</span>
-                        <span className="w-3 text-center">:</span>
-                        <span className="text-black text-left">{currentCard.proyek_rutin || ''}</span>
-                      </div>
-                      <div className="flex items-center text-left">
-                        <span className="w-20 text-black text-left">Tahun</span>
-                        <span className="w-3 text-center">:</span>
-                        <span className="font-bold text-black text-left">{currentCard.tahun}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Tabel 1: Horizontal 15 Kolom Pengeluaran Tiap Bulan */}
-                  <div className="mb-2 print:mb-1.5">
-                    <table className="w-full border-collapse border border-black text-center text-[10px] print:text-[8px]">
-                      <thead>
-                        <tr className="bg-gray-100 font-bold text-black">
-                          <th colSpan={13} className="border border-black py-0.5 uppercase text-[10px] print:text-[8px]">
-                            Banyaknya Pengeluaran Tiap-Tiap Bulan
-                          </th>
-                          <th rowSpan={2} className="border border-black px-1.5 py-0.5 text-[9px] print:text-[7.5px] leading-tight w-16">
-                            Jumlah Pengeluaran
-                          </th>
-                          <th rowSpan={2} className="border border-black px-1.5 py-0.5 text-[9px] print:text-[7.5px] leading-tight w-16">
-                            Stock Awal tahun
-                          </th>
-                          <th rowSpan={2} className="border border-black px-1.5 py-0.5 text-[9px] print:text-[7.5px] leading-tight w-16">
-                            Stock Akhir tahun
-                          </th>
-                        </tr>
-                        <tr className="bg-gray-50 font-semibold text-black text-[9px] print:text-[7.5px]">
-                          {BULAN_NAMES.map((bln, idx) => (
-                            <th key={idx} className="border border-black px-0.5 py-0.5">
-                              {bln}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr className="text-black font-semibold text-[10px] print:text-[8px] h-6 print:h-[18px]">
-                          {BULAN_NAMES.map((_, idx) => {
-                            const m = idx <= 2 ? idx + 1 : idx;
-                            const out = getMonthlyOut(m);
-                            const val = idx === 0 ? (out > 0 ? out : '0') : (out > 0 ? out : '');
-                            return (
-                              <td key={idx} className="border border-black py-0.5">
-                                {val}
-                              </td>
-                            );
-                          })}
-                          <td className="border border-black py-0.5 font-bold">
-                            {totalPengeluaranTahunan > 0 ? totalPengeluaranTahunan : ''}
-                          </td>
-                          <td className="border border-black py-0.5 font-bold">
-                            {stockAwal}
-                          </td>
-                          <td className="border border-black py-0.5 font-bold">
-                            {totalPengeluaranTahunan > 0 || totalMasuk > 0 ? sisaAkhir : ''}
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {/* Tabel 2: Dual-Pane 14 Kolom Persis Halaman 3 PDF */}
-                  <div className="mb-2 print:mb-1">
-                    <table className="w-full border-collapse border border-black text-[9px] print:text-[8px]">
-                      <thead>
-                        <tr className="bg-gray-100 font-bold text-black text-center">
-                          <th className="border border-black px-1 py-1 w-6">No.</th>
-                          <th className="border border-black px-1 py-1 w-16">No. Bon/Faktur</th>
-                          <th className="border border-black px-1 py-1 w-14">Tgl M/K</th>
-                          <th className="border border-black px-2 py-1 text-left">Uraian Pemasukan/Pengeluaran</th>
-                          <th className="border border-black px-1 py-1 w-10">Masuk (M)</th>
-                          <th className="border border-black px-1 py-1 w-10">Keluar (K)</th>
-                          <th className="border border-black px-1 py-1 w-12">Sisa Barang</th>
-
-                          <th className="border border-black px-1 py-1 w-6">No.</th>
-                          <th className="border border-black px-1 py-1 w-16">No. Bon/Faktur</th>
-                          <th className="border border-black px-1 py-1 w-14">Tgl M/K</th>
-                          <th className="border border-black px-2 py-1 text-left">Uraian Pemasukan/Pengeluaran</th>
-                          <th className="border border-black px-1 py-1 w-10">Masuk (M)</th>
-                          <th className="border border-black px-1 py-1 w-10">Keluar (K)</th>
-                          <th className="border border-black px-1 py-1 w-12">Sisa Barang</th>
-                        </tr>
-                        <tr className="bg-gray-50 text-[8px] print:text-[7.5px] text-gray-600 font-bold text-center h-3.5">
-                          <th className="border border-black py-0 px-0.5 leading-tight">(1)</th>
-                          <th className="border border-black py-0 px-0.5 leading-tight">(2)</th>
-                          <th className="border border-black py-0 px-0.5 leading-tight">(3)</th>
-                          <th className="border border-black py-0 px-0.5 leading-tight">(4)</th>
-                          <th className="border border-black py-0 px-0.5 leading-tight">(5)</th>
-                          <th className="border border-black py-0 px-0.5 leading-tight">(6)</th>
-                          <th className="border border-black py-0 px-0.5 leading-tight">(7)</th>
-                          <th className="border border-black py-0 px-0.5 leading-tight">(8)</th>
-                          <th className="border border-black py-0 px-0.5 leading-tight">(9)</th>
-                          <th className="border border-black py-0 px-0.5 leading-tight">(10)</th>
-                          <th className="border border-black py-0 px-0.5 leading-tight">(11)</th>
-                          <th className="border border-black py-0 px-0.5 leading-tight">(12)</th>
-                          <th className="border border-black py-0 px-0.5 leading-tight">(13)</th>
-                          <th className="border border-black py-0 px-0.5 leading-tight">(14)</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {Array.from({ length: activeRowCount }).map((_, rIdx) => {
-                            const isPindahanRow = rIdx === 0;
-                            const left = rIdx > 0 ? leftEntries[rIdx - 1] : null;
-                            const right = rIdx > 0 ? rightEntries[rIdx - 1] : null;
-
-                            return (
-                              <tr key={rIdx} className="text-black h-[21px] print:h-[18px]">
-                                {/* Sisi Kiri */}
-                                {isPindahanRow ? (
-                                  <>
-                                    <td className="border border-black px-1 py-0.5 text-center"></td>
-                                    <td className="border border-black px-1 py-0.5 font-mono text-[8px]"></td>
-                                    <td className="border border-black px-1 py-0.5 text-center"></td>
-                                    <td className="border border-black px-1.5 py-0.5"></td>
-                                    <td className="border border-black px-1 py-0.5 text-center"></td>
-                                    <td className="border border-black px-1 py-0.5 text-center"></td>
-                                    <td className="border border-black px-1 py-0.5 text-center"></td>
-                                  </>
-                                ) : (
-                                  <>
-                                    <td className="border border-black px-1 py-0.5 text-center">
-                                      {left ? rIdx : ''}
-                                    </td>
-                                    <td className="border border-black px-1 py-0.5 font-mono text-[8px]">
-                                      {left?.no_referensi || ''}
-                                    </td>
-                                    <td className="border border-black px-1 py-0.5 text-center">
-                                      {left ? formatDateShort(left.tanggal) : ''}
-                                    </td>
-                                    <td className="border border-black px-1.5 py-0.5">
-                                      {left?.uraian || ''}
-                                    </td>
-                                    <td className="border border-black px-1 py-0.5 text-center font-bold">
-                                      {left && left.masuk > 0 ? left.masuk : (left ? '-' : '')}
-                                    </td>
-                                    <td className="border border-black px-1 py-0.5 text-center font-bold">
-                                      {left && left.keluar > 0 ? left.keluar : (left ? '-' : '')}
-                                    </td>
-                                    <td className="border border-black px-1 py-0.5 text-center font-bold">
-                                      {left ? left.sisa : ''}
-                                    </td>
-                                  </>
-                                )}
-
-                                {/* Sisi Kanan */}
-                                {isPindahanRow ? (
-                                  <>
-                                    <td colSpan={4} className="border border-black px-2 py-0.5 font-medium">
-                                      Pindahan
-                                    </td>
-                                    <td className="border border-black px-1 py-0.5 text-center font-bold"></td>
-                                    <td className="border border-black px-1 py-0.5 text-center font-bold"></td>
-                                    <td className="border border-black px-1 py-0.5 text-center font-bold">
-                                      {leftEntries.length > 0 ? leftLastSisa : ''}
-                                    </td>
-                                  </>
-                                ) : (
-                                  <>
-                                    <td className="border border-black px-1 py-0.5 text-center font-medium">
-                                      {right ? leftEntries.length + rIdx : ''}
-                                    </td>
-                                    <td className="border border-black px-1 py-0.5 font-mono text-[8px]">
-                                      {right?.no_referensi || ''}
-                                    </td>
-                                    <td className="border border-black px-1 py-0.5 text-center">
-                                      {right ? formatDateShort(right.tanggal) : ''}
-                                    </td>
-                                    <td className="border border-black px-1.5 py-0.5">
-                                      {right?.uraian || ''}
-                                    </td>
-                                    <td className="border border-black px-1 py-0.5 text-center font-bold">
-                                      {right && right.masuk > 0 ? right.masuk : (right ? '-' : '')}
-                                    </td>
-                                    <td className="border border-black px-1 py-0.5 text-center font-bold">
-                                      {right && right.keluar > 0 ? right.keluar : (right ? '-' : '')}
-                                    </td>
-                                    <td className="border border-black px-1 py-0.5 text-center font-bold">
-                                      {right ? right.sisa : ''}
-                                    </td>
-                                  </>
-                                )}
-                              </tr>
-                            );
-                          })}
-                      </tbody>
-                      <tfoot>
-                        <tr className="bg-gray-100 font-bold text-black">
-                          <td colSpan={4} className="border border-black px-1.5 py-1 text-center uppercase text-[9px]">
-                            JUMLAH (dipindahkan)
-                          </td>
-                          <td className="border border-black px-1 py-1 text-center font-bold">
-                            {leftTotalMasuk > 0 ? leftTotalMasuk : ''}
-                          </td>
-                          <td className="border border-black px-1 py-1 text-center font-bold">
-                            {leftTotalKeluar > 0 ? leftTotalKeluar : ''}
-                          </td>
-                          <td className="border border-black px-1 py-1 text-center font-bold">
-                            {leftEntries.length > 0 ? leftLastSisa : ''}
-                          </td>
-
-                          <td colSpan={4} className="border border-black px-1.5 py-1 text-center uppercase text-[9px]">
-                            JUMLAH (dipindahkan)
-                          </td>
-                          <td className="border border-black px-1 py-1 text-center font-bold">
-                            {rightEntries.length > 0 && rightTotalMasuk > 0 ? rightTotalMasuk : ''}
-                          </td>
-                          <td className="border border-black px-1 py-1 text-center font-bold">
-                            {rightEntries.length > 0 && rightTotalKeluar > 0 ? rightTotalKeluar : ''}
-                          </td>
-                          <td className="border border-black px-1 py-1 text-center font-bold">
-                            {rightEntries.length > 0 ? sisaAkhir : ''}
-                          </td>
-                        </tr>
-                      </tfoot>
-                    </table>
-                  </div>
-
-                  {/* Tanda Tangan Resmi Sesuai Format BPS (Opsional untuk Kartu Kendali) */}
-                  {tampilkanTandaTanganKartu && (
-                    <div className="w-full flex items-start justify-between text-xs print:text-[9.5px] text-black mt-3 pt-1 print:mt-1.5 print:pt-0 avoid-break">
-                      <div className="w-72 text-center flex flex-col items-center">
-                        <p className="font-semibold text-black">Mengetahui,</p>
-                        <p className="font-medium text-black">Kuasa Pengguna Barang</p>
-                        <p className="font-medium text-black">Kepala BPS Kabupaten OKU Selatan</p>
-                        <div className="h-11 print:h-6" />
-                        <p className="text-center">
-                          <span className="font-bold border-b border-black text-black pb-0.5 inline-block">
-                            Rival Abdul Jabar, S.ST., M.Si.
-                          </span>
-                        </p>
-                        <p className="text-[11px] print:text-[9px] mt-0.5 font-medium text-black text-center">NIP. 19831122 200701 1003</p>
-                      </div>
-                      <div className="w-72 text-center flex flex-col items-center">
-                        <p className="font-medium text-black">
-                          {formatTanggalTandaTangan(tglCetakDokumen)}
-                        </p>
-                        <p className="font-semibold text-black">Petugas Pengelola Persediaan</p>
-                        <p className="text-transparent select-none font-medium">-</p>
-                        <div className="h-11 print:h-6" />
-                        <p className="text-center">
-                          <span className="font-bold border-b border-black text-black pb-0.5 inline-block">
-                            Guspita Karleni, S.Si
-                          </span>
-                        </p>
-                        <p className="text-[11px] print:text-[9px] mt-0.5 font-medium text-black text-center">NIP. 19970806 202521 2039</p>
-                      </div>
-                    </div>
-                  )}
-                </>
+                  ))}
+                </div>
               )}
 
               {/* JIKA PREVIEW DAFTAR PERSEDIAAN (PERSIS HALAMAN 1 & 2 PDF) */}

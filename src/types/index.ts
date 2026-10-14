@@ -125,10 +125,13 @@ export interface TransaksiMasuk {
 // No approval mechanism — admin langsung catat
 // ==========================================
 
+export type JenisPengeluaran = 'habis_pakai' | 'rusak' | 'usang';
+
 export interface TransaksiKeluarItem {
   id_barang: number;
   jumlah: number;
   keterangan: string | null;
+  jenis_pengeluaran?: JenisPengeluaran;
   barang?: Barang;
 }
 
@@ -140,6 +143,7 @@ export interface TransaksiKeluar {
   nama_tim: string;          // Nama Tim
   penanggung_jawab: string;  // Nama PJ
   nip_pj: string;            // NIP PJ
+  jenis_pengeluaran?: JenisPengeluaran;
   items: TransaksiKeluarItem[];
   keterangan: string | null;
   created_by: string;

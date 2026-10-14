@@ -12,16 +12,25 @@ import { cn, formatNumber, getMonthName, getTeksBeritaAcaraOpname, formatTanggal
 import KopSurat from '@/components/KopSurat';
 
 export default function LaporanPage() {
-  // Default difokuskan ke Bulan Agustus 2026 sesuai instruksi revisi
-  const [bulan, setBulan] = useState(8);
+  // Default difokuskan ke Bulan Berjalan (Oktober 2026)
+  const [bulan, setBulan] = useState(10);
   const [tahun, setTahun] = useState(2026);
   const [activeTab, setActiveTab] = useState<'opname' | 'tim'>('opname');
   const [showPreview, setShowPreview] = useState(false);
   const [editIdx, setEditIdx] = useState<number | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [toastNotification, setToastNotification] = useState<string | null>(null);
-  // Tanggal Cetak Dinamis - default hari ini, bisa diubah sesuai hari cetak yang diinginkan
+  // Tanggal Cetak Dinamis - default hari ini, bisa disesuaikan
   const [tglCetakDokumen, setTglCetakDokumen] = useState(() => new Date().toISOString().split('T')[0]);
+
+  // Helper untuk menentukan teks kolom Saldo Awal secara dinamis (misal: Saldo 30 September 2026)
+  const getSaldoAwalHeader = (b: number, t: number) => {
+    const lastDayPrev = new Date(t, b - 1, 0);
+    const day = lastDayPrev.getDate();
+    const mName = getMonthName(lastDayPrev.getMonth() + 1);
+    const yr = lastDayPrev.getFullYear();
+    return `Saldo ${day} ${mName} ${yr}`;
+  };
 
   // Dynamic Data Lists dari LocalStorage
   const [barangList, setBarangList] = useState<Barang[]>([...mockBarang]);
@@ -66,114 +75,141 @@ export default function LaporanPage() {
       }
     }
 
-    if (targetBulan === 8 && targetTahun === 2026 && barangList.length >= 80) {
-      // Data riil resmi Agustus 2026 sebagai basis jika menggunakan data master penuh 81 barang
-      const base = DATA_REKAPITULASI_AGUSTUS.map(item => ({ ...item }));
+    const matchesMonthYear = (tgl: string, m: number, y: number) => {
+      if (!tgl) return false;
+      const d = new Date(tgl);
+      if (isNaN(d.getTime())) return false;
+      return d.getMonth() + 1 === m && d.getFullYear() === y;
+    };
 
-      // Gabungkan transaksi tambahan baru dari localStorage
-      const extraMasuk = transaksiMasukList.filter(t => {
-        const d = new Date(t.tanggal);
-        return d.getMonth() + 1 === 8 && d.getFullYear() === 2026 && !mockTransaksiMasuk.some(m => m.id === t.id);
-      });
-      const extraKeluar = transaksiKeluarList.filter(t => {
-        const d = new Date(t.tanggal);
-        return d.getMonth() + 1 === 8 && d.getFullYear() === 2026 && !mockTransaksiKeluar.some(m => m.id === t.id);
-      });
+    const itemsToProcess = barangList.length > 0 ? barangList : mockBarang;
 
-      extraMasuk.forEach(t => {
-        t.items.forEach(itm => {
-          const match = base.find(b => b.uraian_barang.toLowerCase() === itm.barang?.nama_barang.toLowerCase());
-          if (match) {
-            if (t.sumber === 'Pembelian') match.pembelian += itm.jumlah;
-            else match.transfer_masuk += itm.jumlah;
-            match.total_persediaan = match.saldo_juli + match.pembelian + match.transfer_masuk - match.pengeluaran;
+    return itemsToProcess.map((b, i) => {
+      const agustusBase = DATA_REKAPITULASI_AGUSTUS.find(
+        item => item.uraian_barang.toLowerCase() === b.nama_barang.toLowerCase()
+      );
+
+      // Mutasi untuk bulan tertentu
+      const getMonthMutasi = (m: number, y: number) => {
+        let beli = 0;
+        let transfer = 0;
+        let keluar = 0;
+        let rusak = 0;
+        let usang = 0;
+        const tim = { umum: 0, sosial: 0, ipds: 0, pertanian: 0, distribusi: 0, neraca: 0, pek: 0 };
+
+        // Data resmi BPS untuk Agustus 2026
+        if (m === 8 && y === 2026 && agustusBase) {
+          beli += agustusBase.pembelian;
+          transfer += agustusBase.transfer_masuk;
+          keluar += agustusBase.pengeluaran;
+          rusak += agustusBase.barang_rusak || 0;
+          usang += agustusBase.barang_usang || 0;
+          if (agustusBase.tim) {
+            tim.umum += agustusBase.tim.umum;
+            tim.sosial += agustusBase.tim.sosial;
+            tim.ipds += agustusBase.tim.ipds;
+            tim.pertanian += agustusBase.tim.pertanian;
+            tim.distribusi += agustusBase.tim.distribusi;
+            tim.neraca += agustusBase.tim.neraca;
+            tim.pek += agustusBase.tim.pek;
           }
-        });
-      });
+        }
 
-      extraKeluar.forEach(t => {
-        t.items.forEach(itm => {
-          const match = base.find(b => b.uraian_barang.toLowerCase() === itm.barang?.nama_barang.toLowerCase());
-          if (match) {
-            match.pengeluaran += itm.jumlah;
-            match.total_persediaan = match.saldo_juli + match.pembelian + match.transfer_masuk - match.pengeluaran;
-          }
-        });
-      });
-
-      return base;
-    } else {
-      // Perhitungan dinamis berdasarkan daftar barang dan transaksi aktif
-      return barangList.map((b, i) => {
-        let pembelian = 0;
-        let transferMasuk = 0;
+        // Transaksi masuk dari database / form
         transaksiMasukList.forEach(t => {
-          const d = new Date(t.tanggal);
-          if ((d.getMonth() + 1 === targetBulan || isNaN(d.getMonth())) && d.getFullYear() === targetTahun) {
-            const itm = t.items.find(item => item.id_barang === b.id);
+          if (matchesMonthYear(t.tanggal, m, y)) {
+            if (m === 8 && y === 2026 && mockTransaksiMasuk.some(mock => mock.id === t.id)) return;
+            const itm = t.items?.find(item => item.id_barang === b.id || item.barang?.nama_barang?.toLowerCase() === b.nama_barang.toLowerCase());
             if (itm) {
-              if (t.sumber === 'Pembelian') pembelian += itm.jumlah;
-              else transferMasuk += itm.jumlah;
+              if (t.sumber === 'Pembelian') beli += itm.jumlah;
+              else transfer += itm.jumlah;
             }
           }
         });
 
-        let pengeluaran = 0;
-        const timAlloc = {
-          umum: 0,
-          sosial: 0,
-          ipds: 0,
-          pertanian: 0,
-          distribusi: 0,
-          neraca: 0,
-          pek: 0,
-        };
-
+        // Transaksi keluar dari database / form
         transaksiKeluarList.forEach(t => {
-          const d = new Date(t.tanggal);
-          if ((d.getMonth() + 1 === targetBulan || isNaN(d.getMonth())) && d.getFullYear() === targetTahun) {
-            const itm = t.items.find(item => item.id_barang === b.id);
+          if (matchesMonthYear(t.tanggal, m, y)) {
+            if (m === 8 && y === 2026 && mockTransaksiKeluar.some(mock => mock.id === t.id)) return;
+            const itm = t.items?.find(item => item.id_barang === b.id || item.barang?.nama_barang?.toLowerCase() === b.nama_barang.toLowerCase());
             if (itm) {
-              pengeluaran += itm.jumlah;
+              keluar += itm.jumlah;
+              const jns = itm.jenis_pengeluaran || t.jenis_pengeluaran || 'habis_pakai';
+              if (jns === 'rusak') rusak += itm.jumlah;
+              else if (jns === 'usang') usang += itm.jumlah;
+
               const timName = (t.tim_pemohon || t.nama_tim || '').toLowerCase();
-              if (timName.includes('umum')) timAlloc.umum += itm.jumlah;
-              else if (timName.includes('sosial')) timAlloc.sosial += itm.jumlah;
-              else if (timName.includes('ipds')) timAlloc.ipds += itm.jumlah;
-              else if (timName.includes('tani') || timName.includes('pertanian')) timAlloc.pertanian += itm.jumlah;
-              else if (timName.includes('dist')) timAlloc.distribusi += itm.jumlah;
-              else if (timName.includes('neraca') || timName.includes('nerwilis')) timAlloc.neraca += itm.jumlah;
-              else if (timName.includes('pek') || timName.includes('ktip')) timAlloc.pek += itm.jumlah;
+              if (timName.includes('umum')) tim.umum += itm.jumlah;
+              else if (timName.includes('sosial')) tim.sosial += itm.jumlah;
+              else if (timName.includes('ipds')) tim.ipds += itm.jumlah;
+              else if (timName.includes('tani') || timName.includes('pertanian')) tim.pertanian += itm.jumlah;
+              else if (timName.includes('dist')) tim.distribusi += itm.jumlah;
+              else if (timName.includes('neraca') || timName.includes('nerwilis')) tim.neraca += itm.jumlah;
+              else if (timName.includes('pek') || timName.includes('ktip')) tim.pek += itm.jumlah;
             }
           }
         });
 
-        const saldoAwal = Math.max(0, b.stok - pembelian - transferMasuk + pengeluaran);
-        const total = saldoAwal + pembelian + transferMasuk - pengeluaran;
+        return { beli, transfer, keluar, rusak, usang, tim };
+      };
 
-        return {
-          no: i + 1,
-          uraian_barang: b.nama_barang,
-          satuan: b.satuan?.nama_satuan || 'Buah',
-          saldo_juli: saldoAwal,
-          pembelian,
-          transfer_masuk: transferMasuk,
-          pengeluaran,
-          total_persediaan: total,
-          barang_rusak: 0,
-          barang_usang: 0,
-          tim: {
-            umum: timAlloc.umum,
-            sosial: timAlloc.sosial,
-            ipds: timAlloc.ipds,
-            pertanian: timAlloc.pertanian,
-            distribusi: timAlloc.distribusi,
-            neraca: timAlloc.neraca,
-            pek: timAlloc.pek,
-            sisa: total,
-          },
-        };
-      });
-    }
+      let saldoAwal = 0;
+      let pembelian = 0;
+      let transferMasuk = 0;
+      let pengeluaran = 0;
+      let barangRusak = 0;
+      let barangUsang = 0;
+      let timDist = { umum: 0, sosial: 0, ipds: 0, pertanian: 0, distribusi: 0, neraca: 0, pek: 0 };
+
+      if (targetTahun === 2026 && targetBulan >= 8) {
+        let runningStock = agustusBase ? agustusBase.saldo_juli : b.stok;
+
+        // Roll-forward bulan demi bulan hingga bulan target
+        for (let m = 8; m < targetBulan; m++) {
+          const mutasi = getMonthMutasi(m, targetTahun);
+          runningStock = Math.max(0, runningStock + mutasi.beli + mutasi.transfer - mutasi.keluar);
+        }
+
+        saldoAwal = runningStock;
+
+        const curMutasi = getMonthMutasi(targetBulan, targetTahun);
+        pembelian = curMutasi.beli;
+        transferMasuk = curMutasi.transfer;
+        pengeluaran = curMutasi.keluar;
+        barangRusak = curMutasi.rusak;
+        barangUsang = curMutasi.usang;
+        timDist = curMutasi.tim;
+      } else {
+        const curMutasi = getMonthMutasi(targetBulan, targetTahun);
+        saldoAwal = Math.max(0, b.stok - curMutasi.beli - curMutasi.transfer + curMutasi.keluar);
+        pembelian = curMutasi.beli;
+        transferMasuk = curMutasi.transfer;
+        pengeluaran = curMutasi.keluar;
+        barangRusak = curMutasi.rusak;
+        barangUsang = curMutasi.usang;
+        timDist = curMutasi.tim;
+      }
+
+      const total = Math.max(0, saldoAwal + pembelian + transferMasuk - pengeluaran);
+
+      return {
+        no: i + 1,
+        uraian_barang: b.nama_barang,
+        satuan: b.satuan?.nama_satuan || 'Buah',
+        saldo_juli: saldoAwal, // Menyimpan nilai saldo awal periode
+        pembelian,
+        transfer_masuk: transferMasuk,
+        pengeluaran,
+        total_persediaan: total,
+        barang_rusak: barangRusak,
+        barang_usang: barangUsang,
+        tim: {
+          ...timDist,
+          sisa: total,
+        },
+      };
+    });
   };
 
   // Data Rekapitulasi State
@@ -187,6 +223,16 @@ export default function LaporanPage() {
   const handleBulanChange = (newBulan: number) => {
     setBulan(newBulan);
     setEditIdx(null);
+    const lastDay = new Date(tahun, newBulan, 0).getDate();
+    setTglCetakDokumen(`${tahun}-${String(newBulan).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`);
+  };
+
+  // Handler jika ganti tahun
+  const handleTahunChange = (newTahun: number) => {
+    setTahun(newTahun);
+    setEditIdx(null);
+    const lastDay = new Date(newTahun, bulan, 0).getDate();
+    setTglCetakDokumen(`${newTahun}-${String(bulan).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`);
   };
 
   // Ringkasan Total
@@ -312,17 +358,14 @@ export default function LaporanPage() {
             </div>
             <div>
               <label className="input-label">Tahun</label>
-              <select value={tahun} onChange={(e) => setTahun(Number(e.target.value))} className="input w-32 font-semibold">
+              <select value={tahun} onChange={(e) => handleTahunChange(Number(e.target.value))} className="input w-32 font-semibold">
                 {[2025, 2026, 2027].map(y => (
                   <option key={y} value={y}>{y}</option>
                 ))}
               </select>
             </div>
             <button
-              onClick={() => {
-                if (bulan === 8) setReportData([...DATA_REKAPITULASI_AGUSTUS]);
-                setShowPreview(true);
-              }}
+              onClick={() => setShowPreview(true)}
               className="btn-secondary"
             >
               <FileBarChart className="w-4 h-4" />
@@ -359,14 +402,12 @@ export default function LaporanPage() {
           </div>
         </div>
 
-        {bulan === 8 && (
-          <div className="bg-bps-blue-50 border border-bps-blue-200 rounded-lg p-3 text-xs text-bps-blue-800 flex items-center justify-between">
-            <span>
-              ℹ️ Menampilkan <strong>81 item barang</strong> resmi dari Rekapitulasi Persediaan BPS Kabupaten OKU Selatan.
-            </span>
-            <span className="font-semibold text-bps-blue">Status: Terverifikasi</span>
-          </div>
-        )}
+        <div className="bg-bps-blue-50 border border-bps-blue-200 rounded-lg p-3 text-xs text-bps-blue-800 flex items-center justify-between">
+          <span>
+            ℹ️ Menampilkan <strong>{reportData.length} item barang</strong> resmi dari Rekapitulasi Persediaan BPS Kabupaten OKU Selatan — Periode <strong>{getMonthName(bulan)} {tahun}</strong>.
+          </span>
+          <span className="font-semibold text-bps-blue">Status: Sinkron &amp; Terverifikasi</span>
+        </div>
       </div>
 
       {/* Summary stats */}
@@ -418,7 +459,7 @@ export default function LaporanPage() {
                 Berita Acara Hasil Opname Phisik Persediaan — {getMonthName(bulan)} {tahun}
               </h2>
               <p className="text-xs text-dark-400 mt-0.5">
-                Formula: Saldo 31 Juli + Pembelian + Transfer Masuk - Pengeluaran = Total Persediaan
+                Formula: {getSaldoAwalHeader(bulan, tahun)} + Pembelian + Transfer Masuk - Pengeluaran = Total Persediaan
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -477,7 +518,7 @@ export default function LaporanPage() {
                   <th className="w-12 text-center">No</th>
                   <th>Uraian Barang</th>
                   <th className="text-center w-24">Satuan</th>
-                  <th className="text-center w-24">Saldo 31 Juli</th>
+                  <th className="text-center w-28">{getSaldoAwalHeader(bulan, tahun)}</th>
                   <th className="text-center w-24 text-bps-blue-700">Pembelian</th>
                   <th className="text-center w-24 text-bps-green-700">Transfer Masuk</th>
                   <th className="text-center w-24 text-bps-orange-700">Pengeluaran</th>
@@ -737,7 +778,15 @@ export default function LaporanPage() {
               @media print {
                 @page {
                   size: A4 portrait !important;
-                  margin: 8mm 10mm 8mm 10mm !important;
+                  margin: 6mm 8mm 6mm 8mm !important;
+                }
+                body {
+                  -webkit-print-color-adjust: exact !important;
+                  print-color-adjust: exact !important;
+                }
+                .avoid-break {
+                  page-break-inside: avoid !important;
+                  break-inside: avoid !important;
                 }
               }
             `}} />
@@ -746,14 +795,14 @@ export default function LaporanPage() {
               {/* Kop Surat hanya muncul untuk Rekapitulasi Tim, TIDAK untuk Berita Acara Opname */}
               {activeTab === 'tim' && <KopSurat />}
 
-              {/* Judul & Pengantar Resmi Berita Acara - Diberikan jarak / spasi jelas sesuai format Excel */}
-              <div className="text-center mb-6">
-                <h3 className="font-extrabold text-sm tracking-wide text-black uppercase mb-4 print:mb-5">
+              {/* Judul & Pengantar Resmi Berita Acara - Diberikan jarak / spasi jelas dan proporsional */}
+              <div className="text-center mb-4 print:mb-3">
+                <h3 className="font-extrabold text-sm md:text-base tracking-wide text-black uppercase mb-2 print:mb-2">
                   BERITA ACARA HASIL OPNAME PHISIK (STOCK OPNAME) PERSEDIAAN
                 </h3>
                 <p
                   style={{ textIndent: '2.5rem' }}
-                  className="text-xs text-black mt-2 mb-5 leading-relaxed text-justify max-w-4xl mx-auto"
+                  className="text-xs print:text-[10px] text-black mb-3 print:mb-2 leading-relaxed text-justify max-w-4xl mx-auto"
                 >
                   {getTeksBeritaAcaraOpname(tglCetakDokumen)}
                 </p>
@@ -761,47 +810,47 @@ export default function LaporanPage() {
 
               {/* TAMPILAN CETAK TABEL 1: BERITA ACARA OPNAME PHISIK */}
               {activeTab === 'opname' && (
-                <table className="w-full border-collapse border border-black text-[10px] mb-8">
+                <table className="w-full border-collapse border border-black text-[9px] print:text-[7.5px] mb-4 print:mb-2">
                   <thead>
                     <tr className="bg-gray-100 text-black font-bold text-center">
-                      <th className="border border-black px-1.5 py-1.5 w-8">No.</th>
-                      <th className="border border-black px-2 py-1.5 text-center">Uraian Barang</th>
-                      <th className="border border-black px-2 py-1.5 text-center w-14">Satuan</th>
-                      <th className="border border-black px-2 py-1.5 text-center w-16">Saldo 31 Juli 2026</th>
-                      <th className="border border-black px-2 py-1.5 text-center w-16">Pembelian</th>
-                      <th className="border border-black px-2 py-1.5 text-center w-16">Transfer Masuk Agustus</th>
-                      <th className="border border-black px-2 py-1.5 text-center w-16">Pengeluaran Agustus</th>
-                      <th className="border border-black px-2 py-1.5 text-center w-16">Total Persediaan</th>
-                      <th className="border border-black px-1.5 py-1.5 text-center w-12">Barang Rusak</th>
-                      <th className="border border-black px-1.5 py-1.5 text-center w-12">Barang Usang</th>
+                      <th className="border border-black px-1 py-1 w-7 print:w-6">No.</th>
+                      <th className="border border-black px-1.5 py-1 text-center">Uraian Barang</th>
+                      <th className="border border-black px-1 py-1 text-center w-12 print:w-10">Satuan</th>
+                      <th className="border border-black px-1 py-1 text-center w-16 print:w-14">{getSaldoAwalHeader(bulan, tahun)}</th>
+                      <th className="border border-black px-1 py-1 text-center w-14 print:w-12">Pembelian</th>
+                      <th className="border border-black px-1 py-1 text-center w-16 print:w-14">Transfer Masuk {getMonthName(bulan)}</th>
+                      <th className="border border-black px-1 py-1 text-center w-16 print:w-14">Pengeluaran {getMonthName(bulan)}</th>
+                      <th className="border border-black px-1 py-1 text-center w-16 print:w-14">Total Persediaan</th>
+                      <th className="border border-black px-1 py-1 text-center w-11 print:w-9">Barang Rusak</th>
+                      <th className="border border-black px-1 py-1 text-center w-11 print:w-9">Barang Usang</th>
                     </tr>
-                    {/* Baris penomoran (1)-(10): Ramping, py-0, dan formula muat satu baris */}
-                    <tr className="bg-gray-50 text-[8.5px] print:text-[8px] text-gray-700 font-bold text-center h-4">
-                      <th className="border border-black py-0 px-0.5 leading-tight">(1)</th>
-                      <th className="border border-black py-0 px-1 leading-tight">(2)</th>
-                      <th className="border border-black py-0 px-1 leading-tight">(3)</th>
-                      <th className="border border-black py-0 px-1 leading-tight">(4)</th>
-                      <th className="border border-black py-0 px-1 leading-tight">(5)</th>
-                      <th className="border border-black py-0 px-1 leading-tight">(6)</th>
-                      <th className="border border-black py-0 px-1 leading-tight">(7)</th>
-                      <th className="border border-black py-0 px-0.5 whitespace-nowrap text-[7.5px] tracking-tight leading-tight">(8)=(4)+(5)+(6)-(7)</th>
-                      <th className="border border-black py-0 px-0.5 leading-tight">(9)</th>
-                      <th className="border border-black py-0 px-0.5 leading-tight">(10)</th>
+                    {/* Baris penomoran (1)-(10): Ramping, ketinggian minimal agar hemat ruang */}
+                    <tr className="bg-gray-50 text-[7px] print:text-[6.5px] text-gray-700 font-semibold text-center h-3 leading-none">
+                      <th className="border border-black py-0.5 px-0.5 leading-none">(1)</th>
+                      <th className="border border-black py-0.5 px-0.5 leading-none">(2)</th>
+                      <th className="border border-black py-0.5 px-0.5 leading-none">(3)</th>
+                      <th className="border border-black py-0.5 px-0.5 leading-none">(4)</th>
+                      <th className="border border-black py-0.5 px-0.5 leading-none">(5)</th>
+                      <th className="border border-black py-0.5 px-0.5 leading-none">(6)</th>
+                      <th className="border border-black py-0.5 px-0.5 leading-none">(7)</th>
+                      <th className="border border-black py-0.5 px-0.5 whitespace-nowrap text-[6px] tracking-tighter leading-none">(8)=(4)+(5)+(6)-(7)</th>
+                      <th className="border border-black py-0.5 px-0.5 leading-none">(9)</th>
+                      <th className="border border-black py-0.5 px-0.5 leading-none">(10)</th>
                     </tr>
                   </thead>
                   <tbody>
                     {reportData.map((item) => (
-                      <tr key={item.no} className="text-black">
-                        <td className="border border-black px-1.5 py-2 print:py-2 text-center">{item.no}</td>
-                        <td className="border border-black px-2 py-2 print:py-2 font-medium">{item.uraian_barang}</td>
-                        <td className="border border-black px-2 py-2 print:py-2 text-center">{item.satuan}</td>
-                        <td className="border border-black px-2 py-2 print:py-2 text-center">{item.saldo_juli || '-'}</td>
-                        <td className="border border-black px-2 py-2 print:py-2 text-center">{item.pembelian || '-'}</td>
-                        <td className="border border-black px-2 py-2 print:py-2 text-center">{item.transfer_masuk || '-'}</td>
-                        <td className="border border-black px-2 py-2 print:py-2 text-center font-semibold">{item.pengeluaran || '-'}</td>
-                        <td className="border border-black px-2 py-2 print:py-2 text-center font-bold">{item.total_persediaan}</td>
-                        <td className="border border-black px-1.5 py-2 print:py-2 text-center">{item.barang_rusak || ''}</td>
-                        <td className="border border-black px-1.5 py-2 print:py-2 text-center">{item.barang_usang || ''}</td>
+                      <tr key={item.no} className="text-black leading-tight">
+                        <td className="border border-black px-1 py-0.5 print:py-0.5 text-center">{item.no}</td>
+                        <td className="border border-black px-1.5 py-0.5 print:py-0.5 font-medium">{item.uraian_barang}</td>
+                        <td className="border border-black px-1 py-0.5 print:py-0.5 text-center">{item.satuan}</td>
+                        <td className="border border-black px-1 py-0.5 print:py-0.5 text-center">{item.saldo_juli || '-'}</td>
+                        <td className="border border-black px-1 py-0.5 print:py-0.5 text-center">{item.pembelian || '-'}</td>
+                        <td className="border border-black px-1 py-0.5 print:py-0.5 text-center">{item.transfer_masuk || '-'}</td>
+                        <td className="border border-black px-1 py-0.5 print:py-0.5 text-center font-semibold">{item.pengeluaran || '-'}</td>
+                        <td className="border border-black px-1 py-0.5 print:py-0.5 text-center font-bold">{item.total_persediaan}</td>
+                        <td className="border border-black px-1 py-0.5 print:py-0.5 text-center">{item.barang_rusak || ''}</td>
+                        <td className="border border-black px-1 py-0.5 print:py-0.5 text-center">{item.barang_usang || ''}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -810,17 +859,17 @@ export default function LaporanPage() {
 
               {/* TAMPILAN CETAK TABEL 2: RINCIAN PER TIM KERJA */}
               {activeTab === 'tim' && (
-                <table className="w-full border-collapse border border-black text-[10px] mb-8">
+                <table className="w-full border-collapse border border-black text-[9px] print:text-[8px] mb-4 print:mb-2">
                   <thead>
                     <tr className="bg-gray-100 text-black font-bold text-center">
-                      <th rowSpan={2} className="border border-black px-1 py-1.5 w-8">No.</th>
-                      <th rowSpan={2} className="border border-black px-2 py-1.5 text-center">Uraian Barang</th>
-                      <th rowSpan={2} className="border border-black px-2 py-1.5 text-center w-14">Pengeluaran</th>
-                      <th colSpan={7} className="border border-black px-2 py-1 text-center">Rincian Tim Kerja</th>
-                      <th rowSpan={2} className="border border-black px-2 py-1.5 text-center w-14">Satuan</th>
-                      <th rowSpan={2} className="border border-black px-2 py-1.5 text-center w-10">Sisa</th>
+                      <th rowSpan={2} className="border border-black px-1 py-1 w-7">No.</th>
+                      <th rowSpan={2} className="border border-black px-1.5 py-1 text-center">Uraian Barang</th>
+                      <th rowSpan={2} className="border border-black px-1.5 py-1 text-center w-14">Pengeluaran</th>
+                      <th colSpan={7} className="border border-black px-1.5 py-1 text-center">Rincian Tim Kerja</th>
+                      <th rowSpan={2} className="border border-black px-1 py-1 text-center w-12">Satuan</th>
+                      <th rowSpan={2} className="border border-black px-1 py-1 text-center w-10">Sisa</th>
                     </tr>
-                    <tr className="bg-gray-50 text-[8.5px] text-gray-700 font-bold text-center h-4">
+                    <tr className="bg-gray-50 text-[7.5px] print:text-[7px] text-gray-700 font-bold text-center h-3">
                       <th className="border border-black px-1 py-0.5">Subbag Umum</th>
                       <th className="border border-black px-1 py-0.5">Tim Sosial</th>
                       <th className="border border-black px-1 py-0.5">IPDS</th>
@@ -832,19 +881,19 @@ export default function LaporanPage() {
                   </thead>
                   <tbody>
                     {reportData.map((item) => (
-                      <tr key={item.no} className="text-black">
-                        <td className="border border-black px-1 py-2 print:py-2 text-center">{item.no}</td>
-                        <td className="border border-black px-2 py-2 print:py-2 font-medium">{item.uraian_barang}</td>
-                        <td className="border border-black px-2 py-2 print:py-2 text-center font-bold">{item.pengeluaran || '-'}</td>
-                        <td className="border border-black px-1 py-2 print:py-2 text-center">{item.tim?.umum || '-'}</td>
-                        <td className="border border-black px-1 py-2 print:py-2 text-center">{item.tim?.sosial || '-'}</td>
-                        <td className="border border-black px-1 py-2 print:py-2 text-center">{item.tim?.ipds || '-'}</td>
-                        <td className="border border-black px-1 py-2 print:py-2 text-center">{item.tim?.pertanian || '-'}</td>
-                        <td className="border border-black px-1 py-2 print:py-2 text-center">{item.tim?.distribusi || '-'}</td>
-                        <td className="border border-black px-1 py-2 print:py-2 text-center">{item.tim?.neraca || '-'}</td>
-                        <td className="border border-black px-1 py-2 print:py-2 text-center">{item.tim?.pek || '-'}</td>
-                        <td className="border border-black px-2 py-2 print:py-2 text-center">{item.satuan}</td>
-                        <td className="border border-black px-1 py-2 print:py-2 text-center font-medium">{item.tim?.sisa || '-'}</td>
+                      <tr key={item.no} className="text-black leading-tight">
+                        <td className="border border-black px-1 py-0.5 print:py-0.5 text-center">{item.no}</td>
+                        <td className="border border-black px-1.5 py-0.5 print:py-0.5 font-medium">{item.uraian_barang}</td>
+                        <td className="border border-black px-1.5 py-0.5 print:py-0.5 text-center font-bold">{item.pengeluaran || '-'}</td>
+                        <td className="border border-black px-1 py-0.5 print:py-0.5 text-center">{item.tim?.umum || '-'}</td>
+                        <td className="border border-black px-1 py-0.5 print:py-0.5 text-center">{item.tim?.sosial || '-'}</td>
+                        <td className="border border-black px-1 py-0.5 print:py-0.5 text-center">{item.tim?.ipds || '-'}</td>
+                        <td className="border border-black px-1 py-0.5 print:py-0.5 text-center">{item.tim?.pertanian || '-'}</td>
+                        <td className="border border-black px-1 py-0.5 print:py-0.5 text-center">{item.tim?.distribusi || '-'}</td>
+                        <td className="border border-black px-1 py-0.5 print:py-0.5 text-center">{item.tim?.neraca || '-'}</td>
+                        <td className="border border-black px-1 py-0.5 print:py-0.5 text-center">{item.tim?.pek || '-'}</td>
+                        <td className="border border-black px-1 py-0.5 print:py-0.5 text-center">{item.satuan}</td>
+                        <td className="border border-black px-1 py-0.5 print:py-0.5 text-center font-medium">{item.tim?.sisa || '-'}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -852,33 +901,33 @@ export default function LaporanPage() {
               )}
 
               {/* Tanda Tangan Resmi Sesuai Format BPS - Garis Mengikuti Panjang Nama */}
-              <div className="w-full flex items-start justify-between text-xs text-black mt-8 pt-2 print:mt-4 avoid-break">
+              <div className="w-full flex items-start justify-between text-xs text-black mt-4 pt-2 print:mt-2 avoid-break">
                 {/* Kolom Kiri: Mengetahui KPB */}
                 <div className="w-72 text-center flex flex-col items-center">
-                  <p className="font-semibold text-black">Mengetahui,</p>
-                  <p className="font-medium text-black">Penanggung Jawab KPB</p>
-                  <p className="font-medium text-black">Kepala BPS Kabupaten OKU Selatan</p>
-                  <div className="h-20 print:h-12" />
+                  <p className="font-semibold text-black leading-tight">Mengetahui,</p>
+                  <p className="font-medium text-black leading-tight">Penanggung Jawab KPB</p>
+                  <p className="font-medium text-black leading-tight">Kepala BPS Kabupaten OKU Selatan</p>
+                  <div className="h-14 print:h-9" />
                   <p className="text-center">
                     <span className="font-bold border-b border-black text-black pb-0.5 inline-block">
                       Rival Abdul Jabar, S.ST., M.Si.
                     </span>
                   </p>
-                  <p className="text-[11px] mt-1 font-medium text-black text-center">NIP. 19831122 200701 1003</p>
+                  <p className="text-[10px] mt-0.5 font-medium text-black text-center">NIP. 19831122 200701 1003</p>
                 </div>
 
-                {/* Kolom Kanan: Petugas Pengelola Persediaan (Persis Gambar 2 Revisi) */}
+                {/* Kolom Kanan: Petugas Pengelola Persediaan */}
                 <div className="w-72 text-center flex flex-col items-center">
-                  <p className="font-medium text-black">{formatTanggalTandaTangan(tglCetakDokumen)}</p>
-                  <p className="font-semibold text-black">Petugas Pengelola Persediaan</p>
-                  <p className="text-transparent select-none font-medium">-</p>
-                  <div className="h-20 print:h-12" />
+                  <p className="font-medium text-black leading-tight">{formatTanggalTandaTangan(tglCetakDokumen)}</p>
+                  <p className="font-semibold text-black leading-tight">Petugas Pengelola Persediaan</p>
+                  <p className="text-transparent select-none font-medium leading-tight">-</p>
+                  <div className="h-14 print:h-9" />
                   <p className="text-center">
                     <span className="font-bold border-b border-black text-black pb-0.5 inline-block">
                       Guspita Karleni, S.Si
                     </span>
                   </p>
-                  <p className="text-[11px] mt-1 font-medium text-black text-center">NIP. 19970806 202521 2039</p>
+                  <p className="text-[10px] mt-0.5 font-medium text-black text-center">NIP. 19970806 202521 2039</p>
                 </div>
               </div>
             </div>

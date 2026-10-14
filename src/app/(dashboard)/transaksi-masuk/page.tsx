@@ -13,7 +13,6 @@ import KopSurat from '@/components/KopSurat';
 interface FormMasukItem {
   id_barang: number;
   jumlah: number;
-  harga_satuan: number;
   keterangan: string;
 }
 
@@ -27,12 +26,19 @@ export default function TransaksiMasukPage() {
   const [deleteCandidate, setDeleteCandidate] = useState<TransaksiMasuk | null>(null);
   const [notification, setNotification] = useState<{ type: 'success' | 'info'; message: string } | null>(null);
 
+  // Quick Add Master Barang Modal State
+  const [showQuickAddBarang, setShowQuickAddBarang] = useState(false);
+  const [quickAddIdx, setQuickAddIdx] = useState<number>(0);
+  const [quickNamaBarang, setQuickNamaBarang] = useState('');
+  const [quickSatuan, setQuickSatuan] = useState('Buah');
+  const [quickKategori, setQuickKategori] = useState('Alat Tulis Kantor');
+
   // Form State
   const [formSumber, setFormSumber] = useState<SumberBarangMasuk>('Pembelian');
   const [formTanggal, setFormTanggal] = useState<string>(new Date().toISOString().split('T')[0]);
   const [formNoReferensi, setFormNoReferensi] = useState<string>('');
   const [formItems, setFormItems] = useState<FormMasukItem[]>([
-    { id_barang: mockBarang[0]?.id || 1, jumlah: 10, harga_satuan: 0, keterangan: '' }
+    { id_barang: mockBarang[0]?.id || 1, jumlah: 10, keterangan: '' }
   ]);
   const [formKeterangan, setFormKeterangan] = useState<string>('');
   const [tglCetakDokumen, setTglCetakDokumen] = useState<string>(new Date().toISOString().split('T')[0]);
@@ -79,8 +85,8 @@ export default function TransaksiMasukPage() {
   );
 
   const totalItemsBulanIni = filtered.reduce((sum, t) => sum + t.items.reduce((s, i) => s + i.jumlah, 0), 0);
-  const totalNilaiBulanIni = filtered.reduce((sum, t) =>
-    sum + t.items.reduce((s, i) => s + (i.harga_satuan || 0) * i.jumlah, 0), 0);
+  const totalPembelianBulanIni = filtered.filter(t => t.sumber === 'Pembelian').length;
+  const totalTransferBulanIni = filtered.filter(t => t.sumber === 'Transfer Masuk').length;
 
   const handleOpenAdd = () => {
     setEditItem(null);
@@ -88,7 +94,7 @@ export default function TransaksiMasukPage() {
     setFormTanggal(new Date().toISOString().split('T')[0]);
     setFormNoReferensi(`NOTA/${new Date().getFullYear()}/${String(new Date().getMonth() + 1).padStart(2, '0')}/${String(transaksiList.length + 1).padStart(3, '0')}`);
     setFormItems([
-      { id_barang: barangList[0]?.id || 1, jumlah: 10, harga_satuan: 0, keterangan: '' }
+      { id_barang: barangList[0]?.id || 1, jumlah: 10, keterangan: '' }
     ]);
     setFormKeterangan('');
     setShowModal(true);
@@ -115,12 +121,11 @@ export default function TransaksiMasukPage() {
       setFormItems(trx.items.map(item => ({
         id_barang: item.id_barang,
         jumlah: item.jumlah,
-        harga_satuan: item.harga_satuan || 0,
         keterangan: item.keterangan || '',
       })));
     } else {
       setFormItems([
-        { id_barang: barangList[0]?.id || 1, jumlah: 1, harga_satuan: 0, keterangan: '' }
+        { id_barang: barangList[0]?.id || 1, jumlah: 1, keterangan: '' }
       ]);
     }
     setShowModal(true);
@@ -129,7 +134,7 @@ export default function TransaksiMasukPage() {
   const addFormItem = () => {
     setFormItems(prev => [
       ...prev,
-      { id_barang: barangList[0]?.id || 1, jumlah: 1, harga_satuan: 0, keterangan: '' }
+      { id_barang: barangList[0]?.id || 1, jumlah: 1, keterangan: '' }
     ]);
   };
 
@@ -144,6 +149,39 @@ export default function TransaksiMasukPage() {
       updated[idx] = { ...updated[idx], [field]: value };
       return updated;
     });
+  };
+
+  // Handler Tambah Cepat Barang Baru langsung dari formulir transaksi masuk
+  const handleSaveQuickBarang = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!quickNamaBarang.trim()) {
+      alert('Nama barang tidak boleh kosong!');
+      return;
+    }
+    const newB: Barang = {
+      id: Date.now(),
+      kode_barang: '-',
+      nama_barang: quickNamaBarang.trim(),
+      id_kategori: 1,
+      id_satuan: 1,
+      id_lokasi: 1,
+      stok: 0,
+      stok_minimum: 0,
+      foto_url: null,
+      deskripsi: 'Ditambahkan via Transaksi Masuk',
+      created_at: new Date().toISOString().split('T')[0],
+      updated_at: new Date().toISOString().split('T')[0],
+      kategori: { id: 1, nama_kategori: quickKategori, deskripsi: null, created_at: '' },
+      satuan: { id: 1, nama_satuan: quickSatuan, created_at: '' },
+      lokasi: { id: 1, nama_lokasi: 'Gudang ATK', deskripsi: null, created_at: '' },
+    };
+    const updatedBarang = [newB, ...barangList];
+    setBarangList(updatedBarang);
+    localStorage.setItem('sipersedia_barang_list', JSON.stringify(updatedBarang));
+    updateFormItem(quickAddIdx, 'id_barang', newB.id);
+    setShowQuickAddBarang(false);
+    setQuickNamaBarang('');
+    showToast(`Barang baru "${newB.nama_barang}" berhasil ditambahkan & langsung dipilih!`, 'success');
   };
 
   const handleSave = (e: React.FormEvent) => {
@@ -162,7 +200,7 @@ export default function TransaksiMasukPage() {
       return {
         id_barang: Number(item.id_barang),
         jumlah: Number(item.jumlah),
-        harga_satuan: Number(item.harga_satuan) || null,
+        harga_satuan: null,
         keterangan: item.keterangan.trim() || null,
         barang: b,
       };
@@ -318,8 +356,10 @@ export default function TransaksiMasukPage() {
             <Calendar className="w-5 h-5 text-bps-teal" />
           </div>
           <div>
-            <p className="text-xl font-bold text-dark-800">{formatCurrency(totalNilaiBulanIni)}</p>
-            <p className="text-xs text-dark-400">Nilai Bulan Ini</p>
+            <p className="text-xl font-bold text-dark-800">
+              {totalPembelianBulanIni} Nota / {totalTransferBulanIni} BAST
+            </p>
+            <p className="text-xs text-dark-400">Penerimaan Bulan Ini</p>
           </div>
         </div>
       </div>
@@ -534,45 +574,46 @@ export default function TransaksiMasukPage() {
                           )}
                         </div>
 
-                        <div>
-                          <label className="input-label text-[11px] font-semibold text-dark-600">Pilih Barang</label>
-                          <select
-                            className="input text-xs"
-                            value={item.id_barang}
-                            onChange={(e) => updateFormItem(idx, 'id_barang', Number(e.target.value))}
-                            required
+                        <div className="flex items-center justify-between">
+                          <label className="input-label text-[11px] font-semibold text-dark-600 mb-0">Pilih Barang</label>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setQuickAddIdx(idx);
+                              setQuickNamaBarang('');
+                              setShowQuickAddBarang(true);
+                            }}
+                            className="text-[11px] font-bold text-bps-blue hover:text-bps-blue-700 underline inline-flex items-center gap-1"
                           >
-                            {barangList.map(b => (
-                              <option key={b.id} value={b.id}>
-                                {b.nama_barang} (Stok: {b.stok} {b.satuan?.nama_satuan || 'Buah'})
-                              </option>
-                            ))}
-                          </select>
+                            <Plus className="w-3 h-3" />
+                            <span>+ Tambah Barang Baru</span>
+                          </button>
                         </div>
+                        <select
+                          className="input text-xs"
+                          value={item.id_barang}
+                          onChange={(e) => updateFormItem(idx, 'id_barang', Number(e.target.value))}
+                          required
+                        >
+                          {barangList.map(b => (
+                            <option key={b.id} value={b.id}>
+                              {b.nama_barang} (Stok: {b.stok} {b.satuan?.nama_satuan || 'Buah'})
+                            </option>
+                          ))}
+                        </select>
 
-                        <div className="grid grid-cols-2 gap-2">
-                          <div>
-                            <label className="input-label text-[11px] font-semibold text-dark-600">Jumlah Masuk</label>
-                            <input
-                              type="number"
-                              min="1"
-                              className="input text-xs font-bold"
-                              value={item.jumlah}
-                              onChange={(e) => updateFormItem(idx, 'jumlah', Number(e.target.value))}
-                              required
-                            />
-                          </div>
-                          <div>
-                            <label className="input-label text-[11px] font-semibold text-dark-600">Harga Satuan (Rp opsional)</label>
-                            <input
-                              type="number"
-                              min="0"
-                              className="input text-xs"
-                              placeholder="0"
-                              value={item.harga_satuan}
-                              onChange={(e) => updateFormItem(idx, 'harga_satuan', Number(e.target.value))}
-                            />
-                          </div>
+                        <div>
+                          <label className="input-label text-[11px] font-semibold text-dark-600">
+                            Jumlah Masuk ({barangList.find(b => b.id === Number(item.id_barang))?.satuan?.nama_satuan || 'Buah'}) <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="number"
+                            min="1"
+                            className="input text-xs font-bold w-full"
+                            value={item.jumlah}
+                            onChange={(e) => updateFormItem(idx, 'jumlah', Number(e.target.value))}
+                            required
+                          />
                         </div>
 
                         <div>
@@ -788,6 +829,107 @@ export default function TransaksiMasukPage() {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Tambah Cepat Barang Baru untuk Kegiatan */}
+      {showQuickAddBarang && (
+        <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md animate-slide-in-up overflow-hidden">
+            <div className="flex items-center justify-between p-4 border-b border-dark-100 bg-bps-blue-50/50">
+              <div className="flex items-center gap-2">
+                <PlusCircle className="w-5 h-5 text-bps-blue" />
+                <div>
+                  <h3 className="text-sm font-bold text-dark-800">Tambah Barang Baru ke Master</h3>
+                  <p className="text-[11px] text-dark-400">Barang otomatis terdaftar dengan stok awal 0</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowQuickAddBarang(false)}
+                className="p-1 rounded-lg text-dark-400 hover:bg-dark-100"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveQuickBarang} className="p-4 space-y-3">
+              <div>
+                <label className="input-label text-xs font-semibold text-dark-700">
+                  Nama Barang <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  autoFocus
+                  value={quickNamaBarang}
+                  onChange={(e) => setQuickNamaBarang(e.target.value)}
+                  className="input text-xs"
+                  placeholder="Contoh: Kertas HVS F4 70gsm, Spidol Snowman..."
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="input-label text-xs font-semibold text-dark-700">Satuan Ukuran</label>
+                  <select
+                    value={quickSatuan}
+                    onChange={(e) => setQuickSatuan(e.target.value)}
+                    className="input text-xs"
+                  >
+                    <option value="Buah">Buah</option>
+                    <option value="Rim">Rim</option>
+                    <option value="Kotak">Kotak</option>
+                    <option value="Pak">Pak</option>
+                    <option value="Dus">Dus</option>
+                    <option value="Lusin">Lusin</option>
+                    <option value="Unit">Unit</option>
+                    <option value="Lembar">Lembar</option>
+                    <option value="Roll">Roll</option>
+                    <option value="Botol">Botol</option>
+                    <option value="Batang">Batang</option>
+                    <option value="Pcs">Pcs</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="input-label text-xs font-semibold text-dark-700">Kategori</label>
+                  <select
+                    value={quickKategori}
+                    onChange={(e) => setQuickKategori(e.target.value)}
+                    className="input text-xs"
+                  >
+                    <option value="Alat Tulis Kantor">Alat Tulis Kantor</option>
+                    <option value="Peralatan Komputer">Peralatan Komputer</option>
+                    <option value="Perlengkapan Cetakan">Perlengkapan Cetakan</option>
+                    <option value="Alat Kebersihan">Alat Kebersihan</option>
+                    <option value="Perlengkapan Rumah Tangga">Perlengkapan Rumah Tangga</option>
+                    <option value="Peralatan Elektronik">Peralatan Elektronik</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="p-2.5 bg-emerald-50 rounded-xl border border-emerald-200 text-[11px] text-emerald-800">
+                💡 Barang ini langsung ditambahkan ke master persediaan dengan stok 0, lalu otomatis terpilih di formulir transaksi masuk Anda.
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-dark-100">
+                <button
+                  type="button"
+                  onClick={() => setShowQuickAddBarang(false)}
+                  className="btn-secondary text-xs py-1.5 px-3"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="btn-primary text-xs py-1.5 px-3 inline-flex items-center gap-1"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Simpan &amp; Pilih</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

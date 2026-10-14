@@ -5,6 +5,14 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publish
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+export function getServiceSupabase() {
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (serviceKey) {
+    return createClient(supabaseUrl, serviceKey);
+  }
+  return supabase;
+}
+
 // ==========================================
 // Supabase Database Schema (SQL)
 // Jalankan query ini di Supabase SQL Editor

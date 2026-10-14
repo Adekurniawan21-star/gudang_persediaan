@@ -3,13 +3,18 @@
 import { useState, useEffect } from 'react';
 import {
   ArrowUpFromLine, Plus, Search, Printer, Edit2, Trash2,
-  X, FileText, CheckCircle2, AlertTriangle,
+  X, FileText, CheckCircle2, AlertTriangle, RefreshCw
 } from 'lucide-react';
 import { mockTransaksiKeluar, mockBarang } from '@/lib/mock-data';
 import { TIM_PEMOHON_LIST } from '@/types';
-import type { TransaksiKeluar, Barang } from '@/types';
+import type { TransaksiKeluar, Barang, JenisPengeluaran } from '@/types';
 import { cn, formatDateShort, formatDate, formatTanggalTandaTangan } from '@/lib/utils';
 import KopSurat from '@/components/KopSurat';
+import {
+  fetchAndSyncTransaksiKeluar,
+  pushTransaksiKeluar,
+  deleteTransaksiKeluarRemote
+} from '@/lib/sync-service';
 
 interface FormItem {
   id_barang: number;
@@ -29,6 +34,7 @@ export default function TransaksiKeluarPage() {
   const [notification, setNotification] = useState<{ type: 'success' | 'info'; message: string } | null>(null);
 
   const [selectedTim, setSelectedTim] = useState('tim-sosial');
+  const [formJenisPengeluaran, setFormJenisPengeluaran] = useState<JenisPengeluaran>('habis_pakai');
   const [barangList, setBarangList] = useState<Barang[]>([...mockBarang]);
   const [formItems, setFormItems] = useState<FormItem[]>([
     { id_barang: mockBarang[0]?.id || 1, jumlah: 1, keterangan: '' }
@@ -37,6 +43,7 @@ export default function TransaksiKeluarPage() {
   const [keteranganPermintaan, setKeteranganPermintaan] = useState<string>('');
   const [transaksiList, setTransaksiList] = useState<TransaksiKeluar[]>([...mockTransaksiKeluar]);
   const [userRole, setUserRole] = useState<'admin' | 'user'>('admin');
+  const [isSyncing, setIsSyncing] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem('sipersedia_user');
@@ -60,17 +67,39 @@ export default function TransaksiKeluarPage() {
     }
 
     // Load persisted barang list if any
+    let loadedBarang = [...mockBarang];
     const savedBarang = localStorage.getItem('sipersedia_barang_list');
     if (savedBarang) {
       try {
         const parsed = JSON.parse(savedBarang);
         if (Array.isArray(parsed) && parsed.length > 0) {
+          loadedBarang = parsed;
           setBarangList(parsed);
         }
       } catch (e) {
         console.error(e);
       }
     }
+
+    // Sinkronisasi otomatis data transaksi dari Cloud Database agar semua user/pegawai tersambung
+    const doSync = async () => {
+      setIsSyncing(true);
+      const remoteData = await fetchAndSyncTransaksiKeluar(loadedBarang);
+      if (remoteData && remoteData.length > 0) {
+        setTransaksiList(remoteData);
+      }
+      setIsSyncing(false);
+    };
+    doSync();
+
+    // Polling sync berkala setiap 8 detik agar input dari teman/pegawai lain otomatis masuk ke admin
+    const syncInterval = setInterval(() => {
+      fetchAndSyncTransaksiKeluar(loadedBarang).then((synced) => {
+        if (synced && synced.length > 0) {
+          setTransaksiList(synced);
+        }
+      });
+    }, 8000);
 
     // Handle query params from Katalog (e.g. ?barang_id=1&action=minta)
     if (typeof window !== 'undefined') {
@@ -83,6 +112,7 @@ export default function TransaksiKeluarPage() {
         const bObj = mockBarang.find(b => b.id === targetId);
         setEditItem(null);
         setSelectedTim('tim-sosial');
+        setFormJenisPengeluaran('habis_pakai');
         setTglPermintaan(new Date().toISOString().split('T')[0]);
         setKeteranganPermintaan(bObj ? `Kebutuhan operasional: ${bObj.nama_barang}` : '');
         setFormItems([
@@ -91,6 +121,8 @@ export default function TransaksiKeluarPage() {
         setShowModal(true);
       }
     }
+
+    return () => clearInterval(syncInterval);
   }, []);
 
   const isUser = userRole === 'user';
@@ -107,6 +139,7 @@ export default function TransaksiKeluarPage() {
   const handleCreateNew = () => {
     setEditItem(null);
     setSelectedTim('tim-sosial');
+    setFormJenisPengeluaran('habis_pakai');
     setTglPermintaan(new Date().toISOString().split('T')[0]);
     setKeteranganPermintaan('');
     setFormItems([
@@ -118,6 +151,7 @@ export default function TransaksiKeluarPage() {
   const handleEdit = (trx: TransaksiKeluar) => {
     setEditItem(trx);
     setSelectedTim(trx.tim_pemohon);
+    setFormJenisPengeluaran(trx.jenis_pengeluaran || 'habis_pakai');
     setTglPermintaan(trx.tanggal);
     setKeteranganPermintaan(trx.keterangan || '');
     if (trx.items && trx.items.length > 0) {
@@ -138,9 +172,12 @@ export default function TransaksiKeluarPage() {
     setDeleteCandidate(trx);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (deleteCandidate) {
       const docNo = deleteCandidate.no_dokumen;
+
+      // Hapus di cloud database
+      deleteTransaksiKeluarRemote(docNo);
 
       // Kembalikan stok master barang yang pernah dikeluarkan
       let nextBarang = [...barangList];
@@ -189,7 +226,7 @@ export default function TransaksiKeluarPage() {
     }));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const timObj = TIM_PEMOHON_LIST.find(t => t.id === selectedTim) || TIM_PEMOHON_LIST[1];
     const preparedItems = formItems.map(fItem => {
       const bObj = barangList.find(b => b.id === fItem.id_barang) || mockBarang.find(b => b.id === fItem.id_barang) || mockBarang[0];
@@ -197,6 +234,7 @@ export default function TransaksiKeluarPage() {
         id_barang: fItem.id_barang,
         jumlah: Number(fItem.jumlah) || 1,
         keterangan: fItem.keterangan || keteranganPermintaan || 'Keperluan operasional',
+        jenis_pengeluaran: formJenisPengeluaran,
         barang: bObj,
       };
     });
@@ -209,12 +247,17 @@ export default function TransaksiKeluarPage() {
         nama_tim: timObj.nama_tim,
         penanggung_jawab: timObj.penanggung_jawab,
         nip_pj: timObj.nip_pj,
+        jenis_pengeluaran: formJenisPengeluaran,
         items: preparedItems,
         keterangan: keteranganPermintaan,
       };
       const updatedList = transaksiList.map(t => t.id === editItem.id ? updatedTrx : t);
       setTransaksiList(updatedList);
       localStorage.setItem('sipersedia_transaksi_keluar', JSON.stringify(updatedList));
+
+      // Kirim pembaruan ke cloud
+      pushTransaksiKeluar(updatedTrx);
+
       setShowModal(false);
       setNotification({
         type: 'success',
@@ -230,6 +273,7 @@ export default function TransaksiKeluarPage() {
         nama_tim: timObj.nama_tim,
         penanggung_jawab: timObj.penanggung_jawab,
         nip_pj: timObj.nip_pj,
+        jenis_pengeluaran: formJenisPengeluaran,
         items: preparedItems,
         keterangan: keteranganPermintaan,
         created_by: 'usr-001',
@@ -238,6 +282,9 @@ export default function TransaksiKeluarPage() {
       const updatedList = [newTrx, ...transaksiList];
       setTransaksiList(updatedList);
       localStorage.setItem('sipersedia_transaksi_keluar', JSON.stringify(updatedList));
+
+      // Kirim transaksi ke cloud database agar langsung muncul di laptop admin & pegawai lain
+      pushTransaksiKeluar(newTrx);
 
       // Kurangi stok master barang sesuai jumlah barang keluar
       let nextBarang = [...barangList];
@@ -442,6 +489,21 @@ export default function TransaksiKeluarPage() {
                   </td>
                   <td>
                     <div className="space-y-1">
+                      {trx.jenis_pengeluaran === 'rusak' && (
+                        <span className="inline-block px-2 py-0.5 text-[10px] font-bold rounded-full bg-red-100 text-red-700 border border-red-200">
+                          Barang Rusak
+                        </span>
+                      )}
+                      {trx.jenis_pengeluaran === 'usang' && (
+                        <span className="inline-block px-2 py-0.5 text-[10px] font-bold rounded-full bg-amber-100 text-amber-700 border border-amber-200">
+                          Barang Usang
+                        </span>
+                      )}
+                      {(!trx.jenis_pengeluaran || trx.jenis_pengeluaran === 'habis_pakai') && (
+                        <span className="inline-block px-2 py-0.5 text-[10px] font-medium rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                          Habis Pakai
+                        </span>
+                      )}
                       {trx.items.map((item, idx) => (
                         <p key={idx} className="text-xs text-dark-400">
                           {item.keterangan || '-'}
@@ -524,7 +586,7 @@ export default function TransaksiKeluarPage() {
 
             <div className="p-5 space-y-4">
               <div className="space-y-3">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
                     <label className="input-label text-xs font-semibold text-dark-700">
                       Tim Pemohon & Penanggung Jawab (PJ) <span className="text-red-500">*</span>
@@ -551,6 +613,20 @@ export default function TransaksiKeluarPage() {
                       value={tglPermintaan}
                       onChange={(e) => setTglPermintaan(e.target.value)}
                     />
+                  </div>
+                  <div>
+                    <label className="input-label text-xs font-semibold text-dark-700">
+                      Jenis Pengeluaran / Kondisi <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={formJenisPengeluaran}
+                      onChange={(e) => setFormJenisPengeluaran(e.target.value as JenisPengeluaran)}
+                      className="input text-xs font-medium text-dark-800"
+                    >
+                      <option value="habis_pakai">Barang Habis Pakai (Reguler)</option>
+                      <option value="rusak">Barang Rusak</option>
+                      <option value="usang">Barang Usang</option>
+                    </select>
                   </div>
                 </div>
 
