@@ -198,10 +198,10 @@ export default function KartuKendaliPage() {
     const pengeluaran_bulanan = Array.from({ length: 12 }, (_, i) => getMonthlyOut(i + 1));
     const totalPengeluaranTahunan = pengeluaran_bulanan.reduce((a, b) => a + b, 0);
 
-    const LEFT_CAPACITY = 12;
+    const LEFT_CAPACITY = 13;
     const leftEntries = entries.slice(0, LEFT_CAPACITY);
     const rightEntries = entries.slice(LEFT_CAPACITY);
-    const transactionRows = Math.max(12, Math.max(leftEntries.length, rightEntries.length));
+    const transactionRows = Math.max(13, Math.max(leftEntries.length, rightEntries.length));
     const activeRowCount = 1 + transactionRows;
 
     const leftTotalMasuk = leftEntries.reduce((s, e) => s + e.masuk, 0);
@@ -293,8 +293,8 @@ export default function KartuKendaliPage() {
     return (
       <div className={cn('bg-white text-black', isPrint ? 'card-print-page' : '')}>
         {/* Header Kartu Sesuai Format Resmi PDF Halaman 3 */}
-        <div className={cn('text-center border-b border-dark-200', isPrint ? 'mb-1.5 print:mb-1 pb-1' : 'mb-5 pb-3')}>
-          <h2 className={cn('font-extrabold text-black uppercase tracking-wider', isPrint ? 'text-xs print:text-[12pt] print:tracking-normal' : 'text-base')}>
+        <div className={cn('text-center border-b border-dark-200', isPrint ? 'mb-1 print:mb-1 pb-1' : 'mb-5 pb-3')}>
+          <h2 className={cn('font-extrabold text-black uppercase tracking-wider', isPrint ? 'text-xs print:text-[11.5pt] print:tracking-normal' : 'text-base')}>
             KARTU PERSEDIAAN BARANG PAKAI HABIS (ATK/ARK)
           </h2>
         </div>
@@ -302,7 +302,7 @@ export default function KartuKendaliPage() {
         {/* Identitas Barang & Satuan Kerja Sesuai Format Gambar Excel BPS */}
         <div className={cn(
           'grid grid-cols-1 md:grid-cols-12 gap-3 text-black items-start',
-          isPrint ? 'grid-cols-12 mb-2 print:mb-1.5 text-xs print:text-[9.5pt]' : 'mb-4 text-xs'
+          isPrint ? 'grid-cols-12 mb-1.5 print:mb-1 text-xs print:text-[9pt]' : 'mb-4 text-xs'
         )}>
           <div className="col-span-4 md:col-span-4 flex flex-col items-start justify-start pt-0">
             <div className="flex flex-col items-center text-center">
@@ -365,7 +365,7 @@ export default function KartuKendaliPage() {
         </div>
 
         {/* TABEL 1: Banyaknya Pengeluaran Tiap-Tiap Bulan (15 Kolom Horizontal: 12 Bulan + 3 Ringkasan) */}
-        <div className={cn('overflow-x-auto', isPrint ? 'mb-2 print:mb-1' : 'mb-6')}>
+        <div className={cn('overflow-x-auto', isPrint ? 'mb-1.5 print:mb-1' : 'mb-6')}>
           <table className={cn(
             'w-full border-collapse border border-black text-center',
             isPrint ? 'text-[8.5px] print:text-[8pt]' : 'text-xs'
@@ -394,7 +394,7 @@ export default function KartuKendaliPage() {
               </tr>
             </thead>
             <tbody>
-              <tr className={cn('text-black font-semibold', isPrint ? 'h-4 print:h-[16px]' : 'h-7')}>
+              <tr className={cn('text-black font-semibold', isPrint ? 'h-4 print:h-[22px]' : 'h-7')}>
                 {BULAN_NAMES.map((_, idx) => {
                   const out = c.pengeluaran_bulanan[idx];
                   if (idx === 0) {
@@ -426,10 +426,10 @@ export default function KartuKendaliPage() {
         </div>
 
         {/* TABEL 2: Rincian Mutasi Barang Dual-Pane (14 Kolom) Sesuai Halaman 3 PDF */}
-        <div className={cn('overflow-x-auto', isPrint ? 'mb-2 print:mb-1' : 'mb-6')}>
+        <div className={cn('overflow-x-auto', isPrint ? 'mb-1 print:mb-0' : 'mb-6')}>
           <table className={cn(
             'w-full border-collapse border border-black',
-            isPrint ? 'text-[8.5px] print:text-[7.5pt]' : 'text-[10px]'
+            isPrint ? 'text-[8.5px] print:text-[8pt]' : 'text-[10px]'
           )}>
             <thead>
               <tr className="bg-gray-100 font-bold text-black text-center">
@@ -475,7 +475,7 @@ export default function KartuKendaliPage() {
                 const right = rIdx > 0 ? c.rightEntries[rIdx - 1] : null;
 
                 return (
-                  <tr key={rIdx} className={cn('text-black hover:bg-gray-50/50', isPrint ? 'h-[16px] print:h-[19px]' : 'h-[21px]')}>
+                  <tr key={rIdx} className={cn('text-black hover:bg-gray-50/50', isPrint ? 'h-[16px] print:h-[23px]' : 'h-[21px]')}>
                     {/* Sisi Kiri */}
                     {isPindahanRow ? (
                       <>
@@ -558,19 +558,19 @@ export default function KartuKendaliPage() {
         </div>
 
         {/* Tanda Tangan Resmi Kuasa Pengguna Barang & Pengelola Persediaan (Format Lengkap BPS) */}
-        <div className="w-full flex items-start justify-between text-xs print:text-[8.5pt] text-black pt-1 print:pt-1.5 avoid-break">
+        <div className="w-full flex items-start justify-between text-xs print:text-[9.5pt] text-black pt-1 print:pt-2 avoid-break print:mt-auto">
           {/* Kolom Kiri: Mengetahui KPB */}
           <div className="w-72 text-center flex flex-col items-center">
             <p className="font-semibold text-black leading-tight">Mengetahui,</p>
             <p className="font-medium text-black leading-tight">Kuasa Pengguna Barang</p>
             <p className="font-medium text-black leading-tight">Kepala BPS Kabupaten OKU Selatan</p>
-            <div className="h-8 print:h-9" />
+            <div className="h-8 print:h-16" />
             <p className="text-center">
               <span className="font-bold border-b border-black text-black pb-0.5 inline-block">
                 Rival Abdul Jabar, S.ST., M.Si.
               </span>
             </p>
-            <p className="text-[10px] print:text-[7.5pt] mt-0.5 font-medium text-black text-center">NIP. 19831122 200701 1003</p>
+            <p className="text-[10px] print:text-[8.5pt] mt-0.5 font-medium text-black text-center">NIP. 19831122 200701 1003</p>
           </div>
 
           {/* Kolom Kanan: Petugas Pengelola Persediaan */}
@@ -578,13 +578,13 @@ export default function KartuKendaliPage() {
             <p className="font-medium text-black leading-tight">{formatTanggalTandaTangan(tglCetakDokumen)}</p>
             <p className="font-semibold text-black leading-tight">Petugas Pengelola Persediaan</p>
             <p className="text-transparent select-none font-medium leading-tight">-</p>
-            <div className="h-8 print:h-9" />
+            <div className="h-8 print:h-16" />
             <p className="text-center">
               <span className="font-bold border-b border-black text-black pb-0.5 inline-block">
                 Guspita Karleni, S.Si
               </span>
             </p>
-            <p className="text-[10px] print:text-[7.5pt] mt-0.5 font-medium text-black text-center">NIP. 19970806 202521 2039</p>
+            <p className="text-[10px] print:text-[8.5pt] mt-0.5 font-medium text-black text-center">NIP. 19970806 202521 2039</p>
           </div>
         </div>
       </div>
@@ -1259,7 +1259,7 @@ export default function KartuKendaliPage() {
               @media print {
                 @page {
                   size: ${(previewMode === 'kartu' || previewMode === 'batch') ? 'A4 landscape' : 'A4 portrait'} !important;
-                  margin: ${(previewMode === 'kartu' || previewMode === 'batch') ? '4mm 6mm 4mm 6mm' : '6mm 8mm 6mm 8mm'} !important;
+                  margin: ${(previewMode === 'kartu' || previewMode === 'batch') ? '5mm 8mm 5mm 8mm' : '8mm 10mm 8mm 10mm'} !important;
                 }
                 body {
                   -webkit-print-color-adjust: exact !important;
@@ -1271,7 +1271,14 @@ export default function KartuKendaliPage() {
                   page-break-inside: avoid !important;
                   break-inside: avoid !important;
                   width: 100% !important;
+                  height: 196mm !important;
+                  min-height: 196mm !important;
+                  max-height: 197mm !important;
+                  display: flex !important;
+                  flex-direction: column !important;
+                  justify-content: space-between !important;
                   box-sizing: border-box !important;
+                  overflow: hidden !important;
                 }
                 .card-print-page:last-child {
                   page-break-after: avoid !important;
@@ -1280,8 +1287,7 @@ export default function KartuKendaliPage() {
                 #print-area {
                   padding: 0 !important;
                   width: 100% !important;
-                  page-break-inside: avoid !important;
-                  break-inside: avoid !important;
+                  box-sizing: border-box !important;
                 }
                 table {
                   page-break-inside: auto !important;
@@ -1308,7 +1314,7 @@ export default function KartuKendaliPage() {
               {previewMode === 'batch' && (
                 <div className="space-y-8 print:space-y-0">
                   {filteredAllCards.map((c) => (
-                    <div key={c.barang.id} className="card-print-page print:mb-0">
+                    <div key={c.barang.id}>
                       {renderCardContent(c, true)}
                     </div>
                   ))}
@@ -1370,7 +1376,7 @@ export default function KartuKendaliPage() {
                   </table>
 
                   {/* Tanda Tangan Resmi Sesuai Format BPS - Garis Mengikuti Panjang Nama */}
-                  <div className="w-full flex items-start justify-between text-xs text-black mt-8 pt-2">
+                  <div className="w-full flex items-start justify-between text-xs text-black mt-8 pt-2 avoid-break print:mt-6">
                     <div className="w-72 text-center flex flex-col items-center">
                       <p className="font-semibold text-black">Mengetahui,</p>
                       <p className="font-medium text-black">Kuasa Pengguna Barang</p>

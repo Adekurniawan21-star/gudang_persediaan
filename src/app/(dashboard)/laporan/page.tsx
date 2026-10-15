@@ -344,21 +344,20 @@ export default function LaporanPage() {
   const rowCount = activeReportData.length;
   const printCellPadding =
     rowCount <= 6
+      ? 'print:py-3.5'
+      : rowCount <= 10
       ? 'print:py-2.5'
-      : rowCount <= 12
+      : rowCount <= 16
       ? 'print:py-1.5'
-      : rowCount <= 18
-      ? 'print:py-1'
-      : 'print:py-0.5';
+      : 'print:py-1';
 
   const printTableFontSize =
-    rowCount <= 14 ? 'print:text-[9.5pt]' : 'print:text-[8.5pt]';
+    rowCount <= 10 ? 'print:text-[10pt]' : rowCount <= 16 ? 'print:text-[9.5pt]' : 'print:text-[8.5pt]';
 
-  const printSigMargin =
-    rowCount <= 6 ? 'print:mt-10' : rowCount <= 12 ? 'print:mt-6' : 'print:mt-3';
+  const printSigMargin = 'print:mt-auto';
 
   const printSigSpace =
-    rowCount <= 6 ? 'print:h-18' : rowCount <= 12 ? 'print:h-14' : 'print:h-10';
+    rowCount <= 6 ? 'print:h-24' : rowCount <= 10 ? 'print:h-20' : rowCount <= 16 ? 'print:h-16' : 'print:h-12';
 
   const handlePrint = () => {
     const originalTitle = document.title;
@@ -851,7 +850,7 @@ export default function LaporanPage() {
               @media print {
                 @page {
                   size: A4 portrait !important;
-                  margin: 6mm 8mm 6mm 8mm !important;
+                  margin: 10mm 12mm 10mm 12mm !important;
                 }
                 body {
                   -webkit-print-color-adjust: exact !important;
@@ -864,6 +863,13 @@ export default function LaporanPage() {
                 #print-area {
                   padding: 0 !important;
                   width: 100% !important;
+                  height: 275mm !important;
+                  min-height: 275mm !important;
+                  max-height: 276mm !important;
+                  display: flex !important;
+                  flex-direction: column !important;
+                  justify-content: space-between !important;
+                  box-sizing: border-box !important;
                   page-break-inside: avoid !important;
                   break-inside: avoid !important;
                 }
@@ -899,16 +905,16 @@ export default function LaporanPage() {
                 <table className={cn("w-full border-collapse border border-black text-[9.5px] mb-4 print:mb-3", printTableFontSize)}>
                   <thead>
                     <tr className="bg-gray-100 text-black font-bold text-center">
-                      <th className="border border-black px-1.5 py-1.5 print:py-2 w-8 print:w-7">No.</th>
-                      <th className="border border-black px-2 py-1.5 print:py-2 text-center">Uraian Barang</th>
-                      <th className="border border-black px-1.5 py-1.5 print:py-2 text-center w-14 print:w-13">Satuan</th>
-                      <th className="border border-black px-1.5 py-1.5 print:py-2 text-center w-16 print:w-16">{getSaldoAwalHeader(bulan, tahun)}</th>
-                      <th className="border border-black px-1.5 py-1.5 print:py-2 text-center w-14 print:w-14">Pembelian</th>
-                      <th className="border border-black px-1.5 py-1.5 print:py-2 text-center w-16 print:w-16">Transfer Masuk {getMonthName(bulan)}</th>
-                      <th className="border border-black px-1.5 py-1.5 print:py-2 text-center w-16 print:w-16">Pengeluaran {getMonthName(bulan)}</th>
-                      <th className="border border-black px-1.5 py-1.5 print:py-2 text-center w-16 print:w-16">Total Persediaan</th>
-                      <th className="border border-black px-1.5 py-1.5 print:py-2 text-center w-12 print:w-11">Barang Rusak</th>
-                      <th className="border border-black px-1.5 py-1.5 print:py-2 text-center w-12 print:w-11">Barang Usang</th>
+                      <th className="border border-black px-1.5 py-1.5 print:py-2.5 w-8 print:w-7">No.</th>
+                      <th className="border border-black px-2 py-1.5 print:py-2.5 text-center">Uraian Barang</th>
+                      <th className="border border-black px-1.5 py-1.5 print:py-2.5 text-center w-14 print:w-13">Satuan</th>
+                      <th className="border border-black px-1.5 py-1.5 print:py-2.5 text-center w-16 print:w-16">{getSaldoAwalHeader(bulan, tahun)}</th>
+                      <th className="border border-black px-1.5 py-1.5 print:py-2.5 text-center w-14 print:w-14">Pembelian</th>
+                      <th className="border border-black px-1.5 py-1.5 print:py-2.5 text-center w-16 print:w-16">Transfer Masuk {getMonthName(bulan)}</th>
+                      <th className="border border-black px-1.5 py-1.5 print:py-2.5 text-center w-16 print:w-16">Pengeluaran {getMonthName(bulan)}</th>
+                      <th className="border border-black px-1.5 py-1.5 print:py-2.5 text-center w-16 print:w-16">Total Persediaan</th>
+                      <th className="border border-black px-1.5 py-1.5 print:py-2.5 text-center w-12 print:w-11">Barang Rusak</th>
+                      <th className="border border-black px-1.5 py-1.5 print:py-2.5 text-center w-12 print:w-11">Barang Usang</th>
                     </tr>
                     {/* Baris penomoran (1)-(10): Ramping */}
                     <tr className="bg-gray-50 text-[7.5px] print:text-[8pt] text-gray-700 font-semibold text-center h-4 leading-none">
@@ -953,7 +959,7 @@ export default function LaporanPage() {
                       <th rowSpan={2} className="border border-black px-1.5 py-1.5 text-center w-14">Pengeluaran</th>
                       <th colSpan={7} className="border border-black px-1.5 py-1.5 text-center">Rincian Tim Kerja</th>
                       <th rowSpan={2} className="border border-black px-1 py-1.5 text-center w-12">Satuan</th>
-                      <th rowSpan={2} className="border border-black px-1 py-1.5 text-center w-10">Sisa</th>
+                      <th rowSpan={2} className="border border-black px-1.5 py-1.5 text-center w-10">Sisa</th>
                     </tr>
                     <tr className="bg-gray-50 text-[7.5px] print:text-[8pt] text-gray-700 font-bold text-center h-3">
                       <th className="border border-black px-1 py-0.5">Subbag Umum</th>
@@ -986,14 +992,14 @@ export default function LaporanPage() {
                 </table>
               )}
 
-              {/* Tanda Tangan Resmi Sesuai Format BPS - Jarak Proporsional Mengisi Halaman A4 */}
-              <div className={cn("w-full flex items-start justify-between text-xs print:text-[10.5pt] text-black mt-6 pt-2 avoid-break", printSigMargin)}>
+              {/* Tanda Tangan Resmi Sesuai Format BPS - Jarak Proporsional Mengisi Halaman A4 Sampai Bawah */}
+              <div className={cn("w-full flex items-start justify-between text-xs print:text-[10.5pt] text-black pt-2 avoid-break", printSigMargin)}>
                 {/* Kolom Kiri: Mengetahui KPB */}
                 <div className="w-72 text-center flex flex-col items-center">
                   <p className="font-semibold text-black leading-tight">Mengetahui,</p>
-                  <p className="font-medium text-black leading-tight">Penanggung Jawab KPB</p>
+                  <p className="font-medium text-black leading-tight">Kuasa Pengguna Barang</p>
                   <p className="font-medium text-black leading-tight">Kepala BPS Kabupaten OKU Selatan</p>
-                  <div className={cn("h-14", printSigSpace)} />
+                  <div className={cn("h-16", printSigSpace)} />
                   <p className="text-center">
                     <span className="font-bold border-b border-black text-black pb-0.5 inline-block">
                       Rival Abdul Jabar, S.ST., M.Si.
@@ -1007,7 +1013,7 @@ export default function LaporanPage() {
                   <p className="font-medium text-black leading-tight">{formatTanggalTandaTangan(tglCetakDokumen)}</p>
                   <p className="font-semibold text-black leading-tight">Petugas Pengelola Persediaan</p>
                   <p className="text-transparent select-none font-medium leading-tight">-</p>
-                  <div className={cn("h-14", printSigSpace)} />
+                  <div className={cn("h-16", printSigSpace)} />
                   <p className="text-center">
                     <span className="font-bold border-b border-black text-black pb-0.5 inline-block">
                       Guspita Karleni, S.Si

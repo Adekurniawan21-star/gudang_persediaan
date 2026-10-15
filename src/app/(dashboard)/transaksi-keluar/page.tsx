@@ -876,6 +876,13 @@ export default function TransaksiKeluarPage() {
                   break-inside: avoid !important;
                   padding: 0 !important;
                   width: 100% !important;
+                  height: 275mm !important;
+                  min-height: 275mm !important;
+                  max-height: 276mm !important;
+                  display: flex !important;
+                  flex-direction: column !important;
+                  justify-content: space-between !important;
+                  box-sizing: border-box !important;
                 }
               }
             `}} />
@@ -960,7 +967,7 @@ export default function TransaksiKeluarPage() {
               </p>
 
               {/* Tanda Tangan Format Resmi BPS - Proporsi Jarak Mantap Mengisi Halaman A4 */}
-              <div className="w-full flex items-start justify-between text-xs print:text-[11pt] text-black mt-8 pt-2 print:mt-16 avoid-break">
+              <div className="w-full flex items-start justify-between text-xs print:text-[11pt] text-black mt-8 pt-2 print:mt-auto avoid-break">
                 {/* Kolom Kiri: Administrator Gudang */}
                 <div className="w-72 text-center flex flex-col items-center">
                   <p className="font-semibold text-black">Administrator Gudang</p>
