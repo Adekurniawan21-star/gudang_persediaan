@@ -511,44 +511,27 @@ export default function TransaksiKeluarPage() {
                     </div>
                   </td>
                   <td>
-                    <div className="space-y-1.5">
-                      <div className="flex flex-wrap gap-1">
-                        {trx.jenis_pengeluaran === 'rusak' && (
-                          <span className="inline-block px-2 py-0.5 text-[10px] font-bold rounded-full bg-red-100 text-red-700 border border-red-200">
-                            Barang Rusak
-                          </span>
-                        )}
-                        {trx.jenis_pengeluaran === 'usang' && (
-                          <span className="inline-block px-2 py-0.5 text-[10px] font-bold rounded-full bg-amber-100 text-amber-700 border border-amber-200">
-                            Barang Usang
-                          </span>
-                        )}
-                        {(!trx.jenis_pengeluaran || trx.jenis_pengeluaran === 'habis_pakai') && (
-                          <span className="inline-block px-2 py-0.5 text-[10px] font-medium rounded-full bg-blue-50 text-blue-700 border border-blue-200">
-                            Habis Pakai
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Catatan Dokumen / Keperluan Permintaan (Seperti di Barang Masuk) */}
-                      {trx.keterangan && (
-                        <p className="text-xs font-semibold text-dark-800 leading-snug">
-                          {trx.keterangan}
+                    <div className="space-y-1">
+                      {trx.jenis_pengeluaran === 'rusak' && (
+                        <span className="inline-block px-2 py-0.5 text-[10px] font-bold rounded-full bg-red-100 text-red-700 border border-red-200">
+                          Barang Rusak
+                        </span>
+                      )}
+                      {trx.jenis_pengeluaran === 'usang' && (
+                        <span className="inline-block px-2 py-0.5 text-[10px] font-bold rounded-full bg-amber-100 text-amber-700 border border-amber-200">
+                          Barang Usang
+                        </span>
+                      )}
+                      {(!trx.jenis_pengeluaran || trx.jenis_pengeluaran === 'habis_pakai') && (
+                        <span className="inline-block px-2 py-0.5 text-[10px] font-medium rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                          Habis Pakai
+                        </span>
+                      )}
+                      {trx.items.map((item, idx) => (
+                        <p key={idx} className="text-xs text-dark-400">
+                          {item.keterangan || '-'}
                         </p>
-                      )}
-
-                      {/* Keterangan Item Barang (Opsional, jika ada yang diisi) */}
-                      {trx.items.some(it => it.keterangan) ? (
-                        <div className="space-y-0.5 border-t border-dark-100 pt-1">
-                          {trx.items.map((item, idx) => item.keterangan ? (
-                            <p key={idx} className="text-[11px] text-dark-500">
-                              {trx.items.length > 1 && item.barang?.nama_barang ? `• ${item.barang.nama_barang}: ` : ''}{item.keterangan}
-                            </p>
-                          ) : null)}
-                        </div>
-                      ) : (
-                        !trx.keterangan && <p className="text-xs text-dark-400">-</p>
-                      )}
+                      ))}
                     </div>
                   </td>
                   <td>
@@ -945,7 +928,7 @@ export default function TransaksiKeluarPage() {
                   <tr className="bg-gray-100 text-black font-bold text-center">
                     <th className="border border-black px-2 py-2 print:py-2.5 w-10">No</th>
                     <th className="border border-black px-3 py-2 print:py-2.5 text-center">Nama Barang</th>
-                    <th className="border border-black px-3 py-2 print:py-2.5 text-center w-28 print:w-32">Satuan Barang</th>
+                    <th className="border border-black px-3 py-2 print:py-2.5 text-center w-28 print:w-32">Satuan</th>
                     <th className="border border-black px-3 py-2 print:py-2.5 text-center w-20 print:w-24">Jumlah</th>
                     <th className="border border-black px-3 py-2 print:py-2.5 text-center">Keterangan</th>
                   </tr>
@@ -965,18 +948,16 @@ export default function TransaksiKeluarPage() {
                       <td className="border border-black px-3 py-2.5 print:py-3.5 font-medium">{item.barang?.nama_barang}</td>
                       <td className="border border-black px-3 py-2.5 print:py-3.5 text-center">{item.barang?.satuan?.nama_satuan}</td>
                       <td className="border border-black px-3 py-2.5 print:py-3.5 text-center font-normal">{item.jumlah}</td>
-                      <td className="border border-black px-3 py-2.5 print:py-3.5">{item.keterangan || ''}</td>
+                      <td className="border border-black px-3 py-2.5 print:py-3.5 text-center">{item.keterangan || '-'}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
 
-              {/* Catatan Dokumen / Keperluan Permintaan (Muncul jika diisi, persis seperti Bukti Penerimaan Barang Masuk) */}
-              {showPrintPreview.keterangan && (
-                <p className="text-xs print:text-[11pt] text-gray-700 mb-6 print:mb-6 italic">
-                  Catatan: {showPrintPreview.keterangan}
-                </p>
-              )}
+              {/* Catatan Dokumen / Keperluan Permintaan (Di luar kolom / di bawah tabel persis seperti contoh gambar) */}
+              <p className="text-xs print:text-[11pt] text-gray-700 mb-6 print:mb-6 italic">
+                Catatan: {showPrintPreview.keterangan || '-'}
+              </p>
 
               {/* Tanda Tangan Format Resmi BPS - Proporsi Jarak Mantap Mengisi Halaman A4 */}
               <div className="w-full flex items-start justify-between text-xs print:text-[11pt] text-black mt-8 pt-2 print:mt-16 avoid-break">

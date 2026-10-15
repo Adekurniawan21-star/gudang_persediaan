@@ -879,9 +879,9 @@ export default function TransaksiMasukPage() {
                 </tbody>
               </table>
 
-              {showPrintPreview.keterangan && (
-                <p className="text-xs print:text-[11pt] text-gray-700 mb-6 print:mb-6 italic">Catatan: {showPrintPreview.keterangan}</p>
-              )}
+              <p className="text-xs print:text-[11pt] text-gray-700 mb-6 print:mb-6 italic">
+                Catatan: {showPrintPreview.keterangan || '-'}
+              </p>
 
               {/* Tanda tangan format resmi BPS - Jarak Proporsional Mengisi Halaman A4 */}
               <div className="w-full flex items-start justify-between mt-10 print:mt-16 text-xs print:text-[11pt] text-black avoid-break">
