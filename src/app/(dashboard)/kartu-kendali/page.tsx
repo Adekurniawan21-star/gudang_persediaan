@@ -247,8 +247,8 @@ export default function KartuKendaliPage() {
     return (
       <div className={cn('bg-white text-black', isPrint ? 'card-print-page' : '')}>
         {/* Header Kartu Sesuai Format Resmi PDF Halaman 3 */}
-        <div className={cn('text-center border-b border-dark-200', isPrint ? 'mb-2 print:mb-1 pb-1.5' : 'mb-5 pb-3')}>
-          <h2 className={cn('font-extrabold text-black uppercase tracking-wider', isPrint ? 'text-sm print:text-xs' : 'text-base')}>
+        <div className={cn('text-center border-b border-dark-200', isPrint ? 'mb-2 print:mb-2 pb-1.5' : 'mb-5 pb-3')}>
+          <h2 className={cn('font-extrabold text-black uppercase tracking-wider', isPrint ? 'text-sm print:text-base print:tracking-normal' : 'text-base')}>
             KARTU PERSEDIAAN BARANG PAKAI HABIS (ATK/ARK)
           </h2>
         </div>
@@ -256,17 +256,17 @@ export default function KartuKendaliPage() {
         {/* Identitas Barang & Satuan Kerja Sesuai Format Gambar Excel BPS */}
         <div className={cn(
           'grid grid-cols-1 md:grid-cols-12 gap-3 text-black items-start',
-          isPrint ? 'grid-cols-12 mb-2 print:mb-1.5 text-xs print:text-[10px]' : 'mb-4 text-xs'
+          isPrint ? 'grid-cols-12 mb-2.5 print:mb-2 text-xs print:text-[11px]' : 'mb-4 text-xs'
         )}>
           <div className="col-span-4 md:col-span-4 flex flex-col items-start justify-start pt-0">
             <div className="flex flex-col items-center text-center">
               <img
                 src="/images/logo-bps.svg"
                 alt="Logo BPS"
-                className={cn('w-auto object-contain mb-1', isPrint ? 'h-12 print:h-10' : 'h-14')}
+                className={cn('w-auto object-contain mb-1', isPrint ? 'h-12 print:h-12' : 'h-14')}
               />
               <div
-                style={{ fontFamily: 'Arial, sans-serif', fontSize: isPrint ? '8pt' : '9pt', lineHeight: 1.25 }}
+                style={{ fontFamily: 'Arial, sans-serif', fontSize: isPrint ? '8.5pt' : '9pt', lineHeight: 1.25 }}
                 className="font-bold italic text-black text-center"
               >
                 <p>Badan Pusat Statistik</p>
@@ -277,7 +277,7 @@ export default function KartuKendaliPage() {
 
           <div
             className="col-span-5 md:col-span-5 space-y-1 font-medium items-start pt-0"
-            style={{ fontFamily: 'Arial, sans-serif', fontSize: isPrint ? '10px' : '11px' }}
+            style={{ fontFamily: 'Arial, sans-serif', fontSize: isPrint ? '11px' : '11px' }}
           >
             <div className="flex items-center">
               <span className="w-24 text-black">Nama Barang</span>
@@ -298,7 +298,7 @@ export default function KartuKendaliPage() {
 
           <div
             className="col-span-3 md:col-span-3 space-y-1 font-medium items-start pt-0"
-            style={{ fontFamily: 'Arial, sans-serif', fontSize: isPrint ? '10px' : '11px' }}
+            style={{ fontFamily: 'Arial, sans-serif', fontSize: isPrint ? '11px' : '11px' }}
           >
             <div className="flex items-center">
               <span className="w-20 text-black">Halaman</span>
@@ -319,27 +319,27 @@ export default function KartuKendaliPage() {
         </div>
 
         {/* TABEL 1: Banyaknya Pengeluaran Tiap-Tiap Bulan (15 Kolom Horizontal: 12 Bulan + 3 Ringkasan) */}
-        <div className={cn('overflow-x-auto', isPrint ? 'mb-2 print:mb-1.5' : 'mb-6')}>
+        <div className={cn('overflow-x-auto', isPrint ? 'mb-2.5 print:mb-2' : 'mb-6')}>
           <table className={cn(
             'w-full border-collapse border border-black text-center',
-            isPrint ? 'text-[9.5px] print:text-[8px]' : 'text-xs'
+            isPrint ? 'text-[9.5px] print:text-[9.5pt]' : 'text-xs'
           )}>
             <thead>
               <tr className="bg-gray-100 font-bold text-black">
-                <th colSpan={12} className="border border-black py-1 uppercase tracking-wider text-[10px] print:text-[8px]">
+                <th colSpan={12} className="border border-black py-1 uppercase tracking-wider text-[10px] print:text-[9pt]">
                   Banyaknya Pengeluaran Tiap-Tiap Bulan
                 </th>
-                <th rowSpan={2} className="border border-black px-1.5 py-1 text-[9px] print:text-[7.5px] leading-tight w-20">
+                <th rowSpan={2} className="border border-black px-1.5 py-1 text-[9px] print:text-[8.5pt] leading-tight w-20 print:w-24">
                   Jumlah Pengeluaran
                 </th>
-                <th rowSpan={2} className="border border-black px-1.5 py-1 text-[9px] print:text-[7.5px] leading-tight w-20 bg-amber-50/40" title="Saldo Awal Tahun (Per 1 Januari)">
+                <th rowSpan={2} className="border border-black px-1.5 py-1 text-[9px] print:text-[8.5pt] leading-tight w-20 print:w-24 bg-amber-50/40" title="Saldo Awal Tahun (Per 1 Januari)">
                   Stock Awal tahun
                 </th>
-                <th rowSpan={2} className="border border-black px-1.5 py-1 text-[9px] print:text-[7.5px] leading-tight w-20 bg-blue-50/40" title="Saldo Akhir Tahun (Per 31 Desember)">
+                <th rowSpan={2} className="border border-black px-1.5 py-1 text-[9px] print:text-[8.5pt] leading-tight w-20 print:w-24 bg-blue-50/40" title="Saldo Akhir Tahun (Per 31 Desember)">
                   Stock Akhir tahun
                 </th>
               </tr>
-              <tr className="bg-gray-50 font-semibold text-black text-[9px] print:text-[7.5px]">
+              <tr className="bg-gray-50 font-semibold text-black text-[9px] print:text-[8.5pt]">
                 {BULAN_NAMES.map((bln, idx) => (
                   <th key={idx} className="border border-black px-0.5 py-0.5">
                     {bln}
@@ -387,7 +387,7 @@ export default function KartuKendaliPage() {
         <div className={cn('overflow-x-auto', isPrint ? 'mb-2 print:mb-1' : 'mb-6')}>
           <table className={cn(
             'w-full border-collapse border border-black',
-            isPrint ? 'text-[9px] print:text-[8px]' : 'text-[10px]'
+            isPrint ? 'text-[9.5px] print:text-[9pt]' : 'text-[10px]'
           )}>
             <thead>
               <tr className="bg-gray-100 font-bold text-black text-center">
@@ -409,7 +409,7 @@ export default function KartuKendaliPage() {
                 <th className="border border-black px-1 py-1 w-12">Keluar (K)</th>
                 <th className="border border-black px-1.5 py-1 w-14">Sisa Barang</th>
               </tr>
-              <tr className="bg-gray-50 text-[8px] print:text-[7.5px] text-gray-600 font-bold text-center h-4">
+              <tr className="bg-gray-50 text-[8px] print:text-[8pt] text-gray-600 font-bold text-center h-4">
                 <th className="border border-black py-0 px-0.5 leading-tight">(1)</th>
                 <th className="border border-black py-0 px-0.5 leading-tight">(2)</th>
                 <th className="border border-black py-0 px-0.5 leading-tight">(3)</th>
@@ -433,7 +433,7 @@ export default function KartuKendaliPage() {
                 const right = rIdx > 0 ? c.rightEntries[rIdx - 1] : null;
 
                 return (
-                  <tr key={rIdx} className={cn('text-black hover:bg-gray-50/50', isPrint ? 'h-[20px] print:h-[18px]' : 'h-[21px]')}>
+                  <tr key={rIdx} className={cn('text-black hover:bg-gray-50/50', isPrint ? 'h-[20px] print:h-[22px]' : 'h-[21px]')}>
                     {/* Sisi Kiri */}
                     {isPindahanRow ? (
                       <>
@@ -1182,15 +1182,22 @@ export default function KartuKendaliPage() {
               @media print {
                 @page {
                   size: ${(previewMode === 'kartu' || previewMode === 'batch') ? 'A4 landscape' : 'A4 portrait'} !important;
-                  margin: ${(previewMode === 'kartu' || previewMode === 'batch') ? '6mm 8mm 6mm 8mm' : '8mm 10mm 8mm 10mm'} !important;
+                  margin: ${(previewMode === 'kartu' || previewMode === 'batch') ? '4mm 6mm 4mm 6mm' : '6mm 8mm 6mm 8mm'} !important;
                 }
                 .card-print-page {
                   page-break-after: always !important;
                   break-after: page !important;
+                  page-break-inside: avoid !important;
+                  break-inside: avoid !important;
+                  width: 100% !important;
                 }
                 .card-print-page:last-child {
                   page-break-after: avoid !important;
                   break-after: avoid !important;
+                }
+                #print-area {
+                  padding: 0 !important;
+                  width: 100% !important;
                 }
               }
             `}} />

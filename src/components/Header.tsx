@@ -140,8 +140,8 @@ export default function Header({
   return (
     <>
       {/* Top BPS Tricolor Ribbon */}
-      <div className="h-[3px] w-full bg-gradient-to-r from-bps-blue via-bps-orange to-bps-green sticky top-0 z-30 flex-shrink-0 shadow-xs" />
-      <header className="h-16 bg-white/95 backdrop-blur-md border-b border-amber-100/70 flex items-center justify-between px-4 lg:px-6 sticky top-[3px] z-30 shadow-xs">
+      <div className="h-[3px] w-full bg-gradient-to-r from-bps-blue via-bps-orange to-bps-green sticky top-0 z-30 flex-shrink-0 shadow-xs print:hidden no-print" />
+      <header className="h-16 bg-white/95 backdrop-blur-md border-b border-amber-100/70 flex items-center justify-between px-4 lg:px-6 sticky top-[3px] z-30 shadow-xs print:hidden no-print">
         {/* Left side */}
         <div className="flex items-center gap-3">
           <button

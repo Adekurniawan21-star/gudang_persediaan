@@ -846,22 +846,24 @@ export default function TransaksiKeluarPage() {
               @media print {
                 @page {
                   size: A4 portrait !important;
-                  margin: 8mm 10mm 8mm 10mm !important;
+                  margin: 6mm 8mm 6mm 8mm !important;
                 }
                 #print-area {
                   page-break-inside: avoid !important;
                   break-inside: avoid !important;
+                  padding: 0 !important;
+                  width: 100% !important;
                 }
               }
             `}} />
 
-            <div className="p-8 text-black bg-white" id="print-area">
+            <div className="p-8 print:p-0 text-black bg-white" id="print-area">
               {/* KOP SURAT RESMI BPS */}
               <KopSurat />
 
               {/* No & Tahun (Sesuai Posisi Kanan Atas di Gambar) */}
-              <div className="flex justify-end mb-3 text-xs">
-                <div className="w-44 text-black">
+              <div className="flex justify-end mb-3 text-xs print:text-[11pt]">
+                <div className="w-48 text-black">
                   <div className="flex">
                     <span className="w-16 font-semibold">No</span>
                     <span>: {showPrintPreview.no_dokumen}</span>
@@ -874,80 +876,80 @@ export default function TransaksiKeluarPage() {
               </div>
 
               {/* Judul Formulir (Tengah) */}
-              <div className="text-center mb-5">
-                <h4 className="font-extrabold text-black text-sm tracking-wide">
+              <div className="text-center mb-5 print:mb-4">
+                <h4 className="font-extrabold text-black text-sm print:text-base tracking-wide">
                   SURAT PERMINTAAN BARANG
                 </h4>
-                <h4 className="font-extrabold text-black text-sm tracking-wide">
+                <h4 className="font-extrabold text-black text-sm print:text-base tracking-wide">
                   ATK/CETAKAN/DLL
                 </h4>
               </div>
 
               {/* Tim Pemohon (Font Normal tidak di-bold sesuai Gambar 3) */}
-              <div className="text-xs mb-3 text-black">
+              <div className="text-xs print:text-[11pt] mb-3 text-black">
                 <p className="font-normal">
-                  <span>Tim :</span> {showPrintPreview.nama_tim}
+                  <span className="font-medium">Tim :</span> {showPrintPreview.nama_tim}
                 </p>
               </div>
 
               {/* Tabel Permintaan Sesuai Format Kolom Gambar User */}
-              <table className="w-full border-collapse border border-black text-xs mb-8">
+              <table className="w-full border-collapse border border-black text-xs print:text-[11pt] mb-8 print:mb-4">
                 <thead>
                   <tr className="bg-gray-100 text-black font-bold text-center">
-                    <th className="border border-black px-2 py-1.5 w-10">No</th>
-                    <th className="border border-black px-3 py-1.5 text-center">Nama Barang</th>
-                    <th className="border border-black px-3 py-1.5 text-center w-28">Satuan Barang</th>
-                    <th className="border border-black px-3 py-1.5 text-center w-20">Jumlah</th>
-                    <th className="border border-black px-3 py-1.5 text-center">Keterangan</th>
+                    <th className="border border-black px-2 py-2 print:py-2.5 w-10">No</th>
+                    <th className="border border-black px-3 py-2 print:py-2.5 text-center">Nama Barang</th>
+                    <th className="border border-black px-3 py-2 print:py-2.5 text-center w-28 print:w-32">Satuan Barang</th>
+                    <th className="border border-black px-3 py-2 print:py-2.5 text-center w-20 print:w-24">Jumlah</th>
+                    <th className="border border-black px-3 py-2 print:py-2.5 text-center">Keterangan</th>
                   </tr>
                   {/* Baris penomoran (1)-(5): Ramping */}
-                  <tr className="bg-gray-50 text-[9px] text-gray-700 font-bold text-center h-4">
-                    <th className="border border-black py-0 px-1 leading-tight">(1)</th>
-                    <th className="border border-black py-0 px-1 leading-tight">(2)</th>
-                    <th className="border border-black py-0 px-1 leading-tight">(3)</th>
-                    <th className="border border-black py-0 px-1 leading-tight">(4)</th>
-                    <th className="border border-black py-0 px-1 leading-tight">(5)</th>
+                  <tr className="bg-gray-50 text-[9px] print:text-[10pt] text-gray-700 font-bold text-center h-4">
+                    <th className="border border-black py-0.5 px-1 leading-tight">(1)</th>
+                    <th className="border border-black py-0.5 px-1 leading-tight">(2)</th>
+                    <th className="border border-black py-0.5 px-1 leading-tight">(3)</th>
+                    <th className="border border-black py-0.5 px-1 leading-tight">(4)</th>
+                    <th className="border border-black py-0.5 px-1 leading-tight">(5)</th>
                   </tr>
                 </thead>
                 <tbody>
                   {showPrintPreview.items.map((item, idx) => (
                     <tr key={idx} className="text-black">
-                      <td className="border border-black px-2 py-2.5 print:py-2.5 text-center font-medium">{idx + 1}</td>
-                      <td className="border border-black px-3 py-2.5 print:py-2.5 font-medium">{item.barang?.nama_barang}</td>
-                      <td className="border border-black px-3 py-2.5 print:py-2.5 text-center">{item.barang?.satuan?.nama_satuan}</td>
-                      <td className="border border-black px-3 py-2.5 print:py-2.5 text-center font-normal">{item.jumlah}</td>
-                      <td className="border border-black px-3 py-2.5 print:py-2.5">{item.keterangan || '-'}</td>
+                      <td className="border border-black px-2 py-2.5 print:py-3 text-center font-medium">{idx + 1}</td>
+                      <td className="border border-black px-3 py-2.5 print:py-3 font-medium">{item.barang?.nama_barang}</td>
+                      <td className="border border-black px-3 py-2.5 print:py-3 text-center">{item.barang?.satuan?.nama_satuan}</td>
+                      <td className="border border-black px-3 py-2.5 print:py-3 text-center font-normal">{item.jumlah}</td>
+                      <td className="border border-black px-3 py-2.5 print:py-3">{item.keterangan || '-'}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
 
               {/* Tanda Tangan Format Resmi BPS - Garis Mengikuti Panjang Nama */}
-              <div className="w-full flex items-start justify-between text-xs text-black mt-8 pt-2 print:mt-4 avoid-break">
+              <div className="w-full flex items-start justify-between text-xs print:text-[11pt] text-black mt-8 pt-2 print:mt-6 avoid-break">
                 {/* Kolom Kiri: Administrator Gudang */}
                 <div className="w-72 text-center flex flex-col items-center">
                   <p className="font-semibold text-black">Administrator Gudang</p>
                   <p className="font-semibold text-black">Kuasa Pengguna Barang</p>
-                  <div className="h-16 print:h-12" />
+                  <div className="h-16 print:h-14" />
                   <p className="text-center">
                     <span className="border-b border-black pb-0.5 font-bold text-black inline-block">
                       Guspita Karleni, S.Si
                     </span>
                   </p>
-                  <p className="mt-1 text-black font-medium text-[11px] text-center">NIP. 19970806 202521 2039</p>
+                  <p className="mt-1 text-black font-medium text-[11px] print:text-[10.5pt] text-center">NIP. 19970806 202521 2039</p>
                 </div>
 
                 {/* Kolom Kanan: Penanggung Jawab Tim Pemohon */}
                 <div className="w-72 text-center flex flex-col items-center">
                   <p className="text-black font-medium">{formatTanggalTandaTangan(tglCetakDokumen)}</p>
                   <p className="font-semibold text-black">Penanggung Jawab</p>
-                  <div className="h-16 print:h-12" />
+                  <div className="h-16 print:h-14" />
                   <p className="text-center">
                     <span className="border-b border-black pb-0.5 font-bold text-black inline-block">
                       {showPrintPreview.penanggung_jawab || '............................................................'}
                     </span>
                   </p>
-                  <p className="mt-1 text-black font-medium text-[11px] text-center">NIP. {showPrintPreview.nip_pj || '....................................'}</p>
+                  <p className="mt-1 text-black font-medium text-[11px] print:text-[10.5pt] text-center">NIP. {showPrintPreview.nip_pj || '....................................'}</p>
                 </div>
               </div>
             </div>

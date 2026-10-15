@@ -245,7 +245,7 @@
       font-size: 11pt;
     }
 
-    /* Sembunyikan seluruh UI navigasi, sidebar, header web, tombol aksi, dan toast */
+    /* Sembunyikan seluruh UI navigasi, sidebar, header web, tombol aksi, pita warna, dan toast */
     header,
     aside,
     nav,
@@ -254,7 +254,12 @@
     .no-print,
     .print\:hidden,
     [class*="toast"],
-    [role="status"] {
+    [role="status"],
+    .h-\[3px\],
+    div[class*="h-\[3px\]"],
+    div[class*="bg-gradient-to-r"],
+    div[class*="from-bps-blue"],
+    div[class*="via-bps-orange"] {
       display: none !important;
     }
 
