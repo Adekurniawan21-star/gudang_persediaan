@@ -178,7 +178,13 @@ export default function KartuKendaliPage() {
 
     const totalMasuk = entries.reduce((s, e) => s + e.masuk, 0);
     const totalKeluar = entries.reduce((s, e) => s + e.keluar, 0);
-    const sisaAkhir = entries.length > 0 ? entries[entries.length - 1].sisa : stockAwal;
+    let sisaAkhir = entries.length > 0 ? entries[entries.length - 1].sisa : stockAwal;
+    if (targetBarang?.stok !== undefined && targetBarang.stok === 0 && mMasuk.length === 0) {
+      sisaAkhir = 0;
+    }
+    if (itemPdf && (itemPdf.saldo_1_januari + (itemPdf.masuk || 0) - (itemPdf.keluar || 0)) <= 0 && mMasuk.length === 0) {
+      sisaAkhir = 0;
+    }
 
     const getMonthlyOut = (m: number) => {
       return entries
@@ -238,13 +244,13 @@ export default function KartuKendaliPage() {
   // Daftar kartu kendali untuk seluruh master barang (Hanya barang yang memiliki persediaan fisik > 0)
   // Barang yang habis / stok 0 tidak dimasukkan ke kartu kendali sesuai arahan
   const allCardsRaw = barangList.map(b => computeSingleCard(b));
-  const activeStockCards = allCardsRaw.filter(c => c.sisaAkhir > 0);
-  const allCardsList = activeStockCards.length > 0 ? activeStockCards : allCardsRaw;
+  const activeStockCards = allCardsRaw.filter(c => Number(c.sisaAkhir || 0) > 0);
+  const allCardsList = activeStockCards;
 
   // Daftar barang yang tersedia untuk dipilih (yang masih ada persediaannya)
   const availableBarangList = allCardsList.map(c => c.barang);
-  const activeBarang = availableBarangList.find(b => b.id === selectedBarangId) || availableBarangList[0] || barangList[0];
-  const currentCard = allCardsList.find(c => c.id === activeBarang?.id) || computeSingleCard(activeBarang);
+  const activeBarang = availableBarangList.find(b => b.id === selectedBarangId) || availableBarangList[0];
+  const currentCard = allCardsList.find(c => c.id === activeBarang?.id) || allCardsList[0];
 
   const leftEntries = currentCard.leftEntries;
   const rightEntries = currentCard.rightEntries;
@@ -283,11 +289,12 @@ export default function KartuKendaliPage() {
   // Komponen Helper untuk merender Tampilan Kartu Persediaan Barang Pakai Habis (ATK/ARK)
   // Digunakan seragam untuk tampilan layar, cetak tunggal, maupun cetak massal (batch)
   const renderCardContent = (c: ReturnType<typeof computeSingleCard>, isPrint: boolean = false) => {
+    if (!c) return null;
     return (
       <div className={cn('bg-white text-black', isPrint ? 'card-print-page' : '')}>
         {/* Header Kartu Sesuai Format Resmi PDF Halaman 3 */}
-        <div className={cn('text-center border-b border-dark-200', isPrint ? 'mb-2 print:mb-2 pb-1.5' : 'mb-5 pb-3')}>
-          <h2 className={cn('font-extrabold text-black uppercase tracking-wider', isPrint ? 'text-sm print:text-base print:tracking-normal' : 'text-base')}>
+        <div className={cn('text-center border-b border-dark-200', isPrint ? 'mb-1.5 print:mb-1 pb-1' : 'mb-5 pb-3')}>
+          <h2 className={cn('font-extrabold text-black uppercase tracking-wider', isPrint ? 'text-xs print:text-[12pt] print:tracking-normal' : 'text-base')}>
             KARTU PERSEDIAAN BARANG PAKAI HABIS (ATK/ARK)
           </h2>
         </div>
@@ -295,17 +302,17 @@ export default function KartuKendaliPage() {
         {/* Identitas Barang & Satuan Kerja Sesuai Format Gambar Excel BPS */}
         <div className={cn(
           'grid grid-cols-1 md:grid-cols-12 gap-3 text-black items-start',
-          isPrint ? 'grid-cols-12 mb-2.5 print:mb-2 text-xs print:text-[11px]' : 'mb-4 text-xs'
+          isPrint ? 'grid-cols-12 mb-2 print:mb-1.5 text-xs print:text-[9.5pt]' : 'mb-4 text-xs'
         )}>
           <div className="col-span-4 md:col-span-4 flex flex-col items-start justify-start pt-0">
             <div className="flex flex-col items-center text-center">
               <img
                 src="/images/logo-bps.svg"
                 alt="Logo BPS"
-                className={cn('w-auto object-contain mb-1', isPrint ? 'h-12 print:h-12' : 'h-14')}
+                className={cn('w-auto object-contain mb-0.5', isPrint ? 'h-9 print:h-9' : 'h-14')}
               />
               <div
-                style={{ fontFamily: 'Arial, sans-serif', fontSize: isPrint ? '8.5pt' : '9pt', lineHeight: 1.25 }}
+                style={{ fontFamily: 'Arial, sans-serif', fontSize: isPrint ? '7.5pt' : '9pt', lineHeight: 1.15 }}
                 className="font-bold italic text-black text-center"
               >
                 <p>Badan Pusat Statistik</p>
@@ -315,8 +322,8 @@ export default function KartuKendaliPage() {
           </div>
 
           <div
-            className="col-span-5 md:col-span-5 space-y-1 font-medium items-start pt-0"
-            style={{ fontFamily: 'Arial, sans-serif', fontSize: isPrint ? '11px' : '11px' }}
+            className="col-span-5 md:col-span-5 space-y-0.5 font-medium items-start pt-0"
+            style={{ fontFamily: 'Arial, sans-serif', fontSize: isPrint ? '10px' : '11px' }}
           >
             <div className="flex items-center">
               <span className="w-24 text-black">Nama Barang</span>
@@ -336,8 +343,8 @@ export default function KartuKendaliPage() {
           </div>
 
           <div
-            className="col-span-3 md:col-span-3 space-y-1 font-medium items-start pt-0"
-            style={{ fontFamily: 'Arial, sans-serif', fontSize: isPrint ? '11px' : '11px' }}
+            className="col-span-3 md:col-span-3 space-y-0.5 font-medium items-start pt-0"
+            style={{ fontFamily: 'Arial, sans-serif', fontSize: isPrint ? '10px' : '11px' }}
           >
             <div className="flex items-center">
               <span className="w-20 text-black">Halaman</span>
@@ -358,27 +365,27 @@ export default function KartuKendaliPage() {
         </div>
 
         {/* TABEL 1: Banyaknya Pengeluaran Tiap-Tiap Bulan (15 Kolom Horizontal: 12 Bulan + 3 Ringkasan) */}
-        <div className={cn('overflow-x-auto', isPrint ? 'mb-2.5 print:mb-2' : 'mb-6')}>
+        <div className={cn('overflow-x-auto', isPrint ? 'mb-2 print:mb-1' : 'mb-6')}>
           <table className={cn(
             'w-full border-collapse border border-black text-center',
-            isPrint ? 'text-[9.5px] print:text-[9.5pt]' : 'text-xs'
+            isPrint ? 'text-[8.5px] print:text-[8pt]' : 'text-xs'
           )}>
             <thead>
               <tr className="bg-gray-100 font-bold text-black">
-                <th colSpan={12} className="border border-black py-1 uppercase tracking-wider text-[10px] print:text-[9pt]">
+                <th colSpan={12} className="border border-black py-0.5 uppercase tracking-wider text-[8.5px] print:text-[7.5pt]">
                   Banyaknya Pengeluaran Tiap-Tiap Bulan
                 </th>
-                <th rowSpan={2} className="border border-black px-1.5 py-1 text-[9px] print:text-[8.5pt] leading-tight w-20 print:w-24">
+                <th rowSpan={2} className="border border-black px-1 py-0.5 text-[8px] print:text-[7.5pt] leading-tight w-20 print:w-22">
                   Jumlah Pengeluaran
                 </th>
-                <th rowSpan={2} className="border border-black px-1.5 py-1 text-[9px] print:text-[8.5pt] leading-tight w-20 print:w-24 bg-amber-50/40" title="Saldo Awal Tahun (Per 1 Januari)">
+                <th rowSpan={2} className="border border-black px-1 py-0.5 text-[8px] print:text-[7.5pt] leading-tight w-20 print:w-22 bg-amber-50/40" title="Saldo Awal Tahun (Per 1 Januari)">
                   Stock Awal tahun
                 </th>
-                <th rowSpan={2} className="border border-black px-1.5 py-1 text-[9px] print:text-[8.5pt] leading-tight w-20 print:w-24 bg-blue-50/40" title="Saldo Akhir Tahun (Per 31 Desember)">
+                <th rowSpan={2} className="border border-black px-1 py-0.5 text-[8px] print:text-[7.5pt] leading-tight w-20 print:w-22 bg-blue-50/40" title="Saldo Akhir Tahun (Per 31 Desember)">
                   Stock Akhir tahun
                 </th>
               </tr>
-              <tr className="bg-gray-50 font-semibold text-black text-[9px] print:text-[8.5pt]">
+              <tr className="bg-gray-50 font-semibold text-black text-[8px] print:text-[7pt]">
                 {BULAN_NAMES.map((bln, idx) => (
                   <th key={idx} className="border border-black px-0.5 py-0.5">
                     {bln}
@@ -387,34 +394,30 @@ export default function KartuKendaliPage() {
               </tr>
             </thead>
             <tbody>
-              <tr className={cn('text-black font-semibold', isPrint ? 'h-6 print:h-[18px]' : 'h-7')}>
+              <tr className={cn('text-black font-semibold', isPrint ? 'h-4 print:h-[16px]' : 'h-7')}>
                 {BULAN_NAMES.map((_, idx) => {
-                  const m = idx + 1; // 1 = Januari, ..., 12 = Desember
                   const out = c.pengeluaran_bulanan[idx];
-
                   if (idx === 0) {
-                    // Khusus bulan Januari: cukup tampilkan angka saja (stok awal atau pengeluaran jika ada)
                     const val = out > 0 ? out : (c.stock_awal_tahun > 0 ? c.stock_awal_tahun : '');
                     return (
-                      <td key={idx} className="border border-black py-1">
+                      <td key={idx} className="border border-black py-0.5">
                         {val}
                       </td>
                     );
                   }
-
                   return (
-                    <td key={idx} className="border border-black py-1">
+                    <td key={idx} className="border border-black py-0.5">
                       {out > 0 ? out : ''}
                     </td>
                   );
                 })}
-                <td className="border border-black py-1 font-bold text-black bg-gray-50">
+                <td className="border border-black py-0.5 font-bold text-black bg-gray-50">
                   {c.totalPengeluaranTahunan > 0 ? c.totalPengeluaranTahunan : ''}
                 </td>
-                <td className="border border-black py-1 font-bold text-black bg-amber-50/20" title={`Saldo Awal 1 Januari: ${c.stock_awal_tahun}`}>
+                <td className="border border-black py-0.5 font-bold text-black bg-amber-50/20" title={`Saldo Awal 1 Januari: ${c.stock_awal_tahun}`}>
                   {c.stock_awal_tahun}
                 </td>
-                <td className="border border-black py-1 font-extrabold text-blue-900 bg-blue-50/30" title={`Sisa Akhir 31 Desember: ${c.stock_akhir_tahun}`}>
+                <td className="border border-black py-0.5 font-extrabold text-blue-900 bg-blue-50/30" title={`Sisa Akhir 31 Desember: ${c.stock_akhir_tahun}`}>
                   {c.stock_akhir_tahun}
                 </td>
               </tr>
@@ -426,29 +429,29 @@ export default function KartuKendaliPage() {
         <div className={cn('overflow-x-auto', isPrint ? 'mb-2 print:mb-1' : 'mb-6')}>
           <table className={cn(
             'w-full border-collapse border border-black',
-            isPrint ? 'text-[9.5px] print:text-[9pt]' : 'text-[10px]'
+            isPrint ? 'text-[8.5px] print:text-[7.5pt]' : 'text-[10px]'
           )}>
             <thead>
               <tr className="bg-gray-100 font-bold text-black text-center">
                 {/* Kolom Sisi Kiri */}
-                <th className="border border-black px-1 py-1 w-7">No.</th>
-                <th className="border border-black px-1.5 py-1 w-20">No. Bon/Faktur</th>
-                <th className="border border-black px-1 py-1 w-16">Tgl M/K</th>
-                <th className="border border-black px-2 py-1 text-left">Uraian Pemasukan/Pengeluaran</th>
-                <th className="border border-black px-1 py-1 w-12">Masuk (M)</th>
-                <th className="border border-black px-1 py-1 w-12">Keluar (K)</th>
-                <th className="border border-black px-1.5 py-1 w-14">Sisa Barang</th>
+                <th className="border border-black px-1 py-0.5 w-7">No.</th>
+                <th className="border border-black px-1 py-0.5 w-20">No. Bon/Faktur</th>
+                <th className="border border-black px-1 py-0.5 w-16">Tgl M/K</th>
+                <th className="border border-black px-1.5 py-0.5 text-left">Uraian Pemasukan/Pengeluaran</th>
+                <th className="border border-black px-1 py-0.5 w-12">Masuk (M)</th>
+                <th className="border border-black px-1 py-0.5 w-12">Keluar (K)</th>
+                <th className="border border-black px-1.5 py-0.5 w-14">Sisa Barang</th>
 
                 {/* Kolom Sisi Kanan */}
-                <th className="border border-black px-1 py-1 w-7">No.</th>
-                <th className="border border-black px-1.5 py-1 w-20">No. Bon/Faktur</th>
-                <th className="border border-black px-1 py-1 w-16">Tgl M/K</th>
-                <th className="border border-black px-2 py-1 text-left">Uraian Pemasukan/Pengeluaran</th>
-                <th className="border border-black px-1 py-1 w-12">Masuk (M)</th>
-                <th className="border border-black px-1 py-1 w-12">Keluar (K)</th>
-                <th className="border border-black px-1.5 py-1 w-14">Sisa Barang</th>
+                <th className="border border-black px-1 py-0.5 w-7">No.</th>
+                <th className="border border-black px-1 py-0.5 w-20">No. Bon/Faktur</th>
+                <th className="border border-black px-1 py-0.5 w-16">Tgl M/K</th>
+                <th className="border border-black px-1.5 py-0.5 text-left">Uraian Pemasukan/Pengeluaran</th>
+                <th className="border border-black px-1 py-0.5 w-12">Masuk (M)</th>
+                <th className="border border-black px-1 py-0.5 w-12">Keluar (K)</th>
+                <th className="border border-black px-1.5 py-0.5 w-14">Sisa Barang</th>
               </tr>
-              <tr className="bg-gray-50 text-[8px] print:text-[8pt] text-gray-600 font-bold text-center h-4">
+              <tr className="bg-gray-50 text-[7px] print:text-[6.5pt] text-gray-600 font-bold text-center h-3">
                 <th className="border border-black py-0 px-0.5 leading-tight">(1)</th>
                 <th className="border border-black py-0 px-0.5 leading-tight">(2)</th>
                 <th className="border border-black py-0 px-0.5 leading-tight">(3)</th>
@@ -472,39 +475,39 @@ export default function KartuKendaliPage() {
                 const right = rIdx > 0 ? c.rightEntries[rIdx - 1] : null;
 
                 return (
-                  <tr key={rIdx} className={cn('text-black hover:bg-gray-50/50', isPrint ? 'h-[20px] print:h-[26px]' : 'h-[21px]')}>
+                  <tr key={rIdx} className={cn('text-black hover:bg-gray-50/50', isPrint ? 'h-[16px] print:h-[19px]' : 'h-[21px]')}>
                     {/* Sisi Kiri */}
                     {isPindahanRow ? (
                       <>
-                        <td className="border border-black px-1 py-0.5 text-center"></td>
-                        <td className="border border-black px-1.5 py-0.5 font-mono text-[9px]"></td>
-                        <td className="border border-black px-1 py-0.5 text-center"></td>
-                        <td className="border border-black px-2 py-0.5 font-medium"></td>
-                        <td className="border border-black px-1 py-0.5 text-center"></td>
-                        <td className="border border-black px-1 py-0.5 text-center"></td>
-                        <td className="border border-black px-1.5 py-0.5 text-center"></td>
+                        <td className="border border-black px-1 py-0 text-center"></td>
+                        <td className="border border-black px-1 py-0 font-mono text-[8.5px]"></td>
+                        <td className="border border-black px-1 py-0 text-center"></td>
+                        <td className="border border-black px-1.5 py-0 font-medium"></td>
+                        <td className="border border-black px-1 py-0 text-center"></td>
+                        <td className="border border-black px-1 py-0 text-center"></td>
+                        <td className="border border-black px-1 py-0 text-center"></td>
                       </>
                     ) : (
                       <>
-                        <td className="border border-black px-1 py-0.5 text-center font-medium">
+                        <td className="border border-black px-1 py-0 text-center font-medium">
                           {left ? rIdx : ''}
                         </td>
-                        <td className="border border-black px-1.5 py-0.5 font-mono text-[9px]">
+                        <td className="border border-black px-1 py-0 font-mono text-[8px]">
                           {left?.no_referensi || ''}
                         </td>
-                        <td className="border border-black px-1 py-0.5 text-center">
+                        <td className="border border-black px-1 py-0 text-center">
                           {left ? formatDateShort(left.tanggal) : ''}
                         </td>
-                        <td className="border border-black px-2 py-0.5 font-medium">
+                        <td className="border border-black px-1.5 py-0 font-medium">
                           {left?.uraian || ''}
                         </td>
-                        <td className="border border-black px-1 py-0.5 text-center font-bold text-emerald-800">
+                        <td className="border border-black px-1 py-0 text-center font-bold text-emerald-800">
                           {left && left.masuk > 0 ? left.masuk : (left ? '-' : '')}
                         </td>
-                        <td className="border border-black px-1 py-0.5 text-center font-bold text-rose-800">
+                        <td className="border border-black px-1 py-0 text-center font-bold text-rose-800">
                           {left && left.keluar > 0 ? left.keluar : (left ? '-' : '')}
                         </td>
-                        <td className="border border-black px-1.5 py-0.5 text-center font-bold">
+                        <td className="border border-black px-1 py-0 text-center font-bold">
                           {left ? left.sisa : ''}
                         </td>
                       </>
@@ -513,36 +516,36 @@ export default function KartuKendaliPage() {
                     {/* Sisi Kanan */}
                     {isPindahanRow ? (
                       <>
-                        <td colSpan={4} className="border border-black px-2 py-0.5 font-bold italic text-black">
+                        <td colSpan={4} className="border border-black px-2 py-0 font-bold italic text-black">
                           Pindahan
                         </td>
-                        <td className="border border-black px-1 py-0.5 text-center font-bold text-emerald-800"></td>
-                        <td className="border border-black px-1 py-0.5 text-center font-bold text-rose-800"></td>
-                        <td className="border border-black px-1.5 py-0.5 text-center font-extrabold text-blue-900 bg-blue-50/30">
+                        <td className="border border-black px-1 py-0 text-center font-bold text-emerald-800"></td>
+                        <td className="border border-black px-1 py-0 text-center font-bold text-rose-800"></td>
+                        <td className="border border-black px-1 py-0 text-center font-extrabold text-blue-900 bg-blue-50/30">
                           {c.leftEntries.length > 0 ? c.leftLastSisa : (c.entries.length === 0 ? '' : c.stock_awal_tahun)}
                         </td>
                       </>
                     ) : (
                       <>
-                        <td className="border border-black px-1 py-0.5 text-center font-medium">
+                        <td className="border border-black px-1 py-0 text-center font-medium">
                           {right ? c.LEFT_CAPACITY + rIdx : ''}
                         </td>
-                        <td className="border border-black px-1.5 py-0.5 font-mono text-[9px]">
+                        <td className="border border-black px-1 py-0 font-mono text-[8px]">
                           {right?.no_referensi || ''}
                         </td>
-                        <td className="border border-black px-1 py-0.5 text-center">
+                        <td className="border border-black px-1 py-0 text-center">
                           {right ? formatDateShort(right.tanggal) : ''}
                         </td>
-                        <td className="border border-black px-2 py-0.5 font-medium">
+                        <td className="border border-black px-1.5 py-0 font-medium">
                           {right?.uraian || ''}
                         </td>
-                        <td className="border border-black px-1 py-0.5 text-center font-bold text-emerald-800">
+                        <td className="border border-black px-1 py-0 text-center font-bold text-emerald-800">
                           {right && right.masuk > 0 ? right.masuk : (right ? '-' : '')}
                         </td>
-                        <td className="border border-black px-1 py-0.5 text-center font-bold text-rose-800">
+                        <td className="border border-black px-1 py-0 text-center font-bold text-rose-800">
                           {right && right.keluar > 0 ? right.keluar : (right ? '-' : '')}
                         </td>
-                        <td className="border border-black px-1.5 py-0.5 text-center font-bold">
+                        <td className="border border-black px-1 py-0 text-center font-bold">
                           {right ? right.sisa : ''}
                         </td>
                       </>
@@ -552,6 +555,37 @@ export default function KartuKendaliPage() {
               })}
             </tbody>
           </table>
+        </div>
+
+        {/* Tanda Tangan Resmi Kuasa Pengguna Barang & Pengelola Persediaan (Format Lengkap BPS) */}
+        <div className="w-full flex items-start justify-between text-xs print:text-[8.5pt] text-black pt-1 print:pt-1.5 avoid-break">
+          {/* Kolom Kiri: Mengetahui KPB */}
+          <div className="w-72 text-center flex flex-col items-center">
+            <p className="font-semibold text-black leading-tight">Mengetahui,</p>
+            <p className="font-medium text-black leading-tight">Kuasa Pengguna Barang</p>
+            <p className="font-medium text-black leading-tight">Kepala BPS Kabupaten OKU Selatan</p>
+            <div className="h-8 print:h-9" />
+            <p className="text-center">
+              <span className="font-bold border-b border-black text-black pb-0.5 inline-block">
+                Rival Abdul Jabar, S.ST., M.Si.
+              </span>
+            </p>
+            <p className="text-[10px] print:text-[7.5pt] mt-0.5 font-medium text-black text-center">NIP. 19831122 200701 1003</p>
+          </div>
+
+          {/* Kolom Kanan: Petugas Pengelola Persediaan */}
+          <div className="w-72 text-center flex flex-col items-center">
+            <p className="font-medium text-black leading-tight">{formatTanggalTandaTangan(tglCetakDokumen)}</p>
+            <p className="font-semibold text-black leading-tight">Petugas Pengelola Persediaan</p>
+            <p className="text-transparent select-none font-medium leading-tight">-</p>
+            <div className="h-8 print:h-9" />
+            <p className="text-center">
+              <span className="font-bold border-b border-black text-black pb-0.5 inline-block">
+                Guspita Karleni, S.Si
+              </span>
+            </p>
+            <p className="text-[10px] print:text-[7.5pt] mt-0.5 font-medium text-black text-center">NIP. 19970806 202521 2039</p>
+          </div>
         </div>
       </div>
     );
@@ -564,15 +598,17 @@ export default function KartuKendaliPage() {
 
   const filteredDaftarPersediaan = (
     barangList.length < 80
-      ? availableBarangList.map((b, idx) => ({
-          nomor: idx + 1,
-          kode: b.kode_barang,
-          uraian: b.nama_barang,
-          saldo_1_januari: b.stok,
-          masuk: 0,
-          keluar: 0,
-          satuan: b.satuan?.nama_satuan || 'Buah',
-        }))
+      ? availableBarangList
+          .filter(b => Number(b.stok || 0) > 0)
+          .map((b, idx) => ({
+            nomor: idx + 1,
+            kode: b.kode_barang,
+            uraian: b.nama_barang,
+            saldo_1_januari: b.stok,
+            masuk: 0,
+            keluar: 0,
+            satuan: b.satuan?.nama_satuan || 'Buah',
+          }))
       : DATA_DAFTAR_PERSEDIAAN_PDF1
           .filter(item => (item.saldo_1_januari + item.masuk - item.keluar) > 0)
           .map((item, idx) => ({ ...item, nomor: idx + 1 }))
@@ -1225,12 +1261,17 @@ export default function KartuKendaliPage() {
                   size: ${(previewMode === 'kartu' || previewMode === 'batch') ? 'A4 landscape' : 'A4 portrait'} !important;
                   margin: ${(previewMode === 'kartu' || previewMode === 'batch') ? '4mm 6mm 4mm 6mm' : '6mm 8mm 6mm 8mm'} !important;
                 }
+                body {
+                  -webkit-print-color-adjust: exact !important;
+                  print-color-adjust: exact !important;
+                }
                 .card-print-page {
                   page-break-after: always !important;
                   break-after: page !important;
                   page-break-inside: avoid !important;
                   break-inside: avoid !important;
                   width: 100% !important;
+                  box-sizing: border-box !important;
                 }
                 .card-print-page:last-child {
                   page-break-after: avoid !important;
@@ -1239,6 +1280,19 @@ export default function KartuKendaliPage() {
                 #print-area {
                   padding: 0 !important;
                   width: 100% !important;
+                  page-break-inside: avoid !important;
+                  break-inside: avoid !important;
+                }
+                table {
+                  page-break-inside: auto !important;
+                }
+                tr {
+                  page-break-inside: avoid !important;
+                  break-inside: avoid !important;
+                }
+                .avoid-break {
+                  page-break-inside: avoid !important;
+                  break-inside: avoid !important;
                 }
               }
             `}} />
@@ -1287,29 +1341,31 @@ export default function KartuKendaliPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {DATA_DAFTAR_PERSEDIAAN_PDF1.map((item) => {
-                        const sisa = item.saldo_1_januari + item.masuk - item.keluar;
-                        return (
-                          <tr key={item.nomor} className="text-black">
-                            <td className="border border-black px-1 py-0.5 text-center">{item.nomor}</td>
-                            <td className="border border-black px-1.5 py-0.5 text-center font-mono">{item.kode}</td>
-                            <td className="border border-black px-2 py-0.5">{item.uraian}</td>
-                            <td className="border border-black px-2 py-0.5 text-center font-semibold">
-                              {formatNumber(item.saldo_1_januari)}
-                            </td>
-                            <td className="border border-black px-1.5 py-0.5 text-center">
-                              {item.masuk > 0 ? formatNumber(item.masuk) : '-'}
-                            </td>
-                            <td className="border border-black px-1.5 py-0.5 text-center font-semibold">
-                              {item.keluar > 0 ? formatNumber(item.keluar) : '0'}
-                            </td>
-                            <td className="border border-black px-1.5 py-0.5 text-center">{item.satuan}</td>
-                            <td className="border border-black px-2 py-0.5 text-center font-bold">
-                              {formatNumber(sisa)}
-                            </td>
-                          </tr>
-                        );
-                      })}
+                      {DATA_DAFTAR_PERSEDIAAN_PDF1
+                        .filter(item => (item.saldo_1_januari + item.masuk - item.keluar) > 0)
+                        .map((item, idx) => {
+                          const sisa = item.saldo_1_januari + item.masuk - item.keluar;
+                          return (
+                            <tr key={item.nomor} className="text-black">
+                              <td className="border border-black px-1 py-0.5 text-center">{idx + 1}</td>
+                              <td className="border border-black px-1.5 py-0.5 text-center font-mono">{item.kode}</td>
+                              <td className="border border-black px-2 py-0.5">{item.uraian}</td>
+                              <td className="border border-black px-2 py-0.5 text-center font-semibold">
+                                {formatNumber(item.saldo_1_januari)}
+                              </td>
+                              <td className="border border-black px-1.5 py-0.5 text-center">
+                                {item.masuk > 0 ? formatNumber(item.masuk) : '-'}
+                              </td>
+                              <td className="border border-black px-1.5 py-0.5 text-center font-semibold">
+                                {item.keluar > 0 ? formatNumber(item.keluar) : '0'}
+                              </td>
+                              <td className="border border-black px-1.5 py-0.5 text-center">{item.satuan}</td>
+                              <td className="border border-black px-2 py-0.5 text-center font-bold">
+                                {formatNumber(sisa)}
+                              </td>
+                            </tr>
+                          );
+                        })}
                     </tbody>
                   </table>
 
