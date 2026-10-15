@@ -884,16 +884,23 @@ export default function TransaksiKeluarPage() {
               {/* KOP SURAT RESMI BPS */}
               <KopSurat />
 
-              {/* No & Tahun (Sesuai Posisi Kanan Atas di Gambar - Pastikan 1 Baris Penuh) */}
+              {/* No & Tahun (Sesuai Posisi Kanan Atas di Gambar - Pastikan 1 Baris Penuh Tanpa Wrap) */}
               <div className="flex justify-end mb-4 print:mb-4 text-xs print:text-[11pt]">
-                <div className="w-64 print:w-72 text-black">
-                  <div className="flex items-center">
-                    <span className="w-16 font-semibold shrink-0">No</span>
-                    <span className="font-semibold whitespace-nowrap">: {showPrintPreview.no_dokumen}</span>
+                <div className="inline-block w-auto min-w-[280px] text-black">
+                  <div className="flex items-center justify-start gap-1">
+                    <span className="w-14 font-semibold shrink-0">No</span>
+                    <span
+                      className="font-semibold whitespace-nowrap inline-block"
+                      style={{ whiteSpace: 'nowrap', wordBreak: 'keep-all', hyphens: 'none' }}
+                    >
+                      : {(showPrintPreview.no_dokumen || '').replace(/-/g, '\u2011')}
+                    </span>
                   </div>
-                  <div className="flex items-center">
-                    <span className="w-16 font-semibold shrink-0">Tahun</span>
-                    <span className="font-semibold whitespace-nowrap">: {new Date(tglCetakDokumen || showPrintPreview.tanggal).getFullYear() || 2026}</span>
+                  <div className="flex items-center justify-start gap-1">
+                    <span className="w-14 font-semibold shrink-0">Tahun</span>
+                    <span className="font-semibold whitespace-nowrap">
+                      : {new Date(tglCetakDokumen || showPrintPreview.tanggal).getFullYear() || 2026}
+                    </span>
                   </div>
                 </div>
               </div>

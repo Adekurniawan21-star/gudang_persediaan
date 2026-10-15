@@ -800,19 +800,29 @@ export default function TransaksiMasukPage() {
 
               {/* Metadata Surat Penerimaan — Rapi, Tidak Patah/Wrap Sebaris Penuh */}
               <div className="grid grid-cols-12 gap-x-4 gap-y-2 text-xs print:text-[11pt] mb-6 print:mb-6 text-black">
-                <div className="col-span-7 flex items-center">
+                <div className="col-span-8 flex items-center">
                   <span className="text-gray-700 w-32 print:w-36 shrink-0">No. Dokumen</span>
-                  <span className="font-semibold whitespace-nowrap">: {showPrintPreview.no_dokumen}</span>
+                  <span
+                    className="font-semibold whitespace-nowrap"
+                    style={{ whiteSpace: 'nowrap', wordBreak: 'keep-all', hyphens: 'none' }}
+                  >
+                    : {(showPrintPreview.no_dokumen || '').replace(/-/g, '\u2011')}
+                  </span>
                 </div>
-                <div className="col-span-5 flex items-center">
+                <div className="col-span-4 flex items-center">
                   <span className="text-gray-700 w-28 print:w-32 shrink-0">Tanggal Surat</span>
                   <span className="font-semibold whitespace-nowrap">: {formatDate(showPrintPreview.tanggal)}</span>
                 </div>
-                <div className="col-span-7 flex items-center">
+                <div className="col-span-8 flex items-center">
                   <span className="text-gray-700 w-32 print:w-36 shrink-0">Sumber Barang</span>
-                  <span className="font-semibold whitespace-nowrap">: {showPrintPreview.sumber === 'Pembelian' ? 'Pembelian (Pengadaan Kantor)' : 'Transfer Masuk dari BPS Provinsi'}</span>
+                  <span
+                    className="font-semibold whitespace-nowrap"
+                    style={{ whiteSpace: 'nowrap', wordBreak: 'keep-all', hyphens: 'none' }}
+                  >
+                    : {showPrintPreview.sumber === 'Pembelian' ? 'Pembelian (Pengadaan Kantor)' : 'Transfer Masuk dari BPS Provinsi'}
+                  </span>
                 </div>
-                <div className="col-span-5 flex items-center">
+                <div className="col-span-4 flex items-center">
                   <span className="text-gray-700 w-28 print:w-32 shrink-0">
                     {showPrintPreview.sumber === 'Pembelian' ? 'No. Nota' : 'No. BAST'}
                   </span>
