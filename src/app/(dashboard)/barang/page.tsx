@@ -11,6 +11,13 @@ import { mockBarang, mockTransaksiKeluar } from '@/lib/mock-data';
 import { TIM_PEMOHON_LIST } from '@/types';
 import type { Barang, TransaksiKeluar } from '@/types';
 import { formatNumber, cn } from '@/lib/utils';
+import {
+  fetchAndSyncBarang,
+  pushBarang,
+  deleteBarangRemote,
+  updateBarangStockRemote,
+  pushTransaksiKeluar,
+} from '@/lib/sync-service';
 
 export default function BarangPage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -163,6 +170,24 @@ export default function BarangPage() {
         console.error(e);
       }
     }
+
+    // Tarik data barang resmi terbaru dari Cloud Database Supabase
+    fetchAndSyncBarang().then((cloudBarang) => {
+      if (cloudBarang && cloudBarang.length > 0) {
+        setBarangList(cloudBarang);
+      }
+    });
+
+    // Polling sinkronisasi real-time setiap 7 detik
+    const syncInterval = setInterval(() => {
+      fetchAndSyncBarang().then((cloudBarang) => {
+        if (cloudBarang && cloudBarang.length > 0) {
+          setBarangList(cloudBarang);
+        }
+      });
+    }, 7000);
+
+    return () => clearInterval(syncInterval);
   }, []);
 
   const handleOpenAddBarang = () => {
@@ -202,9 +227,10 @@ export default function BarangPage() {
 
     let updatedList: Barang[];
     if (editItem) {
+      let targetObj: Barang | undefined;
       updatedList = barangList.map((b) => {
         if (b.id === editItem.id) {
-          return {
+          const u: Barang = {
             ...b,
             nama_barang: formNamaBarang.trim(),
             kode_barang: finalKode,
@@ -230,9 +256,14 @@ export default function BarangPage() {
               created_at: '',
             },
           };
+          targetObj = u;
+          return u;
         }
         return b;
       });
+      if (targetObj) {
+        pushBarang(targetObj);
+      }
       setNotification({
         type: 'success',
         message: `Data barang "${formNamaBarang.trim()}" berhasil diperbarui!`,
@@ -270,6 +301,7 @@ export default function BarangPage() {
         },
       };
       updatedList = [newItem, ...barangList];
+      pushBarang(newItem);
       setNotification({
         type: 'success',
         message: `Barang "${formNamaBarang.trim()}" berhasil ditambahkan ke inventaris!`,
@@ -285,9 +317,11 @@ export default function BarangPage() {
   const confirmDeleteBarang = () => {
     if (!deleteCandidate) return;
     const targetName = deleteCandidate.nama_barang;
+    const targetId = deleteCandidate.id;
     const updated = barangList.filter((b) => b.id !== deleteCandidate.id);
     setBarangList(updated);
     localStorage.setItem('sipersedia_barang_list', JSON.stringify(updated));
+    deleteBarangRemote(targetId);
     setDeleteCandidate(null);
     setNotification({
       type: 'info',
@@ -397,6 +431,10 @@ export default function BarangPage() {
 
     const updatedTrx = [newTrx, ...existingTrx];
     localStorage.setItem('sipersedia_transaksi_keluar', JSON.stringify(updatedTrx));
+
+    // Kirim transaksi ke cloud database secara real-time
+    pushTransaksiKeluar(newTrx);
+    updateBarangStockRemote(quickRequestItem.id, Math.max(0, quickRequestItem.stok - Number(quickRequestJumlah)));
 
     // Update sisa stok lokal dan localStorage
     setBarangList((prev) => {

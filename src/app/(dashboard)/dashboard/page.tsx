@@ -23,6 +23,11 @@ import StatsCard from '@/components/StatsCard';
 import { mockDashboardStats, mockChartData, mockBarang, mockTransaksiKeluar } from '@/lib/mock-data';
 import type { Barang, TransaksiMasuk, TransaksiKeluar } from '@/types';
 import { formatCurrency, formatNumber, formatDateShort, getStokStatus, cn } from '@/lib/utils';
+import {
+  fetchAndSyncBarang,
+  fetchAndSyncTransaksiKeluar,
+  fetchAndSyncTransaksiMasuk,
+} from '@/lib/sync-service';
 
 export default function DashboardPage() {
   const [currentUser, setCurrentUser] = useState<{
@@ -75,6 +80,36 @@ export default function DashboardPage() {
         if (Array.isArray(parsed)) setTransaksiKeluarList(parsed);
       } catch (e) {}
     }
+
+    // Sinkronisasi otomatis data terbaru dari cloud
+    let curBarang = mockBarang;
+    fetchAndSyncBarang().then((bData) => {
+      if (bData && bData.length > 0) {
+        curBarang = bData;
+        setBarangList(bData);
+      }
+    });
+    fetchAndSyncTransaksiMasuk(curBarang).then((mData) => {
+      if (mData) setTransaksiMasukList(mData);
+    });
+    fetchAndSyncTransaksiKeluar(curBarang).then((kData) => {
+      if (kData) setTransaksiKeluarList(kData);
+    });
+
+    // Polling setiap 7 detik
+    const syncInterval = setInterval(() => {
+      fetchAndSyncBarang().then((bData) => {
+        if (bData && bData.length > 0) setBarangList(bData);
+      });
+      fetchAndSyncTransaksiMasuk(curBarang).then((mData) => {
+        if (mData) setTransaksiMasukList(mData);
+      });
+      fetchAndSyncTransaksiKeluar(curBarang).then((kData) => {
+        if (kData) setTransaksiKeluarList(kData);
+      });
+    }, 7000);
+
+    return () => clearInterval(syncInterval);
   }, []);
 
   const totalBarang = barangList.length;

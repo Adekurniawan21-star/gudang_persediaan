@@ -10,6 +10,11 @@ import { mockBarang, mockTransaksiMasuk, mockTransaksiKeluar } from '@/lib/mock-
 import type { Barang, TransaksiMasuk, TransaksiKeluar } from '@/types';
 import { cn, formatNumber, getMonthName, getTeksBeritaAcaraOpname, formatTanggalTandaTangan } from '@/lib/utils';
 import KopSurat from '@/components/KopSurat';
+import {
+  fetchAndSyncBarang,
+  fetchAndSyncTransaksiKeluar,
+  fetchAndSyncTransaksiMasuk,
+} from '@/lib/sync-service';
 
 export default function LaporanPage() {
   // Default difokuskan ke Bulan Berjalan (Oktober 2026)
@@ -70,6 +75,21 @@ export default function LaporanPage() {
         if (Array.isArray(p)) setTransaksiKeluarList(p);
       } catch (e) {}
     }
+
+    // Sinkronisasi data cloud terbaru
+    let curBarang = barangList;
+    fetchAndSyncBarang().then((bData) => {
+      if (bData && bData.length > 0) {
+        curBarang = bData;
+        setBarangList(bData);
+      }
+    });
+    fetchAndSyncTransaksiKeluar(curBarang).then((kData) => {
+      if (kData) setTransaksiKeluarList(kData);
+    });
+    fetchAndSyncTransaksiMasuk(curBarang).then((mData) => {
+      if (mData) setTransaksiMasukList(mData);
+    });
   }, []);
 
   // Hitung Data Rekapitulasi sesuai bulan dan transaksi aktif

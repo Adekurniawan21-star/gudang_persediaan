@@ -13,7 +13,9 @@ import KopSurat from '@/components/KopSurat';
 import {
   fetchAndSyncTransaksiKeluar,
   pushTransaksiKeluar,
-  deleteTransaksiKeluarRemote
+  deleteTransaksiKeluarRemote,
+  fetchAndSyncBarang,
+  updateBarangStockRemote,
 } from '@/lib/sync-service';
 
 interface FormItem {
@@ -92,25 +94,33 @@ export default function TransaksiKeluarPage() {
       }
     }
 
+    // Ambil data barang terbaru dari cloud jika tersedia
+    fetchAndSyncBarang().then((cloudBarang) => {
+      if (cloudBarang && cloudBarang.length > 0) {
+        loadedBarang = cloudBarang;
+        setBarangList(cloudBarang);
+      }
+    });
+
     // Sinkronisasi otomatis data transaksi dari Cloud Database agar semua user/pegawai tersambung
     const doSync = async () => {
       setIsSyncing(true);
       const remoteData = await fetchAndSyncTransaksiKeluar(loadedBarang);
-      if (remoteData && remoteData.length > 0) {
+      if (remoteData) {
         setTransaksiList(remoteData);
       }
       setIsSyncing(false);
     };
     doSync();
 
-    // Polling sync berkala setiap 8 detik agar input dari teman/pegawai lain otomatis masuk ke admin
+    // Polling sync berkala setiap 5 detik agar input dari teman/pegawai lain otomatis masuk ke admin
     const syncInterval = setInterval(() => {
       fetchAndSyncTransaksiKeluar(loadedBarang).then((synced) => {
-        if (synced && synced.length > 0) {
+        if (synced) {
           setTransaksiList(synced);
         }
       });
-    }, 8000);
+    }, 5000);
 
     // Handle query params from Katalog (e.g. ?barang_id=1&action=minta)
     if (typeof window !== 'undefined') {
@@ -297,12 +307,14 @@ export default function TransaksiKeluarPage() {
       // Kirim transaksi ke cloud database agar langsung muncul di laptop admin & pegawai lain
       pushTransaksiKeluar(newTrx);
 
-      // Kurangi stok master barang sesuai jumlah barang keluar
+      // Kurangi stok master barang sesuai jumlah barang keluar (Lokal & Cloud)
       let nextBarang = [...barangList];
       preparedItems.forEach(pItem => {
         nextBarang = nextBarang.map(b => {
           if (b.id === pItem.id_barang) {
-            return { ...b, stok: Math.max(0, b.stok - pItem.jumlah) };
+            const newStock = Math.max(0, b.stok - pItem.jumlah);
+            updateBarangStockRemote(b.id, newStock);
+            return { ...b, stok: newStock };
           }
           return b;
         });

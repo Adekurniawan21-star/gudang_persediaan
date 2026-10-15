@@ -9,6 +9,13 @@ import { mockTransaksiMasuk, mockBarang } from '@/lib/mock-data';
 import type { TransaksiMasuk, SumberBarangMasuk, Barang } from '@/types';
 import { cn, formatCurrency, formatDateShort, formatDate, formatTanggalTandaTangan } from '@/lib/utils';
 import KopSurat from '@/components/KopSurat';
+import {
+  fetchAndSyncTransaksiMasuk,
+  pushTransaksiMasuk,
+  deleteTransaksiMasukRemote,
+  fetchAndSyncBarang,
+  updateBarangStockRemote,
+} from '@/lib/sync-service';
 
 interface FormMasukItem {
   id_barang: number;
@@ -70,18 +77,42 @@ export default function TransaksiMasukPage() {
       localStorage.setItem('sipersedia_transaksi_masuk', JSON.stringify(mockTransaksiMasuk));
     }
 
+    let currentBarang = barangList;
     // Load barang list
     const savedBarang = localStorage.getItem('sipersedia_barang_list');
     if (savedBarang !== null) {
       try {
         const parsed = JSON.parse(savedBarang);
         if (Array.isArray(parsed)) {
+          currentBarang = parsed;
           setBarangList(parsed);
         }
       } catch (e) {
         console.error(e);
       }
     }
+
+    // Ambil data barang dari cloud
+    fetchAndSyncBarang().then((cloudBarang) => {
+      if (cloudBarang && cloudBarang.length > 0) {
+        currentBarang = cloudBarang;
+        setBarangList(cloudBarang);
+      }
+    });
+
+    // Sinkronisasi data transaksi masuk dari cloud
+    fetchAndSyncTransaksiMasuk(currentBarang).then((synced) => {
+      if (synced) setTransaksiList(synced);
+    });
+
+    // Polling sync transaksi masuk setiap 6 detik
+    const syncInterval = setInterval(() => {
+      fetchAndSyncTransaksiMasuk(currentBarang).then((synced) => {
+        if (synced) setTransaksiList(synced);
+      });
+    }, 6000);
+
+    return () => clearInterval(syncInterval);
   }, []);
 
   const showToast = (message: string, type: 'success' | 'info' = 'success') => {
@@ -281,8 +312,15 @@ export default function TransaksiMasukPage() {
         created_at: new Date().toISOString(),
       };
       updatedList = [newTrx, ...transaksiList];
+      // Simpan transaksi masuk ke Cloud Database
+      pushTransaksiMasuk(newTrx);
       showToast(`Dokumen transaksi masuk ${newTrx.no_dokumen} (${preparedItems.length} item) berhasil dicatat!`, 'success');
     }
+
+    // Update stok di Cloud Database
+    nextBarang.forEach(b => {
+      updateBarangStockRemote(b.id, b.stok);
+    });
 
     setBarangList(nextBarang);
     localStorage.setItem('sipersedia_barang_list', JSON.stringify(nextBarang));
@@ -311,6 +349,8 @@ export default function TransaksiMasukPage() {
     const updated = transaksiList.filter(t => t.id !== deleteCandidate.id);
     setTransaksiList(updated);
     localStorage.setItem('sipersedia_transaksi_masuk', JSON.stringify(updated));
+    // Hapus juga di cloud database
+    deleteTransaksiMasukRemote(targetDoc);
     setDeleteCandidate(null);
     showToast(`Transaksi ${targetDoc} berhasil dihapus & stok disesuaikan.`, 'info');
   };

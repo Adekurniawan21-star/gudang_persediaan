@@ -13,6 +13,11 @@ import { TIM_PEMOHON_LIST } from '@/types';
 import type { KartuKendali, Barang, TransaksiKeluar, TransaksiMasuk } from '@/types';
 import { cn, formatDateShort, formatNumber, formatTanggalTandaTangan } from '@/lib/utils';
 import KopSurat from '@/components/KopSurat';
+import {
+  fetchAndSyncBarang,
+  fetchAndSyncTransaksiKeluar,
+  fetchAndSyncTransaksiMasuk,
+} from '@/lib/sync-service';
 
 const BULAN_NAMES = [
   'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -85,6 +90,21 @@ export default function KartuKendaliPage() {
         if (Array.isArray(parsed)) setTransaksiMasukList(parsed);
       } catch (e) {}
     }
+
+    // Sinkronisasi data cloud terbaru
+    let curBarang = barangList;
+    fetchAndSyncBarang().then((bData) => {
+      if (bData && bData.length > 0) {
+        curBarang = bData;
+        setBarangList(bData);
+      }
+    });
+    fetchAndSyncTransaksiKeluar(curBarang).then((kData) => {
+      if (kData) setTransaksiKeluarList(kData);
+    });
+    fetchAndSyncTransaksiMasuk(curBarang).then((mData) => {
+      if (mData) setTransaksiMasukList(mData);
+    });
   }, [refreshKey]);
 
   const activeBarang = barangList.find(b => b.id === selectedBarangId) || barangList[0];

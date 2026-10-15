@@ -47,7 +47,7 @@ export async function POST(req: Request) {
 
     const { data, error } = await supabase
       .from('transaksi_keluar')
-      .insert(payload)
+      .upsert(payload, { onConflict: 'no_dokumen' })
       .select();
 
     if (error) {
@@ -65,8 +65,18 @@ export async function DELETE(req: Request) {
     const { searchParams } = new URL(req.url);
     const no_dokumen = searchParams.get('no_dokumen');
     const id = searchParams.get('id');
+    const clear_all = searchParams.get('clear_all');
 
     const supabase = getServiceSupabase();
+
+    if (clear_all === 'true') {
+      const { error } = await supabase.from('transaksi_keluar').delete().neq('id', 0);
+      if (error) {
+        return NextResponse.json({ error: error.message }, { status: 400 });
+      }
+      return NextResponse.json({ success: true, message: 'Semua transaksi keluar berhasil dikosongkan' });
+    }
+
     let query = supabase.from('transaksi_keluar').delete();
 
     if (no_dokumen) {
