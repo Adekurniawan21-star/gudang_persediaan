@@ -270,7 +270,7 @@ export default function TransaksiKeluarPage() {
         nip_pj: timObj.nip_pj,
         jenis_pengeluaran: formJenisPengeluaran,
         items: preparedItems,
-        keterangan: keteranganPermintaan,
+        keterangan: (keteranganPermintaan || '').trim(),
       };
       const updatedList = transaksiList.map(t => t.id === editItem.id ? updatedTrx : t);
       setTransaksiList(updatedList);
@@ -296,7 +296,7 @@ export default function TransaksiKeluarPage() {
         nip_pj: timObj.nip_pj,
         jenis_pengeluaran: formJenisPengeluaran,
         items: preparedItems,
-        keterangan: keteranganPermintaan,
+        keterangan: (keteranganPermintaan || '').trim(),
         created_by: 'usr-001',
         created_at: new Date().toISOString(),
       };

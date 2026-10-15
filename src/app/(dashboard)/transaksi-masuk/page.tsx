@@ -823,22 +823,22 @@ export default function TransaksiMasukPage() {
                 </div>
 
                 {/* Sisi Kanan: Tanggal Surat & No. Nota — Titik Dua Sejajar Tegak Lurus & Angka 2026 Utuh */}
-                <div className="space-y-2">
+                <div className="space-y-2 shrink-0 pr-2 text-left">
                   <div className="flex items-center whitespace-nowrap">
-                    <span className="text-gray-700 w-28 shrink-0">Tanggal Surat</span>
+                    <span className="text-gray-700 w-32 shrink-0">Tanggal Surat</span>
                     <span
-                      className="font-semibold whitespace-nowrap"
+                      className="font-semibold whitespace-nowrap text-black"
                       style={{ whiteSpace: 'nowrap', wordBreak: 'keep-all', hyphens: 'none' }}
                     >
                       : {formatDate(showPrintPreview.tanggal)}
                     </span>
                   </div>
                   <div className="flex items-center whitespace-nowrap">
-                    <span className="text-gray-700 w-28 shrink-0">
+                    <span className="text-gray-700 w-32 shrink-0">
                       {showPrintPreview.sumber === 'Pembelian' ? 'No. Nota' : 'No. BAST'}
                     </span>
                     <span
-                      className="font-semibold whitespace-nowrap"
+                      className="font-semibold whitespace-nowrap text-black"
                       style={{ whiteSpace: 'nowrap', wordBreak: 'keep-all', hyphens: 'none' }}
                     >
                       : {showPrintPreview.no_referensi || '-'}
