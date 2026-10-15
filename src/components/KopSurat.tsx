@@ -8,7 +8,7 @@ interface KopSuratProps {
 export default function KopSurat({ className = '', showLogo = true }: KopSuratProps) {
   return (
     <div className={`w-full pb-3 mb-5 border-b-[2.5px] border-black text-black ${className}`}>
-      <div className="flex items-center justify-center gap-3.5">
+      <div className="flex items-center justify-start gap-4">
         {showLogo && (
           <img
             src="/images/logo-bps.svg"
