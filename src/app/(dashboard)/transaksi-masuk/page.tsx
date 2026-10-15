@@ -798,35 +798,52 @@ export default function TransaksiMasukPage() {
                 BUKTI PENERIMAAN BARANG
               </h4>
 
-              {/* Metadata Surat Penerimaan — Rapi, Tidak Patah/Wrap Sebaris Penuh */}
-              <div className="grid grid-cols-12 gap-x-4 gap-y-2 text-xs print:text-[11pt] mb-6 print:mb-6 text-black">
-                <div className="col-span-8 flex items-center">
-                  <span className="text-gray-700 w-32 print:w-36 shrink-0">No. Dokumen</span>
-                  <span
-                    className="font-semibold whitespace-nowrap"
-                    style={{ whiteSpace: 'nowrap', wordBreak: 'keep-all', hyphens: 'none' }}
-                  >
-                    : {(showPrintPreview.no_dokumen || '').replace(/-/g, '\u2011')}
-                  </span>
+              {/* Metadata Surat Penerimaan — Rapi, Tidak Patah/Wrap & Pas di Kanan Tanpa Terpotong */}
+              <div className="flex justify-between items-start text-xs print:text-[11pt] mb-6 print:mb-6 text-black gap-4">
+                {/* Sisi Kiri: No. Dokumen & Sumber Barang */}
+                <div className="space-y-2">
+                  <div className="flex items-center">
+                    <span className="text-gray-700 w-32 shrink-0">No. Dokumen</span>
+                    <span
+                      className="font-semibold whitespace-nowrap"
+                      style={{ whiteSpace: 'nowrap', wordBreak: 'keep-all', hyphens: 'none' }}
+                    >
+                      : {(showPrintPreview.no_dokumen || '').replace(/-/g, '\u2011')}
+                    </span>
+                  </div>
+                  <div className="flex items-center">
+                    <span className="text-gray-700 w-32 shrink-0">Sumber Barang</span>
+                    <span
+                      className="font-semibold whitespace-nowrap"
+                      style={{ whiteSpace: 'nowrap', wordBreak: 'keep-all', hyphens: 'none' }}
+                    >
+                      : {showPrintPreview.sumber === 'Pembelian' ? 'Pembelian (Pengadaan Kantor)' : 'Transfer Masuk dari BPS Provinsi'}
+                    </span>
+                  </div>
                 </div>
-                <div className="col-span-4 flex items-center">
-                  <span className="text-gray-700 w-28 print:w-32 shrink-0">Tanggal Surat</span>
-                  <span className="font-semibold whitespace-nowrap">: {formatDate(showPrintPreview.tanggal)}</span>
-                </div>
-                <div className="col-span-8 flex items-center">
-                  <span className="text-gray-700 w-32 print:w-36 shrink-0">Sumber Barang</span>
-                  <span
-                    className="font-semibold whitespace-nowrap"
-                    style={{ whiteSpace: 'nowrap', wordBreak: 'keep-all', hyphens: 'none' }}
-                  >
-                    : {showPrintPreview.sumber === 'Pembelian' ? 'Pembelian (Pengadaan Kantor)' : 'Transfer Masuk dari BPS Provinsi'}
-                  </span>
-                </div>
-                <div className="col-span-4 flex items-center">
-                  <span className="text-gray-700 w-28 print:w-32 shrink-0">
-                    {showPrintPreview.sumber === 'Pembelian' ? 'No. Nota' : 'No. BAST'}
-                  </span>
-                  <span className="font-semibold whitespace-nowrap">: {showPrintPreview.no_referensi || '-'}</span>
+
+                {/* Sisi Kanan: Tanggal Surat & No. Nota — Pas Rapat di Kanan Tanpa Terpotong */}
+                <div className="space-y-2 text-right">
+                  <div className="flex items-center justify-end">
+                    <span className="text-gray-700 w-28 shrink-0 text-left">Tanggal Surat</span>
+                    <span
+                      className="font-semibold whitespace-nowrap text-left"
+                      style={{ whiteSpace: 'nowrap', wordBreak: 'keep-all', hyphens: 'none' }}
+                    >
+                      : {formatDate(showPrintPreview.tanggal)}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-end">
+                    <span className="text-gray-700 w-28 shrink-0 text-left">
+                      {showPrintPreview.sumber === 'Pembelian' ? 'No. Nota' : 'No. BAST'}
+                    </span>
+                    <span
+                      className="font-semibold whitespace-nowrap text-left"
+                      style={{ whiteSpace: 'nowrap', wordBreak: 'keep-all', hyphens: 'none' }}
+                    >
+                      : {showPrintPreview.no_referensi || '-'}
+                    </span>
+                  </div>
                 </div>
               </div>
 

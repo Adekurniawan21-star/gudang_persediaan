@@ -884,19 +884,19 @@ export default function TransaksiKeluarPage() {
               {/* KOP SURAT RESMI BPS */}
               <KopSurat />
 
-              {/* No & Tahun (Sesuai Posisi Kanan Atas di Gambar - Pastikan 1 Baris Penuh Tanpa Wrap) */}
+              {/* No & Tahun — Pas Rapat di Garis Kanan & Tetap 1 Baris Penuh */}
               <div className="flex justify-end mb-4 print:mb-4 text-xs print:text-[11pt]">
-                <div className="inline-block w-auto min-w-[280px] text-black">
-                  <div className="flex items-center justify-start gap-1">
+                <div className="text-black">
+                  <div className="flex items-center justify-start gap-1.5 whitespace-nowrap">
                     <span className="w-14 font-semibold shrink-0">No</span>
                     <span
-                      className="font-semibold whitespace-nowrap inline-block"
+                      className="font-semibold whitespace-nowrap"
                       style={{ whiteSpace: 'nowrap', wordBreak: 'keep-all', hyphens: 'none' }}
                     >
                       : {(showPrintPreview.no_dokumen || '').replace(/-/g, '\u2011')}
                     </span>
                   </div>
-                  <div className="flex items-center justify-start gap-1">
+                  <div className="flex items-center justify-start gap-1.5 whitespace-nowrap">
                     <span className="w-14 font-semibold shrink-0">Tahun</span>
                     <span className="font-semibold whitespace-nowrap">
                       : {new Date(tglCetakDokumen || showPrintPreview.tanggal).getFullYear() || 2026}
