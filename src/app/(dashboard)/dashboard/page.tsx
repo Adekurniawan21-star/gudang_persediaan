@@ -47,16 +47,14 @@ export default function DashboardPage() {
     }
 
     const b = localStorage.getItem('sipersedia_barang_list');
-    if (b) {
+    if (b !== null) {
       try {
         const parsed = JSON.parse(b);
-        if (Array.isArray(parsed) && parsed.length > 0) {
+        if (Array.isArray(parsed)) {
           setBarangList(parsed);
-        } else {
-          setBarangList(mockBarang);
         }
       } catch (e) {
-        setBarangList(mockBarang);
+        setBarangList([]);
       }
     } else {
       setBarangList(mockBarang);

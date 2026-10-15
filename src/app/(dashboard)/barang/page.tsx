@@ -19,7 +19,18 @@ export default function BarangPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(6); // Default 6 agar 11 item menghasilkan 2 halaman persis screenshot
   const [userRole, setUserRole] = useState<'admin' | 'user'>('admin');
-  const [barangList, setBarangList] = useState<Barang[]>([...mockBarang]);
+  const [barangList, setBarangList] = useState<Barang[]>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('sipersedia_barang_list');
+      if (stored !== null) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) return parsed;
+        } catch {}
+      }
+    }
+    return mockBarang;
+  });
 
   // Modal Admin Tambah/Edit
   const [showModal, setShowModal] = useState(false);
@@ -96,19 +107,17 @@ export default function BarangPage() {
 
     // Load barang dari localStorage jika ada
     const storedBarang = localStorage.getItem('sipersedia_barang_list');
-    if (storedBarang) {
+    if (storedBarang !== null) {
       try {
         const parsed = JSON.parse(storedBarang);
-        if (Array.isArray(parsed) && parsed.length > 0) {
+        if (Array.isArray(parsed)) {
           setBarangList(parsed);
-        } else {
-          setBarangList(mockBarang);
-          localStorage.setItem('sipersedia_barang_list', JSON.stringify(mockBarang));
         }
       } catch (e) {
         console.error(e);
       }
     } else {
+      // Hanya inisialisasi default jika memang belum ada data sama sekali di localStorage
       setBarangList(mockBarang);
       localStorage.setItem('sipersedia_barang_list', JSON.stringify(mockBarang));
     }

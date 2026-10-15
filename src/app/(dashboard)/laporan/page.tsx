@@ -33,16 +33,27 @@ export default function LaporanPage() {
   };
 
   // Dynamic Data Lists dari LocalStorage
-  const [barangList, setBarangList] = useState<Barang[]>([...mockBarang]);
+  const [barangList, setBarangList] = useState<Barang[]>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('sipersedia_barang_list');
+      if (stored !== null) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) return parsed;
+        } catch {}
+      }
+    }
+    return mockBarang;
+  });
   const [transaksiMasukList, setTransaksiMasukList] = useState<TransaksiMasuk[]>([...mockTransaksiMasuk]);
   const [transaksiKeluarList, setTransaksiKeluarList] = useState<TransaksiKeluar[]>([...mockTransaksiKeluar]);
 
   useEffect(() => {
     const bSaved = localStorage.getItem('sipersedia_barang_list');
-    if (bSaved) {
+    if (bSaved !== null) {
       try {
         const p = JSON.parse(bSaved);
-        if (Array.isArray(p) && p.length > 0) setBarangList(p);
+        if (Array.isArray(p)) setBarangList(p);
       } catch (e) {}
     }
     const mSaved = localStorage.getItem('sipersedia_transaksi_masuk');

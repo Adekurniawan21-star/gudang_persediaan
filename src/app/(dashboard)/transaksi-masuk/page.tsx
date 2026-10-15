@@ -18,7 +18,18 @@ interface FormMasukItem {
 
 export default function TransaksiMasukPage() {
   const [transaksiList, setTransaksiList] = useState<TransaksiMasuk[]>([...mockTransaksiMasuk]);
-  const [barangList, setBarangList] = useState<Barang[]>([...mockBarang]);
+  const [barangList, setBarangList] = useState<Barang[]>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('sipersedia_barang_list');
+      if (stored !== null) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) return parsed;
+        } catch {}
+      }
+    }
+    return mockBarang;
+  });
   const [showModal, setShowModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showPrintPreview, setShowPrintPreview] = useState<TransaksiMasuk | null>(null);
@@ -61,10 +72,10 @@ export default function TransaksiMasukPage() {
 
     // Load barang list
     const savedBarang = localStorage.getItem('sipersedia_barang_list');
-    if (savedBarang) {
+    if (savedBarang !== null) {
       try {
         const parsed = JSON.parse(savedBarang);
-        if (Array.isArray(parsed) && parsed.length > 0) {
+        if (Array.isArray(parsed)) {
           setBarangList(parsed);
         }
       } catch (e) {

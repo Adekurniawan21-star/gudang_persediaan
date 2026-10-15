@@ -43,18 +43,31 @@ export default function KartuKendaliPage() {
   const [refreshKey, setRefreshKey] = useState(0);
 
   // Dynamic Data Lists dari LocalStorage
-  const [barangList, setBarangList] = useState<Barang[]>([...mockBarang]);
+  const [barangList, setBarangList] = useState<Barang[]>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('sipersedia_barang_list');
+      if (stored !== null) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) return parsed;
+        } catch {}
+      }
+    }
+    return mockBarang;
+  });
   const [transaksiKeluarList, setTransaksiKeluarList] = useState<TransaksiKeluar[]>([...mockTransaksiKeluar]);
   const [transaksiMasukList, setTransaksiMasukList] = useState<TransaksiMasuk[]>([...mockTransaksiMasuk]);
 
   useEffect(() => {
     const bSaved = localStorage.getItem('sipersedia_barang_list');
-    if (bSaved) {
+    if (bSaved !== null) {
       try {
         const parsed = JSON.parse(bSaved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
+        if (Array.isArray(parsed)) {
           setBarangList(parsed);
-          setSelectedBarangId(prev => (parsed.some((b: Barang) => b.id === prev) ? prev : parsed[0].id));
+          if (parsed.length > 0) {
+            setSelectedBarangId(prev => (parsed.some((b: Barang) => b.id === prev) ? prev : parsed[0].id));
+          }
         }
       } catch (e) {}
     }

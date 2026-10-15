@@ -35,7 +35,18 @@ export default function TransaksiKeluarPage() {
 
   const [selectedTim, setSelectedTim] = useState('tim-sosial');
   const [formJenisPengeluaran, setFormJenisPengeluaran] = useState<JenisPengeluaran>('habis_pakai');
-  const [barangList, setBarangList] = useState<Barang[]>([...mockBarang]);
+  const [barangList, setBarangList] = useState<Barang[]>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('sipersedia_barang_list');
+      if (stored !== null) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) return parsed;
+        } catch {}
+      }
+    }
+    return mockBarang;
+  });
   const [formItems, setFormItems] = useState<FormItem[]>([
     { id_barang: mockBarang[0]?.id || 1, jumlah: 1, keterangan: '' }
   ]);
@@ -67,12 +78,12 @@ export default function TransaksiKeluarPage() {
     }
 
     // Load persisted barang list if any
-    let loadedBarang = [...mockBarang];
+    let loadedBarang = barangList;
     const savedBarang = localStorage.getItem('sipersedia_barang_list');
-    if (savedBarang) {
+    if (savedBarang !== null) {
       try {
         const parsed = JSON.parse(savedBarang);
-        if (Array.isArray(parsed) && parsed.length > 0) {
+        if (Array.isArray(parsed)) {
           loadedBarang = parsed;
           setBarangList(parsed);
         }
