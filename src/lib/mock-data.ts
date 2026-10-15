@@ -147,13 +147,93 @@ export const ALL_81_BARANG_BPS: Barang[] = SAMPLE_BARANG_BPS;
 // Data Barang Aktif
 export const mockBarang: Barang[] = SAMPLE_BARANG_BPS;
 
-// Data Contoh Transaksi Masuk Bersih (Kosong)
-export const SAMPLE_TRANSAKSI_MASUK: TransaksiMasuk[] = [];
-export const mockTransaksiMasuk: TransaksiMasuk[] = [];
+// Data Contoh Transaksi Masuk Simulasi
+export const SAMPLE_TRANSAKSI_MASUK: TransaksiMasuk[] = [
+  {
+    id: 1,
+    no_dokumen: 'BM-2026/08/001',
+    tanggal: '2026-08-10',
+    sumber: 'Pembelian',
+    no_referensi: 'BAST/008/VIII/2026',
+    items: [
+      { id_barang: 2, jumlah: 15, harga_satuan: 45000, keterangan: 'Kertas HVS Pengadaan Agustus', barang: SAMPLE_BARANG_BPS[1] },
+      { id_barang: 3, jumlah: 25, harga_satuan: 30000, keterangan: 'Ballpoint Standard Pengadaan Agustus', barang: SAMPLE_BARANG_BPS[2] },
+      { id_barang: 1, jumlah: 10, harga_satuan: 12000, keterangan: 'Stabillo Penanda Dokumen', barang: SAMPLE_BARANG_BPS[0] },
+    ],
+    keterangan: 'Pembelian Pengadaan ATK Rutin Kantor Bulan Agustus 2026',
+    created_by: 'admin-001',
+    created_at: '2026-08-10',
+  },
+  {
+    id: 2,
+    no_dokumen: 'BM-2026/09/001',
+    tanggal: '2026-09-05',
+    sumber: 'Transfer Masuk',
+    no_referensi: 'SP-1600/Persed/IX/2026',
+    items: [
+      { id_barang: 4, jumlah: 3, harga_satuan: 1250000, keterangan: 'Toner Printer HP LaserJet', barang: SAMPLE_BARANG_BPS[3] },
+      { id_barang: 6, jumlah: 20, harga_satuan: 65000, keterangan: 'Rompi Petugas Lapangan SE2026', barang: SAMPLE_BARANG_BPS[5] },
+    ],
+    keterangan: 'Transfer Masuk Perlengkapan dari BPS Provinsi Sumatera Selatan',
+    created_by: 'admin-001',
+    created_at: '2026-09-05',
+  },
+];
+export const mockTransaksiMasuk: TransaksiMasuk[] = SAMPLE_TRANSAKSI_MASUK;
 
-// Data Transaksi Keluar Bersih (Kosong untuk Pengujian)
-export const SAMPLE_TRANSAKSI_KELUAR: TransaksiKeluar[] = [];
-export const mockTransaksiKeluar: TransaksiKeluar[] = [];
+// Data Transaksi Keluar Simulasi
+export const SAMPLE_TRANSAKSI_KELUAR: TransaksiKeluar[] = [
+  {
+    id: 1,
+    no_dokumen: 'BK-2026/08/001',
+    tanggal: '2026-08-25',
+    tim_pemohon: 'tim-sosial',
+    nama_tim: 'Tim Statistik Sosial',
+    penanggung_jawab: 'FATONAH AMINI, S.Tr.Stat.',
+    nip_pj: '19990317 202104 2001',
+    items: [
+      { id_barang: 2, jumlah: 5, keterangan: 'Kegiatan Susenas & Sakernas', barang: SAMPLE_BARANG_BPS[1] },
+      { id_barang: 3, jumlah: 10, keterangan: 'Operasional Lapangan', barang: SAMPLE_BARANG_BPS[2] },
+      { id_barang: 1, jumlah: 3, keterangan: 'Editing & Coding Kuesioner', barang: SAMPLE_BARANG_BPS[0] },
+    ],
+    keterangan: 'Permintaan ATK untuk pelaksanaan survei lapangan Sakernas & Susenas',
+    created_by: 'usr-001',
+    created_at: '2026-08-25',
+  },
+  {
+    id: 2,
+    no_dokumen: 'BK-2026/08/002',
+    tanggal: '2026-08-27',
+    tim_pemohon: 'tim-umum',
+    nama_tim: 'Subbagian Umum',
+    penanggung_jawab: 'SURYA WAGITO, SST',
+    nip_pj: '19910814 201412 1001',
+    items: [
+      { id_barang: 5, jumlah: 4, keterangan: 'Pengarsipan Surat Masuk & Keluar', barang: SAMPLE_BARANG_BPS[4] },
+      { id_barang: 3, jumlah: 5, keterangan: 'Keperluan Administrasi Kantor', barang: SAMPLE_BARANG_BPS[2] },
+    ],
+    keterangan: 'Kebutuhan ATK dan kearsipan rutin Subbagian Umum',
+    created_by: 'admin-001',
+    created_at: '2026-08-27',
+  },
+  {
+    id: 3,
+    no_dokumen: 'BK-2026/09/001',
+    tanggal: '2026-09-15',
+    tim_pemohon: 'tim-ipds',
+    nama_tim: 'Tim IPDS',
+    penanggung_jawab: 'DANU ABDI SAPUTRA, S.Tr.Stat.',
+    nip_pj: '20000626 202201 1005',
+    items: [
+      { id_barang: 4, jumlah: 1, keterangan: 'Pencetakan Publikasi Daerah Dalam Angka', barang: SAMPLE_BARANG_BPS[3] },
+      { id_barang: 2, jumlah: 4, keterangan: 'Pencetakan Buku Analisis', barang: SAMPLE_BARANG_BPS[1] },
+    ],
+    keterangan: 'Permintaan toner dan kertas untuk publikasi statistik',
+    created_by: 'usr-004',
+    created_at: '2026-09-15',
+  },
+];
+export const mockTransaksiKeluar: TransaksiKeluar[] = SAMPLE_TRANSAKSI_KELUAR;
 
 export const mockDashboardStats: DashboardStats = {
   totalBarang: 6,
