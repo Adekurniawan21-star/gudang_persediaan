@@ -101,7 +101,11 @@ export default function LaporanPage() {
       if (savedCustom) {
         try {
           const parsed = JSON.parse(savedCustom);
-          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return parsed
+              .filter((item: RekapitulasiAgustusItem) => (item.total_persediaan || 0) > 0)
+              .map((item: RekapitulasiAgustusItem, idx: number) => ({ ...item, no: idx + 1 }));
+          }
         } catch (e) {}
       }
     }
@@ -240,7 +244,12 @@ export default function LaporanPage() {
           sisa: total,
         },
       };
-    });
+    })
+    .filter(item => item.total_persediaan > 0)
+    .map((item, idx) => ({
+      ...item,
+      no: idx + 1,
+    }));
   };
 
   // Data Rekapitulasi State
@@ -809,7 +818,7 @@ export default function LaporanPage() {
               @media print {
                 @page {
                   size: A4 portrait !important;
-                  margin: 4mm 6mm 4mm 6mm !important;
+                  margin: 8mm 10mm 8mm 10mm !important;
                 }
                 body {
                   -webkit-print-color-adjust: exact !important;
@@ -843,24 +852,24 @@ export default function LaporanPage() {
                 </p>
               </div>
 
-              {/* TAMPILAN CETAK TABEL 1: BERITA ACARA OPNAME PHISIK */}
+              {/* TAMPILAN CETAK TABEL 1: BERITA ACARA OPNAME PHISIK (Mengisi Halaman A4 Penuh) */}
               {activeTab === 'opname' && (
-                <table className="w-full border-collapse border border-black text-[9px] print:text-[8.5pt] mb-4 print:mb-2">
+                <table className="w-full border-collapse border border-black text-[9.5px] print:text-[10pt] mb-6 print:mb-6">
                   <thead>
                     <tr className="bg-gray-100 text-black font-bold text-center">
-                      <th className="border border-black px-1 py-1 w-7 print:w-6">No.</th>
-                      <th className="border border-black px-1.5 py-1 text-center">Uraian Barang</th>
-                      <th className="border border-black px-1 py-1 text-center w-12 print:w-11">Satuan</th>
-                      <th className="border border-black px-1 py-1 text-center w-16 print:w-14">{getSaldoAwalHeader(bulan, tahun)}</th>
-                      <th className="border border-black px-1 py-1 text-center w-14 print:w-12">Pembelian</th>
-                      <th className="border border-black px-1 py-1 text-center w-16 print:w-14">Transfer Masuk {getMonthName(bulan)}</th>
-                      <th className="border border-black px-1 py-1 text-center w-16 print:w-14">Pengeluaran {getMonthName(bulan)}</th>
-                      <th className="border border-black px-1 py-1 text-center w-16 print:w-14">Total Persediaan</th>
-                      <th className="border border-black px-1 py-1 text-center w-11 print:w-10">Barang Rusak</th>
-                      <th className="border border-black px-1 py-1 text-center w-11 print:w-10">Barang Usang</th>
+                      <th className="border border-black px-1.5 py-1.5 print:py-2 w-8 print:w-7">No.</th>
+                      <th className="border border-black px-2 py-1.5 print:py-2 text-center">Uraian Barang</th>
+                      <th className="border border-black px-1.5 py-1.5 print:py-2 text-center w-14 print:w-13">Satuan</th>
+                      <th className="border border-black px-1.5 py-1.5 print:py-2 text-center w-16 print:w-16">{getSaldoAwalHeader(bulan, tahun)}</th>
+                      <th className="border border-black px-1.5 py-1.5 print:py-2 text-center w-14 print:w-14">Pembelian</th>
+                      <th className="border border-black px-1.5 py-1.5 print:py-2 text-center w-16 print:w-16">Transfer Masuk {getMonthName(bulan)}</th>
+                      <th className="border border-black px-1.5 py-1.5 print:py-2 text-center w-16 print:w-16">Pengeluaran {getMonthName(bulan)}</th>
+                      <th className="border border-black px-1.5 py-1.5 print:py-2 text-center w-16 print:w-16">Total Persediaan</th>
+                      <th className="border border-black px-1.5 py-1.5 print:py-2 text-center w-12 print:w-11">Barang Rusak</th>
+                      <th className="border border-black px-1.5 py-1.5 print:py-2 text-center w-12 print:w-11">Barang Usang</th>
                     </tr>
-                    {/* Baris penomoran (1)-(10): Ramping, ketinggian minimal agar hemat ruang */}
-                    <tr className="bg-gray-50 text-[7px] print:text-[7pt] text-gray-700 font-semibold text-center h-3 leading-none">
+                    {/* Baris penomoran (1)-(10): Ramping */}
+                    <tr className="bg-gray-50 text-[7.5px] print:text-[8pt] text-gray-700 font-semibold text-center h-4 leading-none">
                       <th className="border border-black py-0.5 px-0.5 leading-none">(1)</th>
                       <th className="border border-black py-0.5 px-0.5 leading-none">(2)</th>
                       <th className="border border-black py-0.5 px-0.5 leading-none">(3)</th>
@@ -868,24 +877,24 @@ export default function LaporanPage() {
                       <th className="border border-black py-0.5 px-0.5 leading-none">(5)</th>
                       <th className="border border-black py-0.5 px-0.5 leading-none">(6)</th>
                       <th className="border border-black py-0.5 px-0.5 leading-none">(7)</th>
-                      <th className="border border-black py-0.5 px-0.5 whitespace-nowrap text-[6px] print:text-[6.5pt] tracking-tighter leading-none">(8)=(4)+(5)+(6)-(7)</th>
+                      <th className="border border-black py-0.5 px-0.5 whitespace-nowrap text-[6.5px] print:text-[7pt] tracking-tighter leading-none">(8)=(4)+(5)+(6)-(7)</th>
                       <th className="border border-black py-0.5 px-0.5 leading-none">(9)</th>
                       <th className="border border-black py-0.5 px-0.5 leading-none">(10)</th>
                     </tr>
                   </thead>
                   <tbody>
                     {reportData.map((item) => (
-                      <tr key={item.no} className="text-black leading-tight">
-                        <td className="border border-black px-1 py-0.5 print:py-[1.5px] text-center">{item.no}</td>
-                        <td className="border border-black px-1.5 py-0.5 print:py-[1.5px] font-medium">{item.uraian_barang}</td>
-                        <td className="border border-black px-1 py-0.5 print:py-[1.5px] text-center">{item.satuan}</td>
-                        <td className="border border-black px-1 py-0.5 print:py-[1.5px] text-center">{item.saldo_juli || '-'}</td>
-                        <td className="border border-black px-1 py-0.5 print:py-[1.5px] text-center">{item.pembelian || '-'}</td>
-                        <td className="border border-black px-1 py-0.5 print:py-[1.5px] text-center">{item.transfer_masuk || '-'}</td>
-                        <td className="border border-black px-1 py-0.5 print:py-[1.5px] text-center font-semibold">{item.pengeluaran || '-'}</td>
-                        <td className="border border-black px-1 py-0.5 print:py-[1.5px] text-center font-bold">{item.total_persediaan}</td>
-                        <td className="border border-black px-1 py-0.5 print:py-[1.5px] text-center">{item.barang_rusak || ''}</td>
-                        <td className="border border-black px-1 py-0.5 print:py-[1.5px] text-center">{item.barang_usang || ''}</td>
+                      <tr key={item.no} className="text-black leading-normal">
+                        <td className="border border-black px-1.5 py-1.5 print:py-2.5 text-center">{item.no}</td>
+                        <td className="border border-black px-2 py-1.5 print:py-2.5 font-medium">{item.uraian_barang}</td>
+                        <td className="border border-black px-1.5 py-1.5 print:py-2.5 text-center">{item.satuan}</td>
+                        <td className="border border-black px-1.5 py-1.5 print:py-2.5 text-center">{item.saldo_juli || '-'}</td>
+                        <td className="border border-black px-1.5 py-1.5 print:py-2.5 text-center">{item.pembelian || '-'}</td>
+                        <td className="border border-black px-1.5 py-1.5 print:py-2.5 text-center">{item.transfer_masuk || '-'}</td>
+                        <td className="border border-black px-1.5 py-1.5 print:py-2.5 text-center font-semibold">{item.pengeluaran || '-'}</td>
+                        <td className="border border-black px-1.5 py-1.5 print:py-2.5 text-center font-bold">{item.total_persediaan}</td>
+                        <td className="border border-black px-1.5 py-1.5 print:py-2.5 text-center">{item.barang_rusak || ''}</td>
+                        <td className="border border-black px-1.5 py-1.5 print:py-2.5 text-center">{item.barang_usang || ''}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -894,17 +903,17 @@ export default function LaporanPage() {
 
               {/* TAMPILAN CETAK TABEL 2: RINCIAN PER TIM KERJA */}
               {activeTab === 'tim' && (
-                <table className="w-full border-collapse border border-black text-[9px] print:text-[8.5pt] mb-4 print:mb-2">
+                <table className="w-full border-collapse border border-black text-[9.5px] print:text-[9.5pt] mb-6 print:mb-6">
                   <thead>
                     <tr className="bg-gray-100 text-black font-bold text-center">
-                      <th rowSpan={2} className="border border-black px-1 py-1 w-7">No.</th>
-                      <th rowSpan={2} className="border border-black px-1.5 py-1 text-center">Uraian Barang</th>
-                      <th rowSpan={2} className="border border-black px-1.5 py-1 text-center w-14">Pengeluaran</th>
-                      <th colSpan={7} className="border border-black px-1.5 py-1 text-center">Rincian Tim Kerja</th>
-                      <th rowSpan={2} className="border border-black px-1 py-1 text-center w-12">Satuan</th>
-                      <th rowSpan={2} className="border border-black px-1 py-1 text-center w-10">Sisa</th>
+                      <th rowSpan={2} className="border border-black px-1 py-1.5 w-7">No.</th>
+                      <th rowSpan={2} className="border border-black px-1.5 py-1.5 text-center">Uraian Barang</th>
+                      <th rowSpan={2} className="border border-black px-1.5 py-1.5 text-center w-14">Pengeluaran</th>
+                      <th colSpan={7} className="border border-black px-1.5 py-1.5 text-center">Rincian Tim Kerja</th>
+                      <th rowSpan={2} className="border border-black px-1 py-1.5 text-center w-12">Satuan</th>
+                      <th rowSpan={2} className="border border-black px-1 py-1.5 text-center w-10">Sisa</th>
                     </tr>
-                    <tr className="bg-gray-50 text-[7.5px] print:text-[7.5pt] text-gray-700 font-bold text-center h-3">
+                    <tr className="bg-gray-50 text-[7.5px] print:text-[8pt] text-gray-700 font-bold text-center h-3">
                       <th className="border border-black px-1 py-0.5">Subbag Umum</th>
                       <th className="border border-black px-1 py-0.5">Tim Sosial</th>
                       <th className="border border-black px-1 py-0.5">IPDS</th>
@@ -916,39 +925,39 @@ export default function LaporanPage() {
                   </thead>
                   <tbody>
                     {reportData.map((item) => (
-                      <tr key={item.no} className="text-black leading-tight">
-                        <td className="border border-black px-1 py-0.5 print:py-[1.5px] text-center">{item.no}</td>
-                        <td className="border border-black px-1.5 py-0.5 print:py-[1.5px] font-medium">{item.uraian_barang}</td>
-                        <td className="border border-black px-1.5 py-0.5 print:py-[1.5px] text-center font-bold">{item.pengeluaran || '-'}</td>
-                        <td className="border border-black px-1 py-0.5 print:py-[1.5px] text-center">{item.tim?.umum || '-'}</td>
-                        <td className="border border-black px-1 py-0.5 print:py-[1.5px] text-center">{item.tim?.sosial || '-'}</td>
-                        <td className="border border-black px-1 py-0.5 print:py-[1.5px] text-center">{item.tim?.ipds || '-'}</td>
-                        <td className="border border-black px-1 py-0.5 print:py-[1.5px] text-center">{item.tim?.pertanian || '-'}</td>
-                        <td className="border border-black px-1 py-0.5 print:py-[1.5px] text-center">{item.tim?.distribusi || '-'}</td>
-                        <td className="border border-black px-1 py-0.5 print:py-[1.5px] text-center">{item.tim?.neraca || '-'}</td>
-                        <td className="border border-black px-1 py-0.5 print:py-[1.5px] text-center">{item.tim?.pek || '-'}</td>
-                        <td className="border border-black px-1 py-0.5 print:py-[1.5px] text-center">{item.satuan}</td>
-                        <td className="border border-black px-1 py-0.5 print:py-[1.5px] text-center font-medium">{item.tim?.sisa || '-'}</td>
+                      <tr key={item.no} className="text-black leading-normal">
+                        <td className="border border-black px-1.5 py-1.5 print:py-2.5 text-center">{item.no}</td>
+                        <td className="border border-black px-2 py-1.5 print:py-2.5 font-medium">{item.uraian_barang}</td>
+                        <td className="border border-black px-1.5 py-1.5 print:py-2.5 text-center font-bold">{item.pengeluaran || '-'}</td>
+                        <td className="border border-black px-1.5 py-1.5 print:py-2.5 text-center">{item.tim?.umum || '-'}</td>
+                        <td className="border border-black px-1.5 py-1.5 print:py-2.5 text-center">{item.tim?.sosial || '-'}</td>
+                        <td className="border border-black px-1.5 py-1.5 print:py-2.5 text-center">{item.tim?.ipds || '-'}</td>
+                        <td className="border border-black px-1.5 py-1.5 print:py-2.5 text-center">{item.tim?.pertanian || '-'}</td>
+                        <td className="border border-black px-1.5 py-1.5 print:py-2.5 text-center">{item.tim?.distribusi || '-'}</td>
+                        <td className="border border-black px-1.5 py-1.5 print:py-2.5 text-center">{item.tim?.neraca || '-'}</td>
+                        <td className="border border-black px-1.5 py-1.5 print:py-2.5 text-center">{item.tim?.pek || '-'}</td>
+                        <td className="border border-black px-1.5 py-1.5 print:py-2.5 text-center">{item.satuan}</td>
+                        <td className="border border-black px-1.5 py-1.5 print:py-2.5 text-center font-medium">{item.tim?.sisa || '-'}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               )}
 
-              {/* Tanda Tangan Resmi Sesuai Format BPS - Garis Mengikuti Panjang Nama */}
-              <div className="w-full flex items-start justify-between text-xs text-black mt-4 pt-2 print:mt-2 avoid-break">
+              {/* Tanda Tangan Resmi Sesuai Format BPS - Jarak Proporsional Mengisi Halaman A4 */}
+              <div className="w-full flex items-start justify-between text-xs print:text-[11pt] text-black mt-8 pt-4 print:mt-14 avoid-break">
                 {/* Kolom Kiri: Mengetahui KPB */}
                 <div className="w-72 text-center flex flex-col items-center">
                   <p className="font-semibold text-black leading-tight">Mengetahui,</p>
                   <p className="font-medium text-black leading-tight">Penanggung Jawab KPB</p>
                   <p className="font-medium text-black leading-tight">Kepala BPS Kabupaten OKU Selatan</p>
-                  <div className="h-14 print:h-9" />
+                  <div className="h-16 print:h-20" />
                   <p className="text-center">
                     <span className="font-bold border-b border-black text-black pb-0.5 inline-block">
                       Rival Abdul Jabar, S.ST., M.Si.
                     </span>
                   </p>
-                  <p className="text-[10px] mt-0.5 font-medium text-black text-center">NIP. 19831122 200701 1003</p>
+                  <p className="text-[10.5px] print:text-[10pt] mt-0.5 font-medium text-black text-center">NIP. 19831122 200701 1003</p>
                 </div>
 
                 {/* Kolom Kanan: Petugas Pengelola Persediaan */}
@@ -956,13 +965,13 @@ export default function LaporanPage() {
                   <p className="font-medium text-black leading-tight">{formatTanggalTandaTangan(tglCetakDokumen)}</p>
                   <p className="font-semibold text-black leading-tight">Petugas Pengelola Persediaan</p>
                   <p className="text-transparent select-none font-medium leading-tight">-</p>
-                  <div className="h-14 print:h-9" />
+                  <div className="h-16 print:h-20" />
                   <p className="text-center">
                     <span className="font-bold border-b border-black text-black pb-0.5 inline-block">
                       Guspita Karleni, S.Si
                     </span>
                   </p>
-                  <p className="text-[10px] mt-0.5 font-medium text-black text-center">NIP. 19970806 202521 2039</p>
+                  <p className="text-[10.5px] print:text-[10pt] mt-0.5 font-medium text-black text-center">NIP. 19970806 202521 2039</p>
                 </div>
               </div>
             </div>

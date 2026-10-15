@@ -107,8 +107,6 @@ export default function KartuKendaliPage() {
     });
   }, [refreshKey]);
 
-  const activeBarang = barangList.find(b => b.id === selectedBarangId) || barangList[0];
-
   // Helper fungsi untuk menghitung kartu kendali lengkap bagi barang tertentu
   const computeSingleCard = (targetBarang: Barang) => {
     // Cari data resmi BPS berdasarkan nama uraian persis terlebih dahulu, lalu kode
@@ -237,7 +235,17 @@ export default function KartuKendaliPage() {
     };
   };
 
-  const currentCard = computeSingleCard(activeBarang);
+  // Daftar kartu kendali untuk seluruh master barang (Hanya barang yang memiliki persediaan fisik > 0)
+  // Barang yang habis / stok 0 tidak dimasukkan ke kartu kendali sesuai arahan
+  const allCardsRaw = barangList.map(b => computeSingleCard(b));
+  const activeStockCards = allCardsRaw.filter(c => c.sisaAkhir > 0);
+  const allCardsList = activeStockCards.length > 0 ? activeStockCards : allCardsRaw;
+
+  // Daftar barang yang tersedia untuk dipilih (yang masih ada persediaannya)
+  const availableBarangList = allCardsList.map(c => c.barang);
+  const activeBarang = availableBarangList.find(b => b.id === selectedBarangId) || availableBarangList[0] || barangList[0];
+  const currentCard = allCardsList.find(c => c.id === activeBarang?.id) || computeSingleCard(activeBarang);
+
   const leftEntries = currentCard.leftEntries;
   const rightEntries = currentCard.rightEntries;
   const stockAwal = currentCard.stock_awal_tahun;
@@ -254,8 +262,6 @@ export default function KartuKendaliPage() {
   const LEFT_CAPACITY = currentCard.LEFT_CAPACITY;
   const getMonthlyOut = currentCard.getMonthlyOut;
 
-  // Daftar kartu kendali untuk seluruh master barang (Katalog & Overview)
-  const allCardsList = barangList.map(b => computeSingleCard(b));
   const filteredAllCards = allCardsList.filter(c => {
     const matchSearch = c.nama_barang.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (c.kode_barang && c.kode_barang.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -466,7 +472,7 @@ export default function KartuKendaliPage() {
                 const right = rIdx > 0 ? c.rightEntries[rIdx - 1] : null;
 
                 return (
-                  <tr key={rIdx} className={cn('text-black hover:bg-gray-50/50', isPrint ? 'h-[20px] print:h-[22px]' : 'h-[21px]')}>
+                  <tr key={rIdx} className={cn('text-black hover:bg-gray-50/50', isPrint ? 'h-[20px] print:h-[26px]' : 'h-[21px]')}>
                     {/* Sisi Kiri */}
                     {isPindahanRow ? (
                       <>
@@ -551,14 +557,14 @@ export default function KartuKendaliPage() {
     );
   };
 
-  const filteredBarang = barangList.filter(b =>
+  const filteredBarang = availableBarangList.filter(b =>
     b.nama_barang.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (b.kode_barang && b.kode_barang.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   const filteredDaftarPersediaan = (
     barangList.length < 80
-      ? barangList.map((b, idx) => ({
+      ? availableBarangList.map((b, idx) => ({
           nomor: idx + 1,
           kode: b.kode_barang,
           uraian: b.nama_barang,
@@ -568,6 +574,8 @@ export default function KartuKendaliPage() {
           satuan: b.satuan?.nama_satuan || 'Buah',
         }))
       : DATA_DAFTAR_PERSEDIAAN_PDF1
+          .filter(item => (item.saldo_1_januari + item.masuk - item.keluar) > 0)
+          .map((item, idx) => ({ ...item, nomor: idx + 1 }))
   ).filter(item =>
     item.uraian.toLowerCase().includes(searchQuery.toLowerCase()) ||
     item.kode.toLowerCase().includes(searchQuery.toLowerCase())

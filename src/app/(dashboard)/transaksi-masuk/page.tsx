@@ -798,29 +798,30 @@ export default function TransaksiMasukPage() {
                 BUKTI PENERIMAAN BARANG
               </h4>
 
-              <div className="grid grid-cols-2 gap-y-2 text-xs print:text-[11pt] mb-6 print:mb-4 text-black">
-                <div className="flex gap-2">
-                  <span className="text-gray-700 w-32 print:w-36">No. Dokumen</span>
-                  <span className="font-semibold">: {showPrintPreview.no_dokumen}</span>
+              {/* Metadata Surat Penerimaan — Rapi, Tidak Patah/Wrap Sebaris Penuh */}
+              <div className="grid grid-cols-12 gap-x-4 gap-y-2 text-xs print:text-[11pt] mb-6 print:mb-6 text-black">
+                <div className="col-span-7 flex items-center">
+                  <span className="text-gray-700 w-32 print:w-36 shrink-0">No. Dokumen</span>
+                  <span className="font-semibold whitespace-nowrap">: {showPrintPreview.no_dokumen}</span>
                 </div>
-                <div className="flex gap-2">
-                  <span className="text-gray-700 w-32 print:w-36">Tanggal Surat</span>
-                  <span className="font-semibold">: {formatDate(showPrintPreview.tanggal)}</span>
+                <div className="col-span-5 flex items-center">
+                  <span className="text-gray-700 w-28 print:w-32 shrink-0">Tanggal Surat</span>
+                  <span className="font-semibold whitespace-nowrap">: {formatDate(showPrintPreview.tanggal)}</span>
                 </div>
-                <div className="flex gap-2">
-                  <span className="text-gray-700 w-32 print:w-36">Sumber Barang</span>
-                  <span className="font-semibold">: {showPrintPreview.sumber === 'Pembelian' ? 'Pembelian (Pengadaan Kantor)' : 'Transfer Masuk dari BPS Provinsi'}</span>
+                <div className="col-span-7 flex items-center">
+                  <span className="text-gray-700 w-32 print:w-36 shrink-0">Sumber Barang</span>
+                  <span className="font-semibold whitespace-nowrap">: {showPrintPreview.sumber === 'Pembelian' ? 'Pembelian (Pengadaan Kantor)' : 'Transfer Masuk dari BPS Provinsi'}</span>
                 </div>
-                <div className="flex gap-2">
-                  <span className="text-gray-700 w-32 print:w-36">
+                <div className="col-span-5 flex items-center">
+                  <span className="text-gray-700 w-28 print:w-32 shrink-0">
                     {showPrintPreview.sumber === 'Pembelian' ? 'No. Nota' : 'No. BAST'}
                   </span>
-                  <span className="font-semibold">: {showPrintPreview.no_referensi || '-'}</span>
+                  <span className="font-semibold whitespace-nowrap">: {showPrintPreview.no_referensi || '-'}</span>
                 </div>
               </div>
 
-              {/* Tabel barang — semua item dalam satu dokumen nomor surat */}
-              <table className="w-full border-collapse border border-black text-xs print:text-[11pt] mb-6 print:mb-4">
+              {/* Tabel barang — semua item dalam satu dokumen nomor surat (Proporsi Mengisi A4 Penuh) */}
+              <table className="w-full border-collapse border border-black text-xs print:text-[11pt] mb-6 print:mb-6">
                 <thead>
                   <tr className="bg-gray-100 text-black font-bold">
                     <th className="border border-black px-2 py-2 print:py-2.5 text-center w-10">No</th>
@@ -841,28 +842,28 @@ export default function TransaksiMasukPage() {
                 <tbody>
                   {showPrintPreview.items.map((item, idx) => (
                     <tr key={idx} className="text-black">
-                      <td className="border border-black px-2 py-2.5 print:py-3 text-center">{idx + 1}</td>
-                      <td className="border border-black px-3 py-2.5 print:py-3 font-medium">{item.barang?.nama_barang}</td>
-                      <td className="border border-black px-3 py-2.5 print:py-3 text-center">{item.barang?.satuan?.nama_satuan || 'Buah'}</td>
-                      <td className="border border-black px-3 py-2.5 print:py-3 text-center font-normal">{item.jumlah}</td>
-                      <td className="border border-black px-3 py-2.5 print:py-3">{item.keterangan || '-'}</td>
+                      <td className="border border-black px-2 py-2.5 print:py-3.5 text-center">{idx + 1}</td>
+                      <td className="border border-black px-3 py-2.5 print:py-3.5 font-medium">{item.barang?.nama_barang}</td>
+                      <td className="border border-black px-3 py-2.5 print:py-3.5 text-center">{item.barang?.satuan?.nama_satuan || 'Buah'}</td>
+                      <td className="border border-black px-3 py-2.5 print:py-3.5 text-center font-normal">{item.jumlah}</td>
+                      <td className="border border-black px-3 py-2.5 print:py-3.5">{item.keterangan || '-'}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
 
               {showPrintPreview.keterangan && (
-                <p className="text-xs print:text-[10.5pt] text-gray-700 mb-6 print:mb-4 italic">Catatan: {showPrintPreview.keterangan}</p>
+                <p className="text-xs print:text-[11pt] text-gray-700 mb-6 print:mb-6 italic">Catatan: {showPrintPreview.keterangan}</p>
               )}
 
-              {/* Tanda tangan format resmi BPS */}
-              <div className="w-full flex items-start justify-between mt-10 print:mt-6 text-xs print:text-[11pt] text-black avoid-break">
+              {/* Tanda tangan format resmi BPS - Jarak Proporsional Mengisi Halaman A4 */}
+              <div className="w-full flex items-start justify-between mt-10 print:mt-16 text-xs print:text-[11pt] text-black avoid-break">
                 <div className="w-72 text-center flex flex-col items-center">
                   <p className="font-semibold text-black">Yang Menyerahkan,</p>
                   <p className="font-medium text-black">
                     {showPrintPreview.sumber === 'Pembelian' ? 'Rekanan / Vendor' : 'BPS Provinsi Sumatera Selatan'}
                   </p>
-                  <div className="h-16 print:h-14" />
+                  <div className="h-16 print:h-24" />
                   <p className="text-center">
                     <span className="font-bold text-black border-b border-black pb-0.5 inline-block">
                       (&nbsp;................................&nbsp;)
@@ -872,7 +873,7 @@ export default function TransaksiMasukPage() {
                 <div className="w-72 text-center flex flex-col items-center">
                   <p className="text-black font-medium">{formatTanggalTandaTangan(tglCetakDokumen)}</p>
                   <p className="font-semibold text-black">Petugas Pengelola Persediaan</p>
-                  <div className="h-16 print:h-14" />
+                  <div className="h-16 print:h-24" />
                   <p className="text-center">
                     <span className="font-bold text-black border-b border-black pb-0.5 inline-block">
                       Guspita Karleni, S.Si

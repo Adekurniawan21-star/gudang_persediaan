@@ -254,7 +254,7 @@ export default function TransaksiKeluarPage() {
       return {
         id_barang: fItem.id_barang,
         jumlah: Number(fItem.jumlah) || 1,
-        keterangan: fItem.keterangan || keteranganPermintaan || 'Keperluan operasional',
+        keterangan: fItem.keterangan ? fItem.keterangan.trim() : (keteranganPermintaan ? keteranganPermintaan.trim() : ''),
         jenis_pengeluaran: formJenisPengeluaran,
         barang: bObj,
       };
@@ -738,7 +738,7 @@ export default function TransaksiKeluarPage() {
                             className="input text-xs"
                             value={fItem.keterangan}
                             onChange={(e) => handleItemChange(idx, 'keterangan', e.target.value)}
-                            placeholder="Keterangan peruntukan kegiatan"
+                            placeholder="Keterangan peruntukan kegiatan (Opsional)"
                           />
                         </div>
                       </div>
@@ -884,22 +884,22 @@ export default function TransaksiKeluarPage() {
               {/* KOP SURAT RESMI BPS */}
               <KopSurat />
 
-              {/* No & Tahun (Sesuai Posisi Kanan Atas di Gambar) */}
-              <div className="flex justify-end mb-3 text-xs print:text-[11pt]">
-                <div className="w-48 text-black">
-                  <div className="flex">
-                    <span className="w-16 font-semibold">No</span>
-                    <span>: {showPrintPreview.no_dokumen}</span>
+              {/* No & Tahun (Sesuai Posisi Kanan Atas di Gambar - Pastikan 1 Baris Penuh) */}
+              <div className="flex justify-end mb-4 print:mb-4 text-xs print:text-[11pt]">
+                <div className="w-64 print:w-72 text-black">
+                  <div className="flex items-center">
+                    <span className="w-16 font-semibold shrink-0">No</span>
+                    <span className="font-semibold whitespace-nowrap">: {showPrintPreview.no_dokumen}</span>
                   </div>
-                  <div className="flex">
-                    <span className="w-16 font-semibold">Tahun</span>
-                    <span>: {new Date(tglCetakDokumen || showPrintPreview.tanggal).getFullYear() || 2026}</span>
+                  <div className="flex items-center">
+                    <span className="w-16 font-semibold shrink-0">Tahun</span>
+                    <span className="font-semibold whitespace-nowrap">: {new Date(tglCetakDokumen || showPrintPreview.tanggal).getFullYear() || 2026}</span>
                   </div>
                 </div>
               </div>
 
               {/* Judul Formulir (Tengah) */}
-              <div className="text-center mb-5 print:mb-4">
+              <div className="text-center mb-6 print:mb-5">
                 <h4 className="font-extrabold text-black text-sm print:text-base tracking-wide">
                   SURAT PERMINTAAN BARANG
                 </h4>
@@ -915,8 +915,8 @@ export default function TransaksiKeluarPage() {
                 </p>
               </div>
 
-              {/* Tabel Permintaan Sesuai Format Kolom Gambar User */}
-              <table className="w-full border-collapse border border-black text-xs print:text-[11pt] mb-8 print:mb-4">
+              {/* Tabel Permintaan Sesuai Format Kolom Gambar User - Proporsi Tinggi Isi A4 */}
+              <table className="w-full border-collapse border border-black text-xs print:text-[11pt] mb-8 print:mb-6">
                 <thead>
                   <tr className="bg-gray-100 text-black font-bold text-center">
                     <th className="border border-black px-2 py-2 print:py-2.5 w-10">No</th>
@@ -937,23 +937,23 @@ export default function TransaksiKeluarPage() {
                 <tbody>
                   {showPrintPreview.items.map((item, idx) => (
                     <tr key={idx} className="text-black">
-                      <td className="border border-black px-2 py-2.5 print:py-3 text-center font-medium">{idx + 1}</td>
-                      <td className="border border-black px-3 py-2.5 print:py-3 font-medium">{item.barang?.nama_barang}</td>
-                      <td className="border border-black px-3 py-2.5 print:py-3 text-center">{item.barang?.satuan?.nama_satuan}</td>
-                      <td className="border border-black px-3 py-2.5 print:py-3 text-center font-normal">{item.jumlah}</td>
-                      <td className="border border-black px-3 py-2.5 print:py-3">{item.keterangan || '-'}</td>
+                      <td className="border border-black px-2 py-2.5 print:py-3.5 text-center font-medium">{idx + 1}</td>
+                      <td className="border border-black px-3 py-2.5 print:py-3.5 font-medium">{item.barang?.nama_barang}</td>
+                      <td className="border border-black px-3 py-2.5 print:py-3.5 text-center">{item.barang?.satuan?.nama_satuan}</td>
+                      <td className="border border-black px-3 py-2.5 print:py-3.5 text-center font-normal">{item.jumlah}</td>
+                      <td className="border border-black px-3 py-2.5 print:py-3.5">{item.keterangan || ''}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
 
-              {/* Tanda Tangan Format Resmi BPS - Garis Mengikuti Panjang Nama */}
-              <div className="w-full flex items-start justify-between text-xs print:text-[11pt] text-black mt-8 pt-2 print:mt-6 avoid-break">
+              {/* Tanda Tangan Format Resmi BPS - Proporsi Jarak Mantap Mengisi Halaman A4 */}
+              <div className="w-full flex items-start justify-between text-xs print:text-[11pt] text-black mt-8 pt-2 print:mt-16 avoid-break">
                 {/* Kolom Kiri: Administrator Gudang */}
                 <div className="w-72 text-center flex flex-col items-center">
                   <p className="font-semibold text-black">Administrator Gudang</p>
                   <p className="font-semibold text-black">Kuasa Pengguna Barang</p>
-                  <div className="h-16 print:h-14" />
+                  <div className="h-16 print:h-24" />
                   <p className="text-center">
                     <span className="border-b border-black pb-0.5 font-bold text-black inline-block">
                       Guspita Karleni, S.Si
@@ -966,7 +966,7 @@ export default function TransaksiKeluarPage() {
                 <div className="w-72 text-center flex flex-col items-center">
                   <p className="text-black font-medium">{formatTanggalTandaTangan(tglCetakDokumen)}</p>
                   <p className="font-semibold text-black">Penanggung Jawab</p>
-                  <div className="h-16 print:h-14" />
+                  <div className="h-16 print:h-24" />
                   <p className="text-center">
                     <span className="border-b border-black pb-0.5 font-bold text-black inline-block">
                       {showPrintPreview.penanggung_jawab || '............................................................'}
