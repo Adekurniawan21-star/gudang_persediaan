@@ -254,7 +254,7 @@ export default function TransaksiKeluarPage() {
       return {
         id_barang: fItem.id_barang,
         jumlah: Number(fItem.jumlah) || 1,
-        keterangan: fItem.keterangan ? fItem.keterangan.trim() : (keteranganPermintaan ? keteranganPermintaan.trim() : ''),
+        keterangan: (fItem.keterangan || '').trim(),
         jenis_pengeluaran: formJenisPengeluaran,
         barang: bObj,
       };
