@@ -326,6 +326,14 @@ export default function TransaksiMasukPage() {
     localStorage.setItem('sipersedia_barang_list', JSON.stringify(nextBarang));
     setTransaksiList(updatedList);
     localStorage.setItem('sipersedia_transaksi_masuk', JSON.stringify(updatedList));
+
+    // Bersihkan cache laporan statis agar laporan persediaan langsung sinkron
+    if (typeof window !== 'undefined') {
+      Object.keys(localStorage).forEach(k => {
+        if (k.startsWith('sipersedia_laporan_data_')) localStorage.removeItem(k);
+      });
+    }
+
     setShowModal(false);
   };
 
@@ -351,6 +359,14 @@ export default function TransaksiMasukPage() {
     localStorage.setItem('sipersedia_transaksi_masuk', JSON.stringify(updated));
     // Hapus juga di cloud database
     deleteTransaksiMasukRemote(targetDoc);
+
+    // Bersihkan cache laporan statis
+    if (typeof window !== 'undefined') {
+      Object.keys(localStorage).forEach(k => {
+        if (k.startsWith('sipersedia_laporan_data_')) localStorage.removeItem(k);
+      });
+    }
+
     setDeleteCandidate(null);
     showToast(`Transaksi ${targetDoc} berhasil dihapus & stok disesuaikan.`, 'info');
   };
@@ -795,14 +811,9 @@ export default function TransaksiMasukPage() {
                 #print-area {
                   page-break-inside: avoid !important;
                   break-inside: avoid !important;
-                  padding: 8mm 12mm 8mm 12mm !important;
+                  padding: 10mm 15mm 10mm 15mm !important;
                   width: 100% !important;
-                  height: 295mm !important;
-                  min-height: 295mm !important;
-                  max-height: 295mm !important;
-                  display: flex !important;
-                  flex-direction: column !important;
-                  justify-content: space-between !important;
+                  display: block !important;
                   box-sizing: border-box !important;
                 }
               }
@@ -897,18 +908,18 @@ export default function TransaksiMasukPage() {
                 </tbody>
               </table>
 
-              <p className="text-xs print:text-[11pt] text-gray-700 mb-6 print:mb-6 italic">
+              <p className="text-xs print:text-[10pt] text-gray-700 mb-3 print:mb-3 italic">
                 Catatan: {showPrintPreview.keterangan || '-'}
               </p>
 
-              {/* Tanda tangan format resmi BPS - Jarak Proporsional Mengisi Halaman A4 */}
-              <div className="w-full flex items-start justify-between mt-10 print:mt-auto text-xs print:text-[11pt] text-black avoid-break">
+              {/* Tanda tangan format resmi BPS - Posisi Rapi Pas di Bawah Tabel */}
+              <div className="w-full flex items-start justify-between mt-4 print:mt-4 text-xs print:text-[10pt] text-black avoid-break">
                 <div className="w-72 text-center flex flex-col items-center">
                   <p className="font-semibold text-black">Yang Menyerahkan,</p>
                   <p className="font-medium text-black">
                     {showPrintPreview.sumber === 'Pembelian' ? 'Rekanan / Vendor' : 'BPS Provinsi Sumatera Selatan'}
                   </p>
-                  <div className="h-16 print:h-24" />
+                  <div className="h-12 print:h-14" />
                   <p className="text-center">
                     <span className="font-bold text-black border-b border-black pb-0.5 inline-block">
                       (&nbsp;................................&nbsp;)
@@ -918,13 +929,13 @@ export default function TransaksiMasukPage() {
                 <div className="w-72 text-center flex flex-col items-center">
                   <p className="text-black font-medium">{formatTanggalTandaTangan(tglCetakDokumen)}</p>
                   <p className="font-semibold text-black">Petugas Pengelola Persediaan</p>
-                  <div className="h-16 print:h-24" />
+                  <div className="h-12 print:h-14" />
                   <p className="text-center">
                     <span className="font-bold text-black border-b border-black pb-0.5 inline-block">
                       Guspita Karleni, S.Si
                     </span>
                   </p>
-                  <p className="text-[11px] print:text-[10.5pt] text-black mt-1 font-medium text-center">NIP. 19970806 202521 2039</p>
+                  <p className="text-[11px] print:text-[9.5pt] text-black mt-0.5 font-medium text-center">NIP. 19970806 202521 2039</p>
                 </div>
               </div>
             </div>

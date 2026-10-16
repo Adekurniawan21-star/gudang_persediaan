@@ -33,7 +33,7 @@ export default function TransaksiKeluarPage() {
   const [tglCetakDokumen, setTglCetakDokumen] = useState(() => new Date().toISOString().split('T')[0]);
   const [editItem, setEditItem] = useState<TransaksiKeluar | null>(null);
   const [deleteCandidate, setDeleteCandidate] = useState<TransaksiKeluar | null>(null);
-  const [notification, setNotification] = useState<{ type: 'success' | 'info'; message: string } | null>(null);
+  const [notification, setNotification] = useState<{ type: 'success' | 'info' | 'error'; message: string } | null>(null);
 
   const [selectedTim, setSelectedTim] = useState('tim-sosial');
   const [formJenisPengeluaran, setFormJenisPengeluaran] = useState<JenisPengeluaran>('habis_pakai');
@@ -249,6 +249,35 @@ export default function TransaksiKeluarPage() {
 
   const handleSave = async () => {
     const timObj = TIM_PEMOHON_LIST.find(t => t.id === selectedTim) || TIM_PEMOHON_LIST[1];
+
+    // Validasi stok: Tidak boleh melebihi sisa stok (saat edit: stok saat ini + jumlah lama transaksi ini)
+    for (let i = 0; i < formItems.length; i++) {
+      const fItem = formItems[i];
+      const bObj = barangList.find(b => b.id === fItem.id_barang) || mockBarang.find(b => b.id === fItem.id_barang);
+      const oldItemJumlah = editItem ? (editItem.items?.find(it => it.id_barang === fItem.id_barang)?.jumlah || 0) : 0;
+      const currentStock = bObj ? bObj.stok : 0;
+      const maxAvailable = currentStock + oldItemJumlah;
+      const qty = Number(fItem.jumlah) || 0;
+
+      if (qty <= 0) {
+        setNotification({
+          type: 'error',
+          message: `Jumlah untuk barang "${bObj?.nama_barang || `Item #${i + 1}`}" harus lebih dari 0.`,
+        });
+        setTimeout(() => setNotification(null), 4500);
+        return;
+      }
+
+      if (qty > maxAvailable) {
+        setNotification({
+          type: 'error',
+          message: `Jumlah permintaan untuk "${bObj?.nama_barang || `Item #${i + 1}`}" (${qty}) melebihi sisa stok! Maksimal yang dapat dikeluarkan: ${maxAvailable} ${bObj?.satuan?.nama_satuan || 'unit'}.`,
+        });
+        setTimeout(() => setNotification(null), 5000);
+        return;
+      }
+    }
+
     const preparedItems = formItems.map(fItem => {
       const bObj = barangList.find(b => b.id === fItem.id_barang) || mockBarang.find(b => b.id === fItem.id_barang) || mockBarang[0];
       return {
@@ -261,6 +290,34 @@ export default function TransaksiKeluarPage() {
     });
 
     if (editItem) {
+      // Hitung selisih stok untuk setiap barang saat diedit
+      let nextBarang = [...barangList];
+
+      // 1. Kembalikan dulu stok lama dari transaksi sebelum diedit
+      editItem.items.forEach(oldItm => {
+        nextBarang = nextBarang.map(b => {
+          if (b.id === oldItm.id_barang) {
+            return { ...b, stok: b.stok + oldItm.jumlah };
+          }
+          return b;
+        });
+      });
+
+      // 2. Kurangi dengan jumlah baru yang sudah divalidasi
+      preparedItems.forEach(newItm => {
+        nextBarang = nextBarang.map(b => {
+          if (b.id === newItm.id_barang) {
+            const finalStock = Math.max(0, b.stok - newItm.jumlah);
+            updateBarangStockRemote(b.id, finalStock);
+            return { ...b, stok: finalStock };
+          }
+          return b;
+        });
+      });
+
+      setBarangList(nextBarang);
+      localStorage.setItem('sipersedia_barang_list', JSON.stringify(nextBarang));
+
       const updatedTrx: TransaksiKeluar = {
         ...editItem,
         tanggal: tglPermintaan,
@@ -279,10 +336,17 @@ export default function TransaksiKeluarPage() {
       // Kirim pembaruan ke cloud
       pushTransaksiKeluar(updatedTrx);
 
+      // Bersihkan cache laporan statis agar tabel laporan persediaan langsung sinkron otomatis
+      if (typeof window !== 'undefined') {
+        Object.keys(localStorage).forEach(k => {
+          if (k.startsWith('sipersedia_laporan_data_')) localStorage.removeItem(k);
+        });
+      }
+
       setShowModal(false);
       setNotification({
         type: 'success',
-        message: `Surat permintaan ${editItem.no_dokumen} berhasil diperbarui.`,
+        message: `Surat permintaan ${editItem.no_dokumen} berhasil diperbarui dan sisa stok telah disesuaikan.`,
       });
       setTimeout(() => setNotification(null), 4000);
     } else {
@@ -321,6 +385,13 @@ export default function TransaksiKeluarPage() {
       });
       setBarangList(nextBarang);
       localStorage.setItem('sipersedia_barang_list', JSON.stringify(nextBarang));
+
+      // Bersihkan cache laporan statis
+      if (typeof window !== 'undefined') {
+        Object.keys(localStorage).forEach(k => {
+          if (k.startsWith('sipersedia_laporan_data_')) localStorage.removeItem(k);
+        });
+      }
 
       setShowModal(false);
       setNotification({
@@ -370,14 +441,28 @@ export default function TransaksiKeluarPage() {
 
       {/* Notification Banner */}
       {notification && (
-        <div className="flex items-center justify-between p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-sm animate-fade-in shadow-xs">
+        <div className={cn(
+          "flex items-center justify-between p-3.5 rounded-xl text-sm animate-fade-in shadow-xs border",
+          notification.type === 'error'
+            ? "bg-rose-50 border-rose-200 text-rose-800"
+            : "bg-emerald-50 border-emerald-200 text-emerald-800"
+        )}>
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+            {notification.type === 'error' ? (
+              <AlertTriangle className="w-4 h-4 text-rose-600 flex-shrink-0" />
+            ) : (
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+            )}
             <span className="font-medium">{notification.message}</span>
           </div>
           <button
             onClick={() => setNotification(null)}
-            className="p-1 text-emerald-600 hover:text-emerald-800 hover:bg-emerald-100 rounded-lg transition-colors"
+            className={cn(
+              "p-1 rounded-lg transition-colors",
+              notification.type === 'error'
+                ? "text-rose-600 hover:text-rose-800 hover:bg-rose-100"
+                : "text-emerald-600 hover:text-emerald-800 hover:bg-emerald-100"
+            )}
           >
             <X className="w-3.5 h-3.5" />
           </button>
@@ -721,27 +806,53 @@ export default function TransaksiKeluarPage() {
                         </select>
                       </div>
 
-                      <div className="grid grid-cols-3 gap-2">
-                        <div>
-                          <input
-                            type="number"
-                            min="1"
-                            className="input text-xs"
-                            value={fItem.jumlah}
-                            onChange={(e) => handleItemChange(idx, 'jumlah', Number(e.target.value))}
-                            placeholder="Jumlah"
-                          />
-                        </div>
-                        <div className="col-span-2">
-                          <input
-                            type="text"
-                            className="input text-xs"
-                            value={fItem.keterangan}
-                            onChange={(e) => handleItemChange(idx, 'keterangan', e.target.value)}
-                            placeholder="Keterangan item (opsional)"
-                          />
-                        </div>
-                      </div>
+                      {(() => {
+                        const selBarang = barangList.find(b => b.id === fItem.id_barang) || mockBarang.find(b => b.id === fItem.id_barang);
+                        const oldItemJumlah = editItem ? (editItem.items?.find(it => it.id_barang === fItem.id_barang)?.jumlah || 0) : 0;
+                        const maxAvailable = (selBarang ? selBarang.stok : 0) + oldItemJumlah;
+                        const isOver = fItem.jumlah > maxAvailable;
+
+                        return (
+                          <div className="space-y-1.5">
+                            <div className="grid grid-cols-3 gap-2">
+                              <div>
+                                <input
+                                  type="number"
+                                  min="1"
+                                  max={maxAvailable}
+                                  className={cn(
+                                    "input text-xs transition-colors",
+                                    isOver ? "border-red-500 bg-red-50 text-red-700 font-bold focus:ring-red-400" : ""
+                                  )}
+                                  value={fItem.jumlah}
+                                  onChange={(e) => handleItemChange(idx, 'jumlah', Number(e.target.value))}
+                                  placeholder="Jumlah"
+                                />
+                              </div>
+                              <div className="col-span-2">
+                                <input
+                                  type="text"
+                                  className="input text-xs"
+                                  value={fItem.keterangan}
+                                  onChange={(e) => handleItemChange(idx, 'keterangan', e.target.value)}
+                                  placeholder="Keterangan item (opsional)"
+                                />
+                              </div>
+                            </div>
+                            <div className="text-[11px] px-1 flex items-center justify-between">
+                              {isOver ? (
+                                <span className="text-red-600 font-bold flex items-center gap-1 animate-pulse">
+                                  ⚠️ Melebihi sisa stok! (Maks: {maxAvailable} {selBarang?.satuan?.nama_satuan || 'unit'})
+                                </span>
+                              ) : (
+                                <span className="text-dark-500 text-[10.5px]">
+                                  Sisa stok tersedia: <strong className="text-dark-800">{maxAvailable}</strong> {selBarang?.satuan?.nama_satuan || 'unit'}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
                   ))}
                 </div>
@@ -885,14 +996,9 @@ export default function TransaksiKeluarPage() {
                 #print-area {
                   page-break-inside: avoid !important;
                   break-inside: avoid !important;
-                  padding: 8mm 12mm 8mm 12mm !important;
+                  padding: 10mm 15mm 10mm 15mm !important;
                   width: 100% !important;
-                  height: 295mm !important;
-                  min-height: 295mm !important;
-                  max-height: 295mm !important;
-                  display: flex !important;
-                  flex-direction: column !important;
-                  justify-content: space-between !important;
+                  display: block !important;
                   box-sizing: border-box !important;
                 }
               }
@@ -973,36 +1079,36 @@ export default function TransaksiKeluarPage() {
               </table>
 
               {/* Catatan Dokumen / Keperluan Permintaan (Di luar kolom / di bawah tabel persis seperti contoh gambar) */}
-              <p className="text-xs print:text-[11pt] text-gray-700 mb-6 print:mb-6 italic">
+              <p className="text-xs print:text-[10pt] text-gray-700 mb-3 print:mb-3 italic">
                 Catatan: {showPrintPreview.keterangan || '-'}
               </p>
 
-              {/* Tanda Tangan Format Resmi BPS - Proporsi Jarak Mantap Mengisi Halaman A4 */}
-              <div className="w-full flex items-start justify-between text-xs print:text-[11pt] text-black mt-8 pt-2 print:mt-auto avoid-break">
+              {/* Tanda Tangan Format Resmi BPS - Posisi Pas di Bawah Tabel */}
+              <div className="w-full flex items-start justify-between text-xs print:text-[10pt] text-black mt-4 pt-1 print:mt-4 avoid-break">
                 {/* Kolom Kiri: Administrator Gudang */}
                 <div className="w-72 text-center flex flex-col items-center">
                   <p className="font-semibold text-black">Administrator Gudang</p>
                   <p className="font-semibold text-black">Kuasa Pengguna Barang</p>
-                  <div className="h-16 print:h-24" />
+                  <div className="h-12 print:h-14" />
                   <p className="text-center">
                     <span className="border-b border-black pb-0.5 font-bold text-black inline-block">
                       Guspita Karleni, S.Si
                     </span>
                   </p>
-                  <p className="mt-1 text-black font-medium text-[11px] print:text-[10.5pt] text-center">NIP. 19970806 202521 2039</p>
+                  <p className="mt-0.5 text-black font-medium text-[11px] print:text-[9.5pt] text-center">NIP. 19970806 202521 2039</p>
                 </div>
 
                 {/* Kolom Kanan: Penanggung Jawab Tim Pemohon */}
                 <div className="w-72 text-center flex flex-col items-center">
                   <p className="text-black font-medium">{formatTanggalTandaTangan(tglCetakDokumen)}</p>
                   <p className="font-semibold text-black">Penanggung Jawab</p>
-                  <div className="h-16 print:h-24" />
+                  <div className="h-12 print:h-14" />
                   <p className="text-center">
                     <span className="border-b border-black pb-0.5 font-bold text-black inline-block">
                       {showPrintPreview.penanggung_jawab || '............................................................'}
                     </span>
                   </p>
-                  <p className="mt-1 text-black font-medium text-[11px] print:text-[10.5pt] text-center">NIP. {showPrintPreview.nip_pj || '....................................'}</p>
+                  <p className="mt-0.5 text-black font-medium text-[11px] print:text-[9.5pt] text-center">NIP. {showPrintPreview.nip_pj || '....................................'}</p>
                 </div>
               </div>
             </div>
