@@ -845,14 +845,17 @@ export default function LaporanPage() {
               </div>
             </div>
 
-            {/* Injeksi Style Cetak: Kunci A4 Portrait untuk Laporan Persediaan */}
+            {/* Injeksi Style Cetak: Kunci A4 Portrait untuk Laporan Persediaan — Bersih Tanpa Header/Footer Browser (1/1) */}
             <style dangerouslySetInnerHTML={{ __html: `
               @media print {
                 @page {
                   size: A4 portrait !important;
-                  margin: 10mm 12mm 10mm 12mm !important;
+                  margin: 0 !important;
                 }
-                body {
+                html, body {
+                  margin: 0 !important;
+                  padding: 0 !important;
+                  background: #ffffff !important;
                   -webkit-print-color-adjust: exact !important;
                   print-color-adjust: exact !important;
                 }
@@ -861,11 +864,11 @@ export default function LaporanPage() {
                   break-inside: avoid !important;
                 }
                 #print-area {
-                  padding: 0 !important;
+                  padding: 10mm 12mm 10mm 12mm !important;
                   width: 100% !important;
-                  height: 275mm !important;
-                  min-height: 275mm !important;
-                  max-height: 276mm !important;
+                  height: 295mm !important;
+                  min-height: 295mm !important;
+                  max-height: 295mm !important;
                   display: flex !important;
                   flex-direction: column !important;
                   justify-content: space-between !important;

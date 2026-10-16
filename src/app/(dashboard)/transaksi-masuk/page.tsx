@@ -774,21 +774,28 @@ export default function TransaksiMasukPage() {
               </div>
             </div>
 
-            {/* Injeksi Style Cetak: Kunci A4 PORTRAIT untuk Bukti Penerimaan Barang */}
+            {/* Injeksi Style Cetak: Kunci A4 PORTRAIT untuk Bukti Penerimaan Barang — Bersih Tanpa Header/Footer Browser (1/1) */}
             <style dangerouslySetInnerHTML={{ __html: `
               @media print {
                 @page {
                   size: A4 portrait !important;
-                  margin: 6mm 8mm 6mm 8mm !important;
+                  margin: 0 !important;
+                }
+                html, body {
+                  margin: 0 !important;
+                  padding: 0 !important;
+                  background: #ffffff !important;
+                  -webkit-print-color-adjust: exact !important;
+                  print-color-adjust: exact !important;
                 }
                 #print-area {
                   page-break-inside: avoid !important;
                   break-inside: avoid !important;
-                  padding: 0 !important;
+                  padding: 8mm 12mm 8mm 12mm !important;
                   width: 100% !important;
-                  height: 275mm !important;
-                  min-height: 275mm !important;
-                  max-height: 276mm !important;
+                  height: 295mm !important;
+                  min-height: 295mm !important;
+                  max-height: 295mm !important;
                   display: flex !important;
                   flex-direction: column !important;
                   justify-content: space-between !important;

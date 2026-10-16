@@ -1254,14 +1254,17 @@ export default function KartuKendaliPage() {
               </div>
             </div>
 
-            {/* Injeksi Style Cetak: Kunci A4 Landscape untuk Kartu Kendali & Cegah Terpotong */}
+            {/* Injeksi Style Cetak: Kunci A4 Landscape untuk Kartu Kendali & Cegah Terpotong — Bersih Tanpa Header/Footer Browser (1/1) */}
             <style dangerouslySetInnerHTML={{ __html: `
               @media print {
                 @page {
                   size: ${(previewMode === 'kartu' || previewMode === 'batch') ? 'A4 landscape' : 'A4 portrait'} !important;
-                  margin: ${(previewMode === 'kartu' || previewMode === 'batch') ? '5mm 8mm 5mm 8mm' : '8mm 10mm 8mm 10mm'} !important;
+                  margin: 0 !important;
                 }
-                body {
+                html, body {
+                  margin: 0 !important;
+                  padding: 0 !important;
+                  background: #ffffff !important;
                   -webkit-print-color-adjust: exact !important;
                   print-color-adjust: exact !important;
                 }
@@ -1271,9 +1274,10 @@ export default function KartuKendaliPage() {
                   page-break-inside: avoid !important;
                   break-inside: avoid !important;
                   width: 100% !important;
-                  height: 196mm !important;
-                  min-height: 196mm !important;
-                  max-height: 197mm !important;
+                  height: 206mm !important;
+                  min-height: 206mm !important;
+                  max-height: 206mm !important;
+                  padding: 5mm 8mm 5mm 8mm !important;
                   display: flex !important;
                   flex-direction: column !important;
                   justify-content: space-between !important;
@@ -1285,7 +1289,7 @@ export default function KartuKendaliPage() {
                   break-after: avoid !important;
                 }
                 #print-area {
-                  padding: 0 !important;
+                  padding: ${(previewMode === 'kartu' || previewMode === 'batch') ? '0' : '8mm 10mm 8mm 10mm'} !important;
                   width: 100% !important;
                   box-sizing: border-box !important;
                 }
