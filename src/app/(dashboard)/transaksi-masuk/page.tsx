@@ -776,10 +776,14 @@ export default function TransaksiMasukPage() {
 
             {/* Injeksi Style Cetak: Kunci A4 PORTRAIT untuk Bukti Penerimaan Barang — Bersih Tanpa Header/Footer Browser (1/1) */}
             <style dangerouslySetInnerHTML={{ __html: `
+              @page {
+                size: A4 portrait;
+                margin: 0;
+              }
               @media print {
                 @page {
-                  size: A4 portrait !important;
-                  margin: 0 !important;
+                  size: A4 portrait;
+                  margin: 0;
                 }
                 html, body {
                   margin: 0 !important;

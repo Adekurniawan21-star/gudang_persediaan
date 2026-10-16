@@ -226,7 +226,7 @@
   /* Universal Print Styles — Dokumen Fisik Bersih Tanpa Header/Footer Browser (1/1, URL, Tanggal) & Elemen Web */
   @media print {
     @page {
-      margin: 0 !important;
+      margin: 0;
     }
 
     /* Reset Canvas */
@@ -359,3 +359,9 @@
     @apply bg-clip-text text-transparent bg-gradient-to-r from-bps-blue via-bps-teal to-bps-green;
   }
 }
+
+/* Hilangkan header dan footer bawaan browser di level root */
+@page {
+  margin: 0;
+}
+

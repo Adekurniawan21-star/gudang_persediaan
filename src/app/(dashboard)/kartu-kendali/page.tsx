@@ -1256,10 +1256,14 @@ export default function KartuKendaliPage() {
 
             {/* Injeksi Style Cetak: Kunci A4 Landscape untuk Kartu Kendali & Cegah Terpotong — Bersih Tanpa Header/Footer Browser (1/1) */}
             <style dangerouslySetInnerHTML={{ __html: `
+              @page {
+                size: ${(previewMode === 'kartu' || previewMode === 'batch') ? 'A4 landscape' : 'A4 portrait'};
+                margin: 0;
+              }
               @media print {
                 @page {
-                  size: ${(previewMode === 'kartu' || previewMode === 'batch') ? 'A4 landscape' : 'A4 portrait'} !important;
-                  margin: 0 !important;
+                  size: ${(previewMode === 'kartu' || previewMode === 'batch') ? 'A4 landscape' : 'A4 portrait'};
+                  margin: 0;
                 }
                 html, body {
                   margin: 0 !important;
