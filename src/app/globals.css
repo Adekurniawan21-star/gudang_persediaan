@@ -365,3 +365,103 @@
   margin: 0;
 }
 
+/* ============================================================ */
+/* STANDARISASI BLOK TANDA TANGAN BPS (.signature-block)        */
+/* Dipakai seragam di: Barang Masuk, Pengeluaran, Laporan        */
+/* ============================================================ */
+.signature-block {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: flex-start !important;
+  width: 100% !important;
+  margin-top: 24px !important;
+  break-inside: avoid !important;
+  page-break-inside: avoid !important;
+  font-size: 10.5pt !important;
+  color: #000000 !important;
+  line-height: 1.35 !important;
+}
+
+.signature-block .sig-col {
+  width: 270px !important;
+  text-align: center !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+}
+
+.signature-block .sig-title {
+  font-weight: 600 !important;
+  color: #000000 !important;
+}
+
+.signature-block .sig-space {
+  height: 60px !important;
+  min-height: 60px !important;
+  max-height: 60px !important;
+}
+
+.signature-block .sig-name {
+  font-weight: 700 !important;
+  text-decoration: underline !important;
+  text-underline-offset: 3px !important;
+  color: #000000 !important;
+  display: inline-block !important;
+}
+
+.signature-block .sig-nip {
+  font-size: 9.5pt !important;
+  font-weight: 500 !important;
+  margin-top: 2px !important;
+  color: #000000 !important;
+}
+
+@media print {
+  .signature-block {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: flex-start !important;
+    width: 100% !important;
+    margin-top: 24px !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+    font-size: 10.5pt !important;
+    color: #000000 !important;
+    line-height: 1.35 !important;
+  }
+
+  .signature-block .sig-col {
+    width: 270px !important;
+    text-align: center !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+  }
+
+  .signature-block .sig-title {
+    font-weight: 600 !important;
+    color: #000000 !important;
+  }
+
+  .signature-block .sig-space {
+    height: 60px !important;
+    min-height: 60px !important;
+    max-height: 60px !important;
+  }
+
+  .signature-block .sig-name {
+    font-weight: 700 !important;
+    text-decoration: underline !important;
+    text-underline-offset: 3px !important;
+    color: #000000 !important;
+    display: inline-block !important;
+  }
+
+  .signature-block .sig-nip {
+    font-size: 9.5pt !important;
+    font-weight: 500 !important;
+    margin-top: 2px !important;
+    color: #000000 !important;
+  }
+}
+

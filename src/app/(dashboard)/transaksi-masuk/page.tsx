@@ -912,30 +912,28 @@ export default function TransaksiMasukPage() {
                 Catatan: {showPrintPreview.keterangan || '-'}
               </p>
 
-              {/* Tanda tangan format resmi BPS - Posisi Rapi Pas di Bawah Tabel */}
-              <div className="w-full flex items-start justify-between mt-4 print:mt-4 text-xs print:text-[10pt] text-black avoid-break">
-                <div className="w-72 text-center flex flex-col items-center">
-                  <p className="font-semibold text-black">Yang Menyerahkan,</p>
-                  <p className="font-medium text-black">
-                    {showPrintPreview.sumber === 'Pembelian' ? 'Rekanan / Vendor' : 'BPS Provinsi Sumatera Selatan'}
-                  </p>
-                  <div className="h-12 print:h-14" />
-                  <p className="text-center">
-                    <span className="font-bold text-black border-b border-black pb-0.5 inline-block">
+              {/* Tanda Tangan Format Resmi BPS (.signature-block seragam) */}
+              <div className="signature-block">
+                <div className="sig-col">
+                  <p className="sig-title">Yang Menyerahkan,</p>
+                  <p>Rekanan / Vendor</p>
+                  <div className="sig-space" />
+                  <p>
+                    <span className="sig-name">
                       (&nbsp;................................&nbsp;)
                     </span>
                   </p>
                 </div>
-                <div className="w-72 text-center flex flex-col items-center">
-                  <p className="text-black font-medium">{formatTanggalTandaTangan(tglCetakDokumen)}</p>
-                  <p className="font-semibold text-black">Petugas Pengelola Persediaan</p>
-                  <div className="h-12 print:h-14" />
-                  <p className="text-center">
-                    <span className="font-bold text-black border-b border-black pb-0.5 inline-block">
+                <div className="sig-col">
+                  <p>{formatTanggalTandaTangan(tglCetakDokumen)}</p>
+                  <p className="sig-title">Petugas Pengelola Persediaan</p>
+                  <div className="sig-space" />
+                  <p>
+                    <span className="sig-name">
                       Guspita Karleni, S.Si
                     </span>
                   </p>
-                  <p className="text-[11px] print:text-[9.5pt] text-black mt-0.5 font-medium text-center">NIP. 19970806 202521 2039</p>
+                  <p className="sig-nip">NIP. 19970806 202521 2039</p>
                 </div>
               </div>
             </div>

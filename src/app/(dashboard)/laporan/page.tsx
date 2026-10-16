@@ -361,9 +361,7 @@ export default function LaporanPage() {
   const printTableFontSize =
     rowCount <= 10 ? 'print:text-[10pt]' : rowCount <= 16 ? 'print:text-[9.5pt]' : 'print:text-[8.5pt]';
 
-  const printSigMargin = 'print:mt-6';
 
-  const printSigSpace = 'print:h-14';
 
   const handlePrint = () => {
     const originalTitle = document.title;
@@ -1005,34 +1003,34 @@ export default function LaporanPage() {
                 </table>
               )}
 
-              {/* Tanda Tangan Resmi Sesuai Format BPS - Posisi Pas di Bawah Tabel Tanpa Jarak Terlalu Jauh */}
-              <div className={cn("w-full flex items-start justify-between text-xs print:text-[10pt] text-black mt-6 pt-2 avoid-break", printSigMargin)}>
+              {/* Tanda Tangan Format Resmi BPS (.signature-block seragam) */}
+              <div className="signature-block">
                 {/* Kolom Kiri: Mengetahui KPB */}
-                <div className="w-72 text-center flex flex-col items-center">
-                  <p className="font-semibold text-black leading-tight">Mengetahui,</p>
-                  <p className="font-medium text-black leading-tight">Kuasa Pengguna Barang</p>
-                  <p className="font-medium text-black leading-tight">Kepala BPS Kabupaten OKU Selatan</p>
-                  <div className={cn("h-14", printSigSpace)} />
-                  <p className="text-center">
-                    <span className="font-bold border-b border-black text-black pb-0.5 inline-block">
+                <div className="sig-col">
+                  <p className="sig-title">Mengetahui,</p>
+                  <p>Kuasa Pengguna Barang</p>
+                  <p>Kepala BPS Kabupaten OKU Selatan</p>
+                  <div className="sig-space" />
+                  <p>
+                    <span className="sig-name">
                       Rival Abdul Jabar, S.ST., M.Si.
                     </span>
                   </p>
-                  <p className="text-[10.5px] print:text-[9.5pt] mt-0.5 font-medium text-black text-center">NIP. 19831122 200701 1003</p>
+                  <p className="sig-nip">NIP. 19831122 200701 1003</p>
                 </div>
 
                 {/* Kolom Kanan: Petugas Pengelola Persediaan */}
-                <div className="w-72 text-center flex flex-col items-center">
-                  <p className="font-medium text-black leading-tight">{formatTanggalTandaTangan(tglCetakDokumen)}</p>
-                  <p className="font-semibold text-black leading-tight">Petugas Pengelola Persediaan</p>
-                  <p className="text-transparent select-none font-medium leading-tight">-</p>
-                  <div className={cn("h-14", printSigSpace)} />
-                  <p className="text-center">
-                    <span className="font-bold border-b border-black text-black pb-0.5 inline-block">
+                <div className="sig-col">
+                  <p>{formatTanggalTandaTangan(tglCetakDokumen)}</p>
+                  <p className="sig-title">Petugas Pengelola Persediaan</p>
+                  <p className="invisible select-none">-</p>
+                  <div className="sig-space" />
+                  <p>
+                    <span className="sig-name">
                       Guspita Karleni, S.Si
                     </span>
                   </p>
-                  <p className="text-[10.5px] print:text-[9.5pt] mt-0.5 font-medium text-black text-center">NIP. 19970806 202521 2039</p>
+                  <p className="sig-nip">NIP. 19970806 202521 2039</p>
                 </div>
               </div>
             </div>

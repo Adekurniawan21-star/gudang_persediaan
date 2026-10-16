@@ -1083,32 +1083,32 @@ export default function TransaksiKeluarPage() {
                 Catatan: {showPrintPreview.keterangan || '-'}
               </p>
 
-              {/* Tanda Tangan Format Resmi BPS - Posisi Pas di Bawah Tabel */}
-              <div className="w-full flex items-start justify-between text-xs print:text-[10pt] text-black mt-4 pt-1 print:mt-4 avoid-break">
+              {/* Tanda Tangan Format Resmi BPS (.signature-block seragam) */}
+              <div className="signature-block">
                 {/* Kolom Kiri: Administrator Gudang */}
-                <div className="w-72 text-center flex flex-col items-center">
-                  <p className="font-semibold text-black">Administrator Gudang</p>
-                  <p className="font-semibold text-black">Kuasa Pengguna Barang</p>
-                  <div className="h-12 print:h-14" />
-                  <p className="text-center">
-                    <span className="border-b border-black pb-0.5 font-bold text-black inline-block">
+                <div className="sig-col">
+                  <p className="sig-title">Administrator Gudang</p>
+                  <p>Kuasa Pengguna Barang</p>
+                  <div className="sig-space" />
+                  <p>
+                    <span className="sig-name">
                       Guspita Karleni, S.Si
                     </span>
                   </p>
-                  <p className="mt-0.5 text-black font-medium text-[11px] print:text-[9.5pt] text-center">NIP. 19970806 202521 2039</p>
+                  <p className="sig-nip">NIP. 19970806 202521 2039</p>
                 </div>
 
                 {/* Kolom Kanan: Penanggung Jawab Tim Pemohon */}
-                <div className="w-72 text-center flex flex-col items-center">
-                  <p className="text-black font-medium">{formatTanggalTandaTangan(tglCetakDokumen)}</p>
-                  <p className="font-semibold text-black">Penanggung Jawab</p>
-                  <div className="h-12 print:h-14" />
-                  <p className="text-center">
-                    <span className="border-b border-black pb-0.5 font-bold text-black inline-block">
+                <div className="sig-col">
+                  <p>{formatTanggalTandaTangan(tglCetakDokumen)}</p>
+                  <p className="sig-title">Penanggung Jawab</p>
+                  <div className="sig-space" />
+                  <p>
+                    <span className="sig-name">
                       {showPrintPreview.penanggung_jawab || '............................................................'}
                     </span>
                   </p>
-                  <p className="mt-0.5 text-black font-medium text-[11px] print:text-[9.5pt] text-center">NIP. {showPrintPreview.nip_pj || '....................................'}</p>
+                  <p className="sig-nip">NIP. {showPrintPreview.nip_pj || '....................................'}</p>
                 </div>
               </div>
             </div>
