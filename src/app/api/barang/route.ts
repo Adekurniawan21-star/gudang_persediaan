@@ -27,9 +27,9 @@ export async function POST(req: Request) {
     const payload: any = {
       kode_barang: body.kode_barang,
       nama_barang: body.nama_barang,
-      id_kategori: body.id_kategori || 1,
-      id_satuan: body.id_satuan || 1,
-      id_lokasi: body.id_lokasi || 1,
+      id_kategori: null,
+      id_satuan: null,
+      id_lokasi: null,
       stok: typeof body.stok === 'number' ? body.stok : 0,
       stok_minimum: typeof body.stok_minimum === 'number' ? body.stok_minimum : 5,
       foto_url: body.foto_url || null,
@@ -70,10 +70,6 @@ export async function PUT(req: Request) {
     };
     if (typeof body.stok === 'number') updateData.stok = body.stok;
     if (body.nama_barang) updateData.nama_barang = body.nama_barang;
-    if (body.kode_barang) updateData.kode_barang = body.kode_barang;
-    if (body.id_kategori) updateData.id_kategori = body.id_kategori;
-    if (body.id_satuan) updateData.id_satuan = body.id_satuan;
-    if (body.id_lokasi) updateData.id_lokasi = body.id_lokasi;
     if (typeof body.stok_minimum === 'number') updateData.stok_minimum = body.stok_minimum;
     if (body.deskripsi !== undefined) updateData.deskripsi = body.deskripsi;
 

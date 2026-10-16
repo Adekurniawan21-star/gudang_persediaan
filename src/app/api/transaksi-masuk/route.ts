@@ -24,10 +24,74 @@ export async function POST(req: Request) {
     const body = await req.json();
     const supabase = getServiceSupabase();
 
+    const items = body.items && Array.isArray(body.items) && body.items.length > 0 ? body.items : [];
+    let primaryIdBarang = body.id_barang || (items[0]?.id_barang);
+
+    // 1. Pastikan setiap barang di items tersimpan di tabel 'barang' agar tidak kena Foreign Key constraint
+    for (const item of items) {
+      const bId = item.id_barang || item.barang?.id;
+      if (bId) {
+        const { data: existingB } = await supabase.from('barang').select('id, stok').eq('id', bId).maybeSingle();
+        if (!existingB) {
+          const bInfo = item.barang || {};
+          await supabase.from('barang').upsert({
+            id: bId,
+            kode_barang: bInfo.kode_barang || `000${bId}`,
+            nama_barang: bInfo.nama_barang || `Barang ${bId}`,
+            id_kategori: bInfo.id_kategori || 1,
+            id_satuan: bInfo.id_satuan || 1,
+            id_lokasi: bInfo.id_lokasi || 1,
+            stok: typeof bInfo.stok === 'number' ? bInfo.stok : (item.jumlah || 0),
+            stok_minimum: typeof bInfo.stok_minimum === 'number' ? bInfo.stok_minimum : 5,
+            deskripsi: bInfo.deskripsi || null,
+            updated_at: new Date().toISOString(),
+          });
+        }
+        if (!primaryIdBarang) primaryIdBarang = bId;
+      }
+    }
+
+    // 2. Pastikan primaryIdBarang benar-benar ada di tabel barang
+    if (primaryIdBarang) {
+      const { data: checkPrimary } = await supabase.from('barang').select('id').eq('id', primaryIdBarang).maybeSingle();
+      if (!checkPrimary) {
+        const fallbackName = items[0]?.barang?.nama_barang || `Barang ${primaryIdBarang}`;
+        const fallbackKode = items[0]?.barang?.kode_barang || `000${primaryIdBarang}`;
+        await supabase.from('barang').upsert({
+          id: primaryIdBarang,
+          kode_barang: fallbackKode,
+          nama_barang: fallbackName,
+          id_kategori: 1,
+          id_satuan: 1,
+          id_lokasi: 1,
+          stok: body.jumlah || 1,
+          stok_minimum: 5,
+          updated_at: new Date().toISOString(),
+        });
+      }
+    } else {
+      const { data: anyB } = await supabase.from('barang').select('id').limit(1).maybeSingle();
+      if (anyB) {
+        primaryIdBarang = anyB.id;
+      } else {
+        const { data: createdB } = await supabase.from('barang').insert({
+          id: 1,
+          kode_barang: '000001',
+          nama_barang: 'Stabillo',
+          id_kategori: 1,
+          id_satuan: 1,
+          id_lokasi: 1,
+          stok: 10,
+          stok_minimum: 5,
+        }).select('id').single();
+        primaryIdBarang = createdB?.id || 1;
+      }
+    }
+
     const payload = {
       no_dokumen: body.no_dokumen,
-      id_barang: body.id_barang || (body.items && body.items[0]?.id_barang) || 1,
-      jumlah: body.jumlah || (body.items && body.items.reduce((s: number, i: any) => s + (i.jumlah || 0), 0)) || 1,
+      id_barang: primaryIdBarang,
+      jumlah: body.jumlah || (items.reduce((s: number, i: any) => s + (i.jumlah || 0), 0)) || 1,
       tanggal: body.tanggal || new Date().toISOString().split('T')[0],
       sumber: body.sumber || 'Pembelian',
       no_surat_jalan: body.no_referensi || body.no_surat_jalan || body.no_dokumen,
@@ -38,7 +102,7 @@ export async function POST(req: Request) {
             note: body.keterangan || '',
             sumber: body.sumber || 'Pembelian',
             no_referensi: body.no_referensi || '',
-            items: body.items || [],
+            items: items,
           }),
     };
 
@@ -48,11 +112,13 @@ export async function POST(req: Request) {
       .select();
 
     if (error) {
+      console.error('[API Transaksi Masuk Error]:', error);
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
     return NextResponse.json({ success: true, data });
   } catch (err: any) {
+    console.error('[API Transaksi Masuk Catch Error]:', err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
